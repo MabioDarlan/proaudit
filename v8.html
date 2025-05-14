@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+
+
+<title>Controle de Prioridades</title>
+
+
+
+        
+
+<style>
+body { font-family: Arial, sans-serif; margin: 20px; }
+table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+th { background-color: #f4f4f4; }
+.prioridade-alta { background-color: red; color: white; }
+.prioridade-media { background-color: orange; color: black; }
+.prioridade-baixa { background-color: green; color: white; }
+
+</style>
+
+<style>
+@media print {
+    body {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+    
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    th, td {
+        border: 1px solid black !important;
+        padding: 10px;
+        text-align: left;
+    }
+
+    .prioridade-alta {
+        background-color: red !important;
+        color: white !important;
+    }
+
+    .prioridade-media {
+        background-color: orange !important;
+        color: black !important;
+    }
+
+    .prioridade-baixa {
+        background-color: green !important;
+        color: white !important;
+    }
+}
+
+</style>
+</head>
+<body>
+<h2>Controle de Prioridades de Ações</h2>
+<label for="nomeUsuario">Seu Nome:</label>
+<input type="text" id="nomeUsuario" placeholder="Digite seu nome">
+<br><br>
+
+<label for="perfil">Escolha seu perfil:</label>
+<select id="perfil">
+<option value="intermediario" selected>Intermediário</option>
+<option value="disciplinado">Disciplinado</option>
+<option value="procrastinador">Procrastinador</option>
+</select>
+<br><br>
+<label for="tempoSemanal">Tempo disponível na semana (horas):</label>
+<input type="number" id="tempoSemanal" value="40" oninput="atualizarTempoDisponivel()">
+<br><br>
+<label for="horasRestantes">Horas restantes:</label>
+<input type="number" id="horasRestantes" value="40" readonly>
+<br><br>
+<label for="acao">Ação:</label>
+<input type="text" id="acao">
+
+<h3>Critérios dos Grupos</h3>
+
+<p>
+        <span class="grupo" onmouseover="mostrarTooltip(this)" onmouseout="ocultarTooltip(this)">
+          
+        
+		<strong> Grupo 1 (Básico):</strong>
+            <span class="tooltip">Grau de Desconhecimento, Tamanho da Ação/Projeto/Matéria, Grau de Dificuldade. 
+			<br>Avalia pontos Inerentes para priorizar atividades.</span>
+        </span>
+    </p>
+<label for="basico1">Grau de Desconhecimento (1-5):</label>
+<input type="number" id="basico1" min="1" max="5">
+<label for="basico2">Tamanho do Projeto (1-5):</label>
+<input type="number" id="basico2" min="1" max="5">
+<label for="basico3">Grau de Dificuldade do Projeto (1-5):</label>
+<input type="number" id="basico3" min="1" max="5">
+
+<p>
+        <span class="grupo" onmouseover="mostrarTooltip(this)" onmouseout="ocultarTooltip(this)">
+           <strong> Grupo 2 (PBR):</strong>
+            <span class="tooltip">Criticidade- O que pode ter maior impacto?,
+			<br>Relevância - O que é significativo o suficiente para ser considerado?, 
+			<br> Materialidade - O que realmente importa para a tomada de decisão?. <br>
+			<br>Modelo de atividades/ações/projetos baseados em risco para a gestão de risco.</span>
+        </span>
+    </p>
+<label for="pbr1">Criticidade (1-5):</label>
+<input type="number" id="pbr1" min="1" max="5">
+<label for="pbr2">Relevância (1-5):</label>
+<input type="number" id="pbr2" min="1" max="5">
+<label for="pbr3">Materialidade (1-5):</label>
+<input type="number" id="pbr3" min="1" max="5">
+
+<p>
+        <span class="grupo" onmouseover="mostrarTooltip(this)" onmouseout="ocultarTooltip(this)">
+          <strong>  Grupo 3 (Eisenhower):</strong>
+            <span class="tooltip">Importância e Urgência. Critério de Eisenhower para definir ações com base em tempo e gravidade. <br><br>
+			<br> "Importantes" são aquelas cjujos resultados afetam diretamente as metas e objetivos q precisam ser alcançados.
+			<br> "Urgentes" são aquelas que têm um prazo determinado, se não receber a devida atgenção e foco o quanto antes, 
+			<br>podem trazer resultados inesperados, negativos ou irreversíveis.</span>
+        </span>
+    </p>
+<label for="importancia">Importância (1-5):</label>
+<input type="number" id="importancia" min="1" max="5">
+<label for="urgencia">Urgência (1-5):</label>
+<input type="number" id="urgencia" min="1" max="5">
+
+<button onclick="adicionarAcao()">Adicionar</button>
+<button onclick="imprimirTabela()">Imprimir Lista de Ações</button>
+
+
+<table>
+<thead>
+<tr>
+<th>Ação</th>
+<th>Prioridade</th>
+<th>Tempo (h)</th>
+<th>Notas dos Grupos</th>
+<th>Ações</th>
+</tr>
+</thead>
+<tbody id="listaAcoes"></tbody>
+</table>
+
+
+
+<script>
+
+ function mostrarTooltip(elemento) {
+            let tooltip = elemento.querySelector('.tooltip');
+            tooltip.style.display = 'inline-block';
+            tooltip.style.backgroundColor = 'black';
+            tooltip.style.color = 'white';
+            tooltip.style.padding = '8px';
+            tooltip.style.borderRadius = '5px';
+            tooltip.style.position = 'absolute';
+            tooltip.style.marginLeft = '10px';
+            tooltip.style.whiteSpace = 'nowrap';
+            tooltip.style.boxShadow = '0px 4px 8px rgba(0, 0, 0, 0.2)';
+        }
+
+        function ocultarTooltip(elemento) {
+            let tooltip = elemento.querySelector('.tooltip');
+            tooltip.style.display = 'none';
+        }
+
+        // Ocultar tooltips por padrão
+        document.querySelectorAll('.tooltip').forEach(tooltip => {
+            tooltip.style.display = 'none';
+        });
+
+
+
+let acoes = [];
+let tempoDisponivel = 40;
+
+document.getElementById('perfil').addEventListener('change', calcularPrioridades);
+document.getElementById('tempoSemanal').addEventListener('input', atualizarTempoDisponivel);
+
+function atualizarTempoDisponivel() {
+    tempoDisponivel = parseInt(document.getElementById('tempoSemanal').value) || 0;
+    document.getElementById('horasRestantes').value = tempoDisponivel;
+    distribuirTempo();
+}
+
+function calcularNotaFinal(media1, media2, media3, perfil) {
+    let notaFinal;
+    if (perfil === 'disciplinado') {
+        notaFinal = (media1 * 0.3) + (media2 * 0.6) + (media3 * 0.1);
+    } else if (perfil === 'procrastinador') {
+        notaFinal = (media1 * 0.3) + (media2 * 0.2) + (media3 * 0.5);
+    } else { // Intermediário
+        let nota1 = (media1 * 0.3) + (media2 * 0.6) + (media3 * 0.1);
+        let nota2 = (media1 * 0.3) + (media2 * 0.2) + (media3 * 0.5);
+        notaFinal = (nota1 + nota2) / 2;
+    }
+    return notaFinal;
+}
+
+function adicionarAcao() {
+    let acao = document.getElementById('acao').value;
+    let perfil = document.getElementById('perfil').value;
+    
+    let grupo1 = (parseFloat(document.getElementById('basico1').value) +
+                  parseFloat(document.getElementById('basico2').value) +
+                  parseFloat(document.getElementById('basico3').value)) / 3;
+    
+    let grupo2 = (parseFloat(document.getElementById('pbr1').value) +
+                  parseFloat(document.getElementById('pbr2').value) +
+                  parseFloat(document.getElementById('pbr3').value)) / 3;
+    
+    let grupo3 = (parseFloat(document.getElementById('importancia').value) +
+                  parseFloat(document.getElementById('urgencia').value)) / 2;
+
+    let prioridade = calcularNotaFinal(grupo1, grupo2, grupo3, perfil);
+
+    acoes.push({ acao, prioridade, notasGrupos: `Básico: ${grupo1.toFixed(2)}, PBR: ${grupo2.toFixed(2)}, Eisenhower: ${grupo3.toFixed(2)}` });
+    ordenarAcoes();
+    distribuirTempo();
+    exibirAcoes();
+}
+
+function ordenarAcoes() {
+    acoes.sort((a, b) => b.prioridade - a.prioridade);
+}
+
+function distribuirTempo() {
+    let totalPrioridade = acoes.reduce((sum, item) => sum + item.prioridade, 0);
+    if (totalPrioridade > 0) {
+        acoes.forEach(item => {
+            item.tempo = (item.prioridade / totalPrioridade) * tempoDisponivel;
+        });
+    }
+    document.getElementById('horasRestantes').value = tempoDisponivel - acoes.reduce((sum, item) => sum + item.tempo, 0);
+
+
+
+}
+function exibirAcoes() {
+    let lista = document.getElementById('listaAcoes');
+    lista.innerHTML = '';
+    acoes.forEach((item, index) => {
+        let prioridadeClasse = item.prioridade >= 4 ? 'prioridade-alta' :
+                               item.prioridade >= 3 ? 'prioridade-media' : 'prioridade-baixa';
+        let row = `<tr class="${prioridadeClasse}">
+            <td>${item.acao}</td>
+            <td>${item.prioridade.toFixed(2)}</td>
+            <td>${item.tempo.toFixed(2)}</td>
+           
+		    <td>
+                <span> ${item.notasGrupos.split(', ')[0]}</span> 
+                <span> ${item.notasGrupos.split(', ')[1]}</span>
+                <span> ${item.notasGrupos.split(', ')[2]}</span>
+            </td>
+            <td><button onclick="removerAcao(${index})">Remover</button></td>
+        </tr>`;
+        lista.innerHTML += row;
+    });
+}
+
+
+function removerAcao(index) {
+    acoes.splice(index, 1);
+    distribuirTempo();
+    exibirAcoes();
+}
+
+function imprimirTabela() {
+    let tabela = document.querySelector('table').outerHTML; // Captura a tabela completa
+    let nomeUsuario = document.getElementById('nomeUsuario').value || "Não informado";
+    let perfilSelecionado = document.getElementById('perfil').value;
+
+    let estilo = `
+        <style>
+            @media print {
+                body {
+                    -webkit-print-color-adjust: exact;
+                    print-color-adjust: exact;
+                }
+                table {
+                    width: 100%;
+                    border-collapse: collapse;
+                }
+                th, td {
+                    border: 1px solid black !important;
+                    padding: 10px;
+                    text-align: left;
+                }
+                .prioridade-alta {
+                    background-color: red !important;
+                    color: white !important;
+                }
+                .prioridade-media {
+                    background-color: orange !important;
+                    color: black !important;
+                }
+                .prioridade-baixa {
+                    background-color: green !important;
+                    color: white !important;
+                }
+            }
+        </style>
+    `;
+
+    let novaJanela = window.open('', '', 'width=800, height=600');
+    novaJanela.document.write('<html><head><title>Lista de Prioridades V7..::Mabiozão::..)</title>' + estilo + '</head><body>');
+    novaJanela.document.write(`<h2>Lista de Prioridade de Ações V7..::Mabiozão::..</h2>`);
+    novaJanela.document.write(`<p><strong>Nome:</strong> ${nomeUsuario}</p>`);
+    novaJanela.document.write(`<p><strong>Perfil Selecionado:</strong> ${perfilSelecionado}</p>`);
+    novaJanela.document.write(tabela);
+    novaJanela.document.write('</body></html>');
+    novaJanela.document.close();
+    novaJanela.print();
+}
+
+
+
+
+</script>
+</body>
+</html>

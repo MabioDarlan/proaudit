@@ -1,0 +1,1225 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mábio's Kanban — Framework das 3 Caixas</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+  <style>
+    :root {
+      --bg: #f4f6f8;
+      --surface: #ffffff;
+      --text: #24303b;
+      --muted: #65727e;
+      --border: #d9e0e6;
+      --shadow: 0 8px 24px rgba(31, 45, 61, .08);
+      --sustain: #2e7d32;
+      --sustain-soft: #e8f5e9;
+      --season: #ef6c00;
+      --season-soft: #fff3e0;
+      --sandbox: #1565c0;
+      --sandbox-soft: #e3f2fd;
+      --waiting: #6d4c41;
+      --waiting-soft: #efebe9;
+      --history: #546e7a;
+      --danger: #b71c1c;
+      --accent: #263238;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      color: var(--text);
+      background: var(--bg);
+      min-height: 100vh;
+    }
+
+    button, input, select, textarea { font: inherit; }
+
+    button {
+      border: 0;
+      border-radius: 7px;
+      cursor: pointer;
+      transition: transform .15s ease, opacity .15s ease, background .15s ease;
+    }
+
+    button:hover { opacity: .92; }
+    button:active { transform: translateY(1px); }
+
+    .app-shell {
+      width: min(1500px, 96vw);
+      margin: 0 auto;
+      padding: 18px 0 40px;
+    }
+
+    .topbar {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      box-shadow: var(--shadow);
+      padding: 16px 18px;
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: clamp(25px, 3vw, 38px);
+      line-height: 1.05;
+    }
+
+    .brand p {
+      margin: 6px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .brand .version {
+      display: inline-block;
+      margin-left: 8px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: #eceff1;
+      color: #455a64;
+      font-size: 11px;
+      vertical-align: middle;
+    }
+
+    .top-actions, .json-controls {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .btn {
+      padding: 9px 12px;
+      background: #607d8b;
+      color: #fff;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .btn.secondary { background: #455a64; }
+    .btn.success { background: var(--sustain); }
+    .btn.warning { background: var(--season); }
+    .btn.info { background: var(--sandbox); }
+    .btn.danger { background: var(--danger); }
+    .btn.ghost {
+      background: #f1f4f6;
+      color: #37474f;
+      border: 1px solid var(--border);
+    }
+
+    #kanbanFileInput { display: none; }
+
+    .golden-rule {
+      margin: 14px 0;
+      padding: 13px 16px;
+      border-left: 5px solid #f9a825;
+      background: #fffde7;
+      border-radius: 10px;
+      font-size: 14px;
+      box-shadow: 0 3px 14px rgba(31,45,61,.04);
+    }
+
+    .golden-rule strong { color: #7a5b00; }
+
+    .status-message {
+      display: none;
+      margin: 10px 0;
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 13px;
+      text-align: center;
+    }
+
+    .status-message.success { background: #e8f5e9; color: #1b5e20; border: 1px solid #a5d6a7; }
+    .status-message.warning { background: #fff8e1; color: #8d6e00; border: 1px solid #ffe082; }
+    .status-message.error { background: #ffebee; color: #b71c1c; border: 1px solid #ef9a9a; }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(130px, 1fr));
+      gap: 10px;
+      margin: 12px 0;
+    }
+
+    .metric {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 11px 12px;
+      box-shadow: 0 3px 10px rgba(31,45,61,.04);
+    }
+
+    .metric span { display: block; color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .5px; }
+    .metric strong { display: block; margin-top: 4px; font-size: 22px; }
+
+    .manual-panel {
+      display: none;
+      margin: 12px 0;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: var(--shadow);
+    }
+
+    .manual-panel.open { display: block; }
+    .manual-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .manual-card { padding: 12px; border-radius: 10px; border: 1px solid var(--border); }
+    .manual-card h3 { margin: 0 0 7px; font-size: 16px; }
+    .manual-card p { margin: 4px 0; font-size: 13px; line-height: 1.45; }
+    .manual-card.sustain { background: var(--sustain-soft); }
+    .manual-card.season { background: var(--season-soft); }
+    .manual-card.sandbox { background: var(--sandbox-soft); }
+
+    .quick-capture {
+      display: grid;
+      grid-template-columns: 1fr 210px auto;
+      gap: 8px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px;
+      margin-bottom: 12px;
+      box-shadow: 0 3px 14px rgba(31,45,61,.04);
+    }
+
+    .quick-capture input, .quick-capture select,
+    .add-task input, .season-control input, .season-control textarea {
+      width: 100%;
+      border: 1px solid #cfd8dc;
+      border-radius: 7px;
+      padding: 9px 10px;
+      background: #fff;
+      color: var(--text);
+      outline: none;
+    }
+
+    .quick-capture input:focus, .quick-capture select:focus,
+    .add-task input:focus, .season-control input:focus, .season-control textarea:focus {
+      border-color: #78909c;
+      box-shadow: 0 0 0 3px rgba(96,125,139,.12);
+    }
+
+    .board {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+      align-items: start;
+    }
+
+    .box {
+      min-height: 480px;
+      border-radius: 14px;
+      border: 2px solid transparent;
+      padding: 12px;
+      box-shadow: var(--shadow);
+      position: relative;
+      background: var(--surface);
+    }
+
+    .box.sustentacao { border-color: #a5d6a7; background: linear-gradient(180deg, var(--sustain-soft), #fff 170px); }
+    .box.temporada { border-color: #ffcc80; background: linear-gradient(180deg, var(--season-soft), #fff 190px); }
+    .box.areia { border-color: #90caf9; background: linear-gradient(180deg, var(--sandbox-soft), #fff 170px); }
+
+    .box.drag-over, .waiting-zone.drag-over {
+      outline: 3px dashed #546e7a;
+      outline-offset: -6px;
+    }
+
+    .box-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      align-items: flex-start;
+      margin-bottom: 8px;
+    }
+
+    .box-title h2 { margin: 0; font-size: 20px; }
+    .box-title p { margin: 5px 0 0; font-size: 12px; color: var(--muted); line-height: 1.35; }
+
+    .counter {
+      min-width: 34px;
+      text-align: center;
+      padding: 5px 8px;
+      background: rgba(255,255,255,.78);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .rule-chip {
+      display: inline-block;
+      margin: 5px 0 10px;
+      padding: 5px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      background: rgba(255,255,255,.78);
+      border: 1px solid var(--border);
+    }
+
+    .tooltip { position: relative; }
+    .tooltiptext {
+      visibility: hidden;
+      opacity: 0;
+      width: 290px;
+      background: #263238;
+      color: #fff;
+      text-align: left;
+      padding: 11px;
+      border-radius: 8px;
+      position: absolute;
+      top: 42px;
+      left: 0;
+      z-index: 50;
+      font-size: 12px;
+      line-height: 1.42;
+      transition: opacity .12s ease;
+      pointer-events: none;
+      box-shadow: 0 8px 22px rgba(0,0,0,.22);
+    }
+    .tooltip:hover .tooltiptext { visibility: visible; opacity: 1; }
+
+    .task-list { min-height: 120px; }
+
+    .task {
+      margin: 8px 0;
+      padding: 10px;
+      border-radius: 9px;
+      color: #fff;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      align-items: start;
+      cursor: grab;
+      box-shadow: 0 3px 10px rgba(0,0,0,.12);
+      border: 1px solid rgba(255,255,255,.22);
+    }
+
+    .task:active { cursor: grabbing; }
+    .task.sustain { background: var(--sustain); }
+    .task.season { background: var(--season); }
+    .task.sandbox { background: var(--sandbox); }
+    .task.waiting { background: var(--waiting); }
+    .task.history { background: var(--history); }
+
+    .task-main { min-width: 0; }
+    .task-title {
+      display: block;
+      font-weight: 700;
+      line-height: 1.3;
+      overflow-wrap: anywhere;
+    }
+
+    .task-meta {
+      display: block;
+      margin-top: 5px;
+      font-size: 10px;
+      opacity: .86;
+    }
+
+    .task-actions {
+      display: flex;
+      gap: 3px;
+    }
+
+    .icon-btn {
+      width: 28px;
+      height: 28px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255,255,255,.18);
+      color: #fff;
+      border-radius: 6px;
+      font-size: 12px;
+    }
+
+    .inline-edit {
+      width: 100%;
+      border: 0;
+      border-bottom: 1px solid rgba(255,255,255,.8);
+      background: transparent;
+      color: #fff;
+      outline: none;
+      padding: 2px 0;
+      font-weight: 700;
+    }
+
+    .add-task {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 6px;
+      margin-top: 10px;
+      border-top: 1px dashed #cfd8dc;
+      padding-top: 10px;
+    }
+
+    .add-task button { padding: 8px 10px; color: #fff; font-weight: 700; }
+    .sustentacao .add-task button { background: var(--sustain); }
+    .temporada .add-task button { background: var(--season); }
+    .areia .add-task button { background: var(--sandbox); }
+
+    .season-control {
+      background: rgba(255,255,255,.82);
+      border: 1px solid #ffe0b2;
+      border-radius: 10px;
+      padding: 10px;
+      margin-bottom: 10px;
+    }
+
+    .season-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 7px;
+    }
+
+    .season-control label {
+      display: block;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .4px;
+      margin-bottom: 4px;
+    }
+
+    .season-control textarea { min-height: 62px; resize: vertical; }
+
+    .season-progress {
+      margin-top: 9px;
+      background: #ffe0b2;
+      border-radius: 999px;
+      height: 11px;
+      overflow: hidden;
+    }
+
+    .season-progress > div {
+      height: 100%;
+      width: 0;
+      background: var(--season);
+      transition: width .2s ease;
+    }
+
+    .season-status {
+      margin-top: 6px;
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      color: #6d4c41;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .season-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    .season-actions button { padding: 8px; font-size: 11px; color: #fff; font-weight: 700; }
+
+    .waiting-zone {
+      margin-top: 12px;
+      padding: 9px;
+      border: 1px dashed #a1887f;
+      border-radius: 10px;
+      background: var(--waiting-soft);
+    }
+
+    .waiting-zone h3 {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      margin: 0 0 5px;
+      font-size: 14px;
+      color: #4e342e;
+    }
+
+    .waiting-zone p { margin: 0 0 7px; font-size: 11px; color: #6d4c41; line-height: 1.35; }
+
+    .empty-state {
+      text-align: center;
+      color: #90a4ae;
+      font-size: 12px;
+      padding: 22px 8px;
+      border: 1px dashed #cfd8dc;
+      border-radius: 9px;
+      margin-top: 7px;
+    }
+
+    .history-panel {
+      margin-top: 14px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .history-header {
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      cursor: pointer;
+      background: #eceff1;
+    }
+
+    .history-header h2 { margin: 0; font-size: 16px; color: #455a64; }
+    .history-content { display: none; padding: 12px; }
+    .history-panel.open .history-content { display: block; }
+    .history-list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+    .history-list .task { margin: 0; }
+
+    .footer-note {
+      margin-top: 12px;
+      text-align: center;
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    @media (max-width: 1050px) {
+      .board { grid-template-columns: 1fr; }
+      .box { min-height: 380px; }
+      .metrics { grid-template-columns: repeat(2, 1fr); }
+      .manual-grid { grid-template-columns: 1fr; }
+      .history-list { grid-template-columns: 1fr 1fr; }
+    }
+
+    @media (max-width: 650px) {
+      .app-shell { width: 94vw; }
+      .quick-capture { grid-template-columns: 1fr; }
+      .metrics { grid-template-columns: 1fr 1fr; }
+      .history-list { grid-template-columns: 1fr; }
+      .season-grid, .season-actions { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app-shell">
+    <header class="topbar">
+      <div class="brand">
+        <h1>Mábio's Kanban <span class="version">3 Caixas v1.0</span></h1>
+        <p>BASE → FOCO → LIBERDADE | Sustentação • Temporada • Caixa de Areia</p>
+      </div>
+      <div class="top-actions">
+        <button class="btn ghost" onclick="toggleManual()"><i class="fa fa-book"></i> Manual 80/20</button>
+        <button class="btn" onclick="exportarKanbanJSON()"><i class="fa fa-upload"></i> Exportar JSON</button>
+        <button class="btn" onclick="document.getElementById('kanbanFileInput').click()"><i class="fa fa-download"></i> Importar JSON</button>
+        <input type="file" id="kanbanFileInput" accept=".json,application/json" onchange="importarKanbanJSON(event)">
+        <button class="btn danger" onclick="limparKanban()"><i class="fa fa-trash"></i> Limpar</button>
+      </div>
+    </header>
+
+    <div class="golden-rule">
+      <strong>REGRA DE OURO:</strong> não obrigue o mesmo projeto a sustentar sua vida, realizar sua ambição e satisfazer sua curiosidade ao mesmo tempo. Classifique primeiro; execute depois.
+    </div>
+
+    <div id="statusMessage" class="status-message" aria-live="polite"></div>
+
+    <section class="metrics" aria-label="Painel de indicadores">
+      <div class="metric"><span>Sustentação</span><strong id="metricSustentacao">0</strong></div>
+      <div class="metric"><span>Temporada WIP</span><strong id="metricTemporada">0/1</strong></div>
+      <div class="metric"><span>Lista de espera</span><strong id="metricEspera">0</strong></div>
+      <div class="metric"><span>Caixa de Areia</span><strong id="metricAreia">0</strong></div>
+      <div class="metric"><span>Entregas</span><strong id="metricHistorico">0</strong></div>
+    </section>
+
+    <section id="manualPanel" class="manual-panel">
+      <div class="manual-grid">
+        <article class="manual-card sustain">
+          <h3>🛡 1. Sustentação</h3>
+          <p><strong>Função:</strong> proteger estabilidade, renda e rotinas essenciais.</p>
+          <p><strong>80/20:</strong> dominar o trabalho recorrente sem consumir toda a energia cognitiva.</p>
+          <p><strong>Pergunta:</strong> “O que precisa continuar funcionando mesmo quando minha motivação muda?”</p>
+        </article>
+        <article class="manual-card season">
+          <h3>🚀 2. Temporada</h3>
+          <p><strong>Função:</strong> transformar potencial em uma entrega concreta.</p>
+          <p><strong>WIP:</strong> somente 1 projeto principal ativo. Ideias novas vão para a Lista de Espera.</p>
+          <p><strong>Ciclo:</strong> referência de 90 dias + definição explícita da entrega.</p>
+        </article>
+        <article class="manual-card sandbox">
+          <h3>🧪 3. Caixa de Areia</h3>
+          <p><strong>Função:</strong> experimentar por curiosidade e prazer, sem obrigação de monetizar.</p>
+          <p><strong>Regra:</strong> hobby não precisa virar negócio, conteúdo ou compromisso permanente.</p>
+          <p><strong>Pergunta:</strong> “O que posso explorar sem precisar provar nada?”</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="quick-capture" aria-label="Captura rápida">
+      <input id="quickTask" type="text" placeholder="Captura rápida: escreva uma ideia, projeto, rotina ou hobby...">
+      <select id="quickTarget" aria-label="Destino da captura">
+        <option value="espera">Lista de Espera (padrão)</option>
+        <option value="sustentacao">Sustentação</option>
+        <option value="temporada">Temporada — projeto ativo</option>
+        <option value="areia">Caixa de Areia</option>
+      </select>
+      <button class="btn secondary" onclick="quickCapture()"><i class="fa fa-plus"></i> Capturar</button>
+    </section>
+
+    <section class="board">
+      <article class="box sustentacao tooltip" id="sustentacao" data-zone="sustentacao" ondragover="allowDrop(event)" ondragleave="dragLeave(event)" ondrop="drop(event)">
+        <div class="box-header">
+          <div class="box-title">
+            <h2><i class="fa fa-shield"></i> Sustentação</h2>
+            <p>Seu “feijão com arroz”: base financeira, rotinas essenciais e responsabilidades recorrentes.</p>
+          </div>
+          <span class="counter" id="countSustentacao">0</span>
+        </div>
+        <span class="rule-chip">Proteja a base; não a destrua por impulso.</span>
+        <div class="tooltiptext">
+          <strong>O que entra:</strong> atividades, trabalhos e sistemas que mantêm sua vida operacional e previsível.<br><br>
+          <strong>Critério:</strong> estabilidade e sustentabilidade.<br><br>
+          <strong>Evite:</strong> abandonar a base por causa de uma novidade ainda não validada.
+        </div>
+        <div class="task-list" id="listSustentacao"></div>
+        <div class="add-task">
+          <input type="text" id="newTaskSustentacao" placeholder="Adicionar à Sustentação">
+          <button onclick="addTaskFromInput('sustentacao','newTaskSustentacao')">Add +</button>
+        </div>
+      </article>
+
+      <article class="box temporada tooltip" id="temporada" data-zone="temporada" ondragover="allowDrop(event)" ondragleave="dragLeave(event)" ondrop="drop(event)">
+        <div class="box-header">
+          <div class="box-title">
+            <h2><i class="fa fa-rocket"></i> Temporada</h2>
+            <p>Seu único projeto estratégico ativo. O objetivo é atravessar a novidade e chegar a uma entrega real.</p>
+          </div>
+          <span class="counter" id="countTemporada">0/1</span>
+        </div>
+        <span class="rule-chip">WIP = 1 • Nova ideia ≠ novo projeto agora.</span>
+        <div class="tooltiptext">
+          <strong>O que entra:</strong> somente um projeto principal por ciclo.<br><br>
+          <strong>Regra:</strong> se já existe projeto ativo, novas ideias vão para a Lista de Espera.<br><br>
+          <strong>Done:</strong> a temporada precisa terminar com uma entrega concreta ou decisão consciente de encerramento.
+        </div>
+
+        <div class="season-control">
+          <div class="season-grid">
+            <div>
+              <label for="seasonStart">Início do ciclo</label>
+              <input id="seasonStart" type="date" onchange="updateSeasonSettings()">
+            </div>
+            <div>
+              <label for="seasonDuration">Duração (dias)</label>
+              <input id="seasonDuration" type="number" min="7" max="365" value="90" onchange="updateSeasonSettings()">
+            </div>
+          </div>
+          <div style="margin-top:7px;">
+            <label for="seasonDelivery">Entrega concreta / Definition of Done</label>
+            <textarea id="seasonDelivery" placeholder="Ex.: concluir curso + fazer simulado + gerar mapa mental..." oninput="updateSeasonSettings()"></textarea>
+          </div>
+          <div class="season-progress" aria-label="Progresso temporal da temporada"><div id="seasonProgressBar"></div></div>
+          <div class="season-status">
+            <span id="seasonDayLabel">Dia 1 de 90</span>
+            <span id="seasonRemainingLabel">89 dias restantes</span>
+          </div>
+        </div>
+
+        <div class="task-list" id="listTemporada"></div>
+        <div class="season-actions">
+          <button style="background:var(--sustain);" onclick="promoverTemporadaParaSustentacao()"><i class="fa fa-level-up"></i> Entregou → Sustentação</button>
+          <button style="background:var(--history);" onclick="concluirTemporada()"><i class="fa fa-check"></i> Entregou → Arquivar</button>
+        </div>
+        <div class="add-task">
+          <input type="text" id="newTaskTemporada" placeholder="Definir projeto da Temporada">
+          <button onclick="addTaskFromInput('temporada','newTaskTemporada')">Add +</button>
+        </div>
+
+        <section class="waiting-zone" id="espera" data-zone="espera" ondragover="allowDrop(event)" ondragleave="dragLeave(event)" ondrop="drop(event)">
+          <h3><span><i class="fa fa-hourglass-half"></i> Lista de Espera</span><span id="countEspera">0</span></h3>
+          <p>Ideias aprovadas, mas não iniciadas. Elas ficam seguras aqui até o encerramento da temporada atual.</p>
+          <div class="task-list" id="listEspera"></div>
+          <div class="add-task">
+            <input type="text" id="newTaskEspera" placeholder="Guardar uma nova ideia">
+            <button style="background:var(--waiting);" onclick="addTaskFromInput('espera','newTaskEspera')">Guardar</button>
+          </div>
+        </section>
+      </article>
+
+      <article class="box areia tooltip" id="areia" data-zone="areia" ondragover="allowDrop(event)" ondragleave="dragLeave(event)" ondrop="drop(event)">
+        <div class="box-header">
+          <div class="box-title">
+            <h2><i class="fa fa-flask"></i> Caixa de Areia</h2>
+            <p>Laboratório livre para curiosidade, hobbies e experimentos sem cobrança de produtividade.</p>
+          </div>
+          <span class="counter" id="countAreia">0</span>
+        </div>
+        <span class="rule-chip">Explore sem monetizar, validar ou se culpar.</span>
+        <div class="tooltiptext">
+          <strong>O que entra:</strong> hobbies, curiosidades e explorações livres.<br><br>
+          <strong>Regra:</strong> não transformar automaticamente em renda, empresa ou obrigação pública.<br><br>
+          <strong>Permissão:</strong> perder o interesse sem culpa faz parte desta caixa.
+        </div>
+        <div class="task-list" id="listAreia"></div>
+        <div class="add-task">
+          <input type="text" id="newTaskAreia" placeholder="Adicionar experimento / hobby">
+          <button onclick="addTaskFromInput('areia','newTaskAreia')">Add +</button>
+        </div>
+      </article>
+    </section>
+
+    <section class="history-panel" id="historyPanel">
+      <div class="history-header" onclick="toggleHistory()">
+        <h2><i class="fa fa-check-circle"></i> Histórico de Entregas — preserva a lógica “Done” sem criar uma 4ª caixa</h2>
+        <span><strong id="countHistorico">0</strong> itens <i class="fa fa-chevron-down"></i></span>
+      </div>
+      <div class="history-content">
+        <div id="listHistorico" class="history-list"></div>
+      </div>
+    </section>
+
+    <p class="footer-note">Dica: arraste os cartões entre as caixas. Dê duplo clique no título para editar. O navegador salva automaticamente em localStorage.</p>
+  </main>
+
+  <script>
+    const STORAGE_KEY = 'mabiosKanban3Caixas_v1';
+    const APP_VERSION = "Mabio's Kanban 3 Caixas v1.0";
+    const BOXES = ['sustentacao', 'temporada', 'espera', 'areia', 'historico'];
+
+    function todayISO() {
+      const d = new Date();
+      const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
+      return local.toISOString().slice(0, 10);
+    }
+
+    function defaultState() {
+      return {
+        version: APP_VERSION,
+        taskIdCounter: 0,
+        season: {
+          startDate: todayISO(),
+          duration: 90,
+          delivery: ''
+        },
+        boxes: {
+          sustentacao: [],
+          temporada: [],
+          espera: [],
+          areia: [],
+          historico: []
+        },
+        updatedAt: new Date().toISOString()
+      };
+    }
+
+    let state = loadStateRaw() || defaultState();
+
+    function loadStateRaw() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        return normalizeState(parsed);
+      } catch (error) {
+        console.error('Erro ao carregar estado:', error);
+        return null;
+      }
+    }
+
+    function normalizeState(data) {
+      const base = defaultState();
+      const normalized = {
+        ...base,
+        ...data,
+        season: { ...base.season, ...(data.season || {}) },
+        boxes: { ...base.boxes, ...(data.boxes || {}) }
+      };
+      BOXES.forEach(box => {
+        if (!Array.isArray(normalized.boxes[box])) normalized.boxes[box] = [];
+      });
+      normalized.taskIdCounter = Number(normalized.taskIdCounter) || 0;
+      normalized.season.duration = Math.max(7, Math.min(365, Number(normalized.season.duration) || 90));
+      normalized.season.startDate = normalized.season.startDate || todayISO();
+      return normalized;
+    }
+
+    function saveState() {
+      state.updatedAt = new Date().toISOString();
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
+
+    function nextTaskId() {
+      state.taskIdCounter += 1;
+      return 'task' + state.taskIdCounter;
+    }
+
+    function makeTask(title, origin = '') {
+      return {
+        id: nextTaskId(),
+        title: title.trim(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        origin
+      };
+    }
+
+    function findTask(taskId) {
+      for (const box of BOXES) {
+        const index = state.boxes[box].findIndex(t => t.id === taskId);
+        if (index !== -1) return { box, index, task: state.boxes[box][index] };
+      }
+      return null;
+    }
+
+    function addTask(target, title, options = {}) {
+      const clean = String(title || '').trim();
+      if (!clean) return false;
+
+      if (target === 'temporada' && state.boxes.temporada.length >= 1) {
+        const task = makeTask(clean, options.origin || 'redirecionado-da-temporada');
+        state.boxes.espera.push(task);
+        saveState();
+        renderAll();
+        mostrarMensagem('Temporada já possui 1 projeto ativo. A nova ideia foi protegida na Lista de Espera.', 'warning');
+        return true;
+      }
+
+      if (!BOXES.includes(target) || target === 'historico') return false;
+      state.boxes[target].push(makeTask(clean, options.origin || target));
+      if (target === 'temporada' && state.boxes.temporada.length === 1 && !state.season.startDate) {
+        state.season.startDate = todayISO();
+      }
+      saveState();
+      renderAll();
+      return true;
+    }
+
+    function addTaskFromInput(target, inputId) {
+      const input = document.getElementById(inputId);
+      if (!input) return;
+      const text = input.value.trim();
+      if (!text) return;
+      if (addTask(target, text)) input.value = '';
+    }
+
+    function quickCapture() {
+      const input = document.getElementById('quickTask');
+      const target = document.getElementById('quickTarget').value;
+      const text = input.value.trim();
+      if (!text) return;
+      if (addTask(target, text, { origin: 'captura-rapida' })) input.value = '';
+    }
+
+    function allowDrop(event) {
+      event.preventDefault();
+      event.stopPropagation();
+      const zone = event.currentTarget;
+      if (zone) zone.classList.add('drag-over');
+    }
+
+    function dragLeave(event) {
+      event.stopPropagation();
+      const zone = event.currentTarget;
+      if (zone) zone.classList.remove('drag-over');
+    }
+
+    function drag(event) {
+      event.dataTransfer.setData('text/plain', event.currentTarget.dataset.taskId);
+      event.dataTransfer.effectAllowed = 'move';
+    }
+
+    function drop(event) {
+      event.preventDefault();
+      event.stopPropagation();
+      const zone = event.currentTarget;
+      zone.classList.remove('drag-over');
+      const taskId = event.dataTransfer.getData('text/plain');
+      const target = zone.dataset.zone;
+      moveTask(taskId, target);
+    }
+
+    function moveTask(taskId, target) {
+      if (!BOXES.includes(target) || target === 'historico') return;
+      const found = findTask(taskId);
+      if (!found || found.box === target) return;
+
+      if (target === 'temporada' && state.boxes.temporada.length >= 1) {
+        mostrarMensagem('WIP da Temporada = 1. Conclua ou mova o projeto atual antes de ativar outro.', 'warning');
+        return;
+      }
+
+      const [task] = state.boxes[found.box].splice(found.index, 1);
+      task.updatedAt = new Date().toISOString();
+      task.origin = task.origin || found.box;
+      state.boxes[target].push(task);
+      if (target === 'temporada') state.season.startDate = todayISO();
+      saveState();
+      renderAll();
+    }
+
+    function archiveTask(taskId, reason = 'Concluído') {
+      const found = findTask(taskId);
+      if (!found || found.box === 'historico') return;
+      const [task] = state.boxes[found.box].splice(found.index, 1);
+      task.completedAt = new Date().toISOString();
+      task.completionReason = reason;
+      task.completedFrom = found.box;
+      state.boxes.historico.unshift(task);
+      saveState();
+      renderAll();
+    }
+
+    function deleteTask(taskId) {
+      const found = findTask(taskId);
+      if (!found) return;
+      if (!confirm(`Excluir “${found.task.title}”?`)) return;
+      state.boxes[found.box].splice(found.index, 1);
+      saveState();
+      renderAll();
+    }
+
+    function editTaskInline(taskId, spanEl) {
+      const found = findTask(taskId);
+      if (!found || !spanEl) return;
+      const oldText = found.task.title;
+      const input = document.createElement('input');
+      input.className = 'inline-edit';
+      input.value = oldText;
+      spanEl.replaceWith(input);
+      input.focus();
+      input.select();
+
+      const commit = () => {
+        const next = input.value.trim() || oldText;
+        found.task.title = next;
+        found.task.updatedAt = new Date().toISOString();
+        saveState();
+        renderAll();
+      };
+
+      input.addEventListener('blur', commit, { once: true });
+      input.addEventListener('keydown', event => {
+        if (event.key === 'Enter') input.blur();
+        if (event.key === 'Escape') {
+          input.value = oldText;
+          input.blur();
+        }
+      });
+    }
+
+    function createTaskElement(task, box) {
+      const card = document.createElement('div');
+      card.className = `task ${classForBox(box)}`;
+      card.draggable = box !== 'historico';
+      card.dataset.taskId = task.id;
+      if (box !== 'historico') card.addEventListener('dragstart', drag);
+
+      const main = document.createElement('div');
+      main.className = 'task-main';
+
+      const title = document.createElement('span');
+      title.className = 'task-title';
+      title.textContent = task.title;
+      title.title = 'Duplo clique para editar';
+      if (box !== 'historico') title.ondblclick = () => editTaskInline(task.id, title);
+
+      const meta = document.createElement('span');
+      meta.className = 'task-meta';
+      if (box === 'historico') {
+        const date = task.completedAt ? new Date(task.completedAt).toLocaleDateString('pt-BR') : '—';
+        meta.textContent = `${task.completionReason || 'Concluído'} • ${date}`;
+      } else {
+        const date = task.createdAt ? new Date(task.createdAt).toLocaleDateString('pt-BR') : '—';
+        meta.textContent = `Criado em ${date}`;
+      }
+
+      main.appendChild(title);
+      main.appendChild(meta);
+
+      const actions = document.createElement('div');
+      actions.className = 'task-actions';
+
+      if (box === 'espera') {
+        const activate = document.createElement('button');
+        activate.className = 'icon-btn';
+        activate.title = 'Ativar na Temporada';
+        activate.innerHTML = '<i class="fa fa-play"></i>';
+        activate.onclick = event => { event.stopPropagation(); moveTask(task.id, 'temporada'); };
+        actions.appendChild(activate);
+      }
+
+      if (box !== 'historico') {
+        const done = document.createElement('button');
+        done.className = 'icon-btn';
+        done.title = 'Concluir / arquivar';
+        done.innerHTML = '<i class="fa fa-check"></i>';
+        done.onclick = event => { event.stopPropagation(); archiveTask(task.id, 'Concluído'); };
+        actions.appendChild(done);
+      }
+
+      const del = document.createElement('button');
+      del.className = 'icon-btn';
+      del.title = 'Excluir';
+      del.innerHTML = '<i class="fa fa-trash"></i>';
+      del.onclick = event => { event.stopPropagation(); deleteTask(task.id); };
+      actions.appendChild(del);
+
+      card.appendChild(main);
+      card.appendChild(actions);
+      return card;
+    }
+
+    function classForBox(box) {
+      return ({
+        sustentacao: 'sustain',
+        temporada: 'season',
+        espera: 'waiting',
+        areia: 'sandbox',
+        historico: 'history'
+      })[box] || 'history';
+    }
+
+    function renderList(box, elementId, emptyText) {
+      const container = document.getElementById(elementId);
+      container.innerHTML = '';
+      const tasks = state.boxes[box];
+      if (!tasks.length) {
+        const empty = document.createElement('div');
+        empty.className = 'empty-state';
+        empty.textContent = emptyText;
+        container.appendChild(empty);
+        return;
+      }
+      tasks.forEach(task => container.appendChild(createTaskElement(task, box)));
+    }
+
+    function renderAll() {
+      renderList('sustentacao', 'listSustentacao', 'Sua base está vazia. Registre aqui o que mantém a vida funcionando.');
+      renderList('temporada', 'listTemporada', 'Nenhum projeto ativo. Escolha apenas UM projeto estratégico.');
+      renderList('espera', 'listEspera', 'Nenhuma ideia aguardando. Use esta área para não sabotar a temporada atual.');
+      renderList('areia', 'listAreia', 'Sem experimentos no momento. Este espaço pode ficar leve e livre.');
+      renderList('historico', 'listHistorico', 'Nenhuma entrega arquivada ainda.');
+
+      document.getElementById('countSustentacao').textContent = state.boxes.sustentacao.length;
+      document.getElementById('countTemporada').textContent = `${state.boxes.temporada.length}/1`;
+      document.getElementById('countEspera').textContent = state.boxes.espera.length;
+      document.getElementById('countAreia').textContent = state.boxes.areia.length;
+      document.getElementById('countHistorico').textContent = state.boxes.historico.length;
+
+      document.getElementById('metricSustentacao').textContent = state.boxes.sustentacao.length;
+      document.getElementById('metricTemporada').textContent = `${state.boxes.temporada.length}/1`;
+      document.getElementById('metricEspera').textContent = state.boxes.espera.length;
+      document.getElementById('metricAreia').textContent = state.boxes.areia.length;
+      document.getElementById('metricHistorico').textContent = state.boxes.historico.length;
+
+      document.getElementById('seasonStart').value = state.season.startDate;
+      document.getElementById('seasonDuration').value = state.season.duration;
+      document.getElementById('seasonDelivery').value = state.season.delivery || '';
+      renderSeasonProgress();
+    }
+
+    function updateSeasonSettings() {
+      state.season.startDate = document.getElementById('seasonStart').value || todayISO();
+      state.season.duration = Math.max(7, Math.min(365, Number(document.getElementById('seasonDuration').value) || 90));
+      state.season.delivery = document.getElementById('seasonDelivery').value.trim();
+      saveState();
+      renderSeasonProgress();
+    }
+
+    function renderSeasonProgress() {
+      const start = new Date(`${state.season.startDate}T00:00:00`);
+      const now = new Date();
+      now.setHours(0,0,0,0);
+      const elapsed = Math.max(0, Math.floor((now - start) / 86400000));
+      const duration = state.season.duration;
+      const day = Math.min(duration, elapsed + 1);
+      const remaining = Math.max(0, duration - elapsed - 1);
+      const pct = Math.max(0, Math.min(100, ((elapsed + 1) / duration) * 100));
+      document.getElementById('seasonProgressBar').style.width = `${pct}%`;
+      document.getElementById('seasonDayLabel').textContent = `Dia ${day} de ${duration}`;
+      document.getElementById('seasonRemainingLabel').textContent = remaining > 0 ? `${remaining} dias restantes` : 'Ciclo chegou ao prazo';
+    }
+
+    function concluirTemporada() {
+      if (!state.boxes.temporada.length) {
+        mostrarMensagem('Não há projeto ativo na Temporada.', 'warning');
+        return;
+      }
+      const task = state.boxes.temporada[0];
+      const delivery = state.season.delivery ? `Entrega: ${state.season.delivery}` : 'Temporada concluída';
+      archiveTask(task.id, delivery);
+      resetSeasonCycle(true);
+      renderAll();
+      mostrarMensagem('Temporada concluída e enviada ao Histórico de Entregas.', 'success');
+    }
+
+    function promoverTemporadaParaSustentacao() {
+      if (!state.boxes.temporada.length) {
+        mostrarMensagem('Não há projeto ativo na Temporada.', 'warning');
+        return;
+      }
+      const task = state.boxes.temporada.shift();
+      const snapshot = { ...task };
+      snapshot.id = nextTaskId();
+      snapshot.completedAt = new Date().toISOString();
+      snapshot.completionReason = state.season.delivery ? `Entrega: ${state.season.delivery} → promovido à Sustentação` : 'Entregue e promovido à Sustentação';
+      snapshot.completedFrom = 'temporada';
+      state.boxes.historico.unshift(snapshot);
+      task.updatedAt = new Date().toISOString();
+      task.origin = 'temporada-validada';
+      state.boxes.sustentacao.push(task);
+      resetSeasonCycle(false);
+      saveState();
+      renderAll();
+      mostrarMensagem('Projeto validado: entrou na Sustentação e a entrega foi registrada no Histórico.', 'success');
+    }
+
+    function resetSeasonCycle(save = true) {
+      state.season.startDate = todayISO();
+      state.season.delivery = '';
+      if (save) saveState();
+    }
+
+    function toggleManual() {
+      document.getElementById('manualPanel').classList.toggle('open');
+    }
+
+    function toggleHistory() {
+      document.getElementById('historyPanel').classList.toggle('open');
+    }
+
+    function exportarKanbanJSON() {
+      try {
+        saveState();
+        const exportData = {
+          ...state,
+          exportDate: new Date().toISOString(),
+          format: 'mabios-kanban-3-caixas'
+        };
+        const jsonString = JSON.stringify(exportData, null, 2);
+        const blob = new Blob([jsonString], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `mabios_kanban_3_caixas_${todayISO()}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        mostrarMensagem('Mábio\'s Kanban exportado com sucesso.', 'success');
+      } catch (error) {
+        console.error(error);
+        mostrarMensagem('Erro ao exportar o Kanban.', 'error');
+      }
+    }
+
+    function legacyToNewState(data) {
+      const fresh = defaultState();
+      const legacy = data.kanbanBoard || {};
+      const convert = (item, origin) => ({
+        id: item.id || `legacy_${Math.random().toString(36).slice(2, 9)}`,
+        title: String(item.text || item.title || 'Item importado'),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        origin
+      });
+
+      const working = (legacy.working || []).map(i => convert(i, 'legacy-working'));
+      if (working.length) fresh.boxes.temporada.push(working.shift());
+      fresh.boxes.espera.push(
+        ...(legacy.todo || []).map(i => convert(i, 'legacy-todo')),
+        ...(legacy.buffer || []).map(i => convert(i, 'legacy-buffer')),
+        ...working
+      );
+      fresh.boxes.historico.push(...(legacy.done || []).map(i => {
+        const t = convert(i, 'legacy-done');
+        t.completedAt = new Date().toISOString();
+        t.completionReason = 'Importado do Done do Kanban v4.1';
+        t.completedFrom = 'legacy-done';
+        return t;
+      }));
+      fresh.taskIdCounter = Math.max(Number(data.taskIdCounter) || 0, fresh.boxes.espera.length + fresh.boxes.historico.length + fresh.boxes.temporada.length);
+      return fresh;
+    }
+
+    function importarKanbanJSON(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const data = JSON.parse(e.target.result);
+          let imported;
+          if (data.format === 'mabios-kanban-3-caixas' || data.boxes) {
+            imported = normalizeState(data);
+          } else if (data.kanbanBoard) {
+            imported = legacyToNewState(data);
+            mostrarMensagem('Kanban v4.x detectado: To Do/Buffer foram para a Lista de Espera, 1 Working virou Temporada e Done virou Histórico.', 'warning');
+          } else {
+            throw new Error('Formato JSON não reconhecido');
+          }
+          state = imported;
+          saveState();
+          renderAll();
+          if (!data.kanbanBoard) mostrarMensagem('Kanban importado com sucesso.', 'success');
+        } catch (error) {
+          console.error(error);
+          mostrarMensagem('Erro ao importar: arquivo JSON inválido ou incompatível.', 'error');
+        }
+      };
+      reader.readAsText(file);
+      event.target.value = '';
+    }
+
+    function limparKanban() {
+      if (!confirm('Limpar todo o Mábio\'s Kanban das 3 Caixas? Esta ação apaga os dados salvos neste navegador.')) return;
+      localStorage.removeItem(STORAGE_KEY);
+      state = defaultState();
+      saveState();
+      renderAll();
+      mostrarMensagem('Kanban limpo e reiniciado.', 'success');
+    }
+
+    let messageTimer;
+    function mostrarMensagem(texto, tipo = 'success') {
+      clearTimeout(messageTimer);
+      const el = document.getElementById('statusMessage');
+      el.textContent = texto;
+      el.className = `status-message ${tipo}`;
+      el.style.display = 'block';
+      messageTimer = setTimeout(() => { el.style.display = 'none'; }, 4200);
+    }
+
+    function setupKeyboard() {
+      const bindings = [
+        ['quickTask', quickCapture],
+        ['newTaskSustentacao', () => addTaskFromInput('sustentacao','newTaskSustentacao')],
+        ['newTaskTemporada', () => addTaskFromInput('temporada','newTaskTemporada')],
+        ['newTaskEspera', () => addTaskFromInput('espera','newTaskEspera')],
+        ['newTaskAreia', () => addTaskFromInput('areia','newTaskAreia')]
+      ];
+      bindings.forEach(([id, fn]) => {
+        const el = document.getElementById(id);
+        el.addEventListener('keydown', event => {
+          if (event.key === 'Enter') {
+            event.preventDefault();
+            fn();
+          }
+        });
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      setupKeyboard();
+      renderAll();
+    });
+  </script>
+</body>
+</html>

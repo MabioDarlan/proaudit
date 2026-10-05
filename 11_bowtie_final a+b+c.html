@@ -1,0 +1,1307 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Mábio's Bow Tie — Versão Final</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f5f5f5;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin: 0;
+      padding: 0;
+    }
+
+    h1 { margin: 10px 0 0 0; font-size: 35px; }
+
+    .subtitle {
+      margin: 0 0 8px 0;
+      color: #607D8B;
+      font-size: 13px;
+      font-weight: bold;
+    }
+
+    .json-controls {
+      margin: 5px 0 8px 0;
+      padding: 10px;
+      background-color: white;
+      border: 2px solid #607D8B;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .json-controls h3 { margin: 0; color: #607D8B; font-size: 14px; }
+
+    .json-controls button {
+      padding: 8px 15px;
+      background-color: #607D8B;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+      transition: background-color 0.3s;
+    }
+
+    .json-controls button:hover { background-color: #455A64; }
+    .json-controls input[type="file"] { display: none; }
+
+    .status-message {
+      margin: 5px 0;
+      padding: 8px;
+      border-radius: 4px;
+      text-align: center;
+      font-weight: bold;
+      display: none;
+      font-size: 12px;
+    }
+    .status-message.success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+    .status-message.warn    { background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
+    .status-message.error   { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+
+    .diag {
+      margin: 2px 0 4px 0;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 11px;
+      background-color: #eceff1;
+      color: #b00020;
+      border: 1px solid #90A4AE;
+      max-width: 90%;
+      text-align: center;
+    }
+    .diag.on { color: #37474F; }
+
+    .err-box {
+      display: none;
+      margin: 4px 0;
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: bold;
+      background-color: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+      max-width: 90%;
+      text-align: center;
+    }
+
+    .persist-note {
+      display: none;
+      margin: 5px 0;
+      padding: 8px 12px;
+      border-radius: 4px;
+      text-align: center;
+      font-size: 12px;
+      font-weight: bold;
+      background-color: #fff3cd;
+      color: #856404;
+      border: 1px solid #ffeeba;
+      max-width: 90%;
+    }
+
+    /* Tooltips (camada metodológica) — pointer-events:none impede a interceptação de cliques */
+    .tooltip { position: relative; }
+    .tooltiptext {
+      visibility: hidden;
+      pointer-events: none;
+      width: 280px;
+      background-color: #333;
+      color: #fff;
+      text-align: left;
+      padding: 10px;
+      border-radius: 6px;
+      position: absolute;
+      top: 110%;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 5;
+      font-size: 12px;
+      line-height: 1.4;
+      font-weight: normal;
+    }
+    .tooltip:hover .tooltiptext { visibility: visible; }
+
+    .legend {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin: 2px 0 6px 0;
+    }
+    .chip {
+      background: #fff;
+      border: 1px solid #607D8B;
+      color: #455A64;
+      border-radius: 12px;
+      padding: 3px 10px;
+      font-size: 12px;
+      cursor: help;
+    }
+    .legend .chip .tooltiptext { width: 330px; }
+
+    /* Evento central */
+    .evento-wrap { text-align: center; margin: 2px 0 6px 0; }
+    .titulo-line { font-size: 12px; color: #607D8B; margin-bottom: 4px; }
+    .titulo-txt { font-weight: bold; cursor: text; color: #37474F; }
+
+    /* Painéis de edição (padrões do kanban) */
+    .editor { width: 96%; }
+    .panels { display: flex; justify-content: space-between; gap: 14px; }
+    .panel {
+      background-color: #e0e0e0;
+      border-radius: 8px;
+      padding: 10px;
+      width: 50%;
+      min-height: 220px;
+      box-sizing: border-box;
+    }
+    .panel h2 { text-align: center; font-size: 17px; margin: 4px 0 8px 0; }
+
+    .card {
+      border-radius: 4px;
+      padding: 8px;
+      margin: 8px 0;
+      color: white;
+    }
+    .card.azul     { background-color: #1565C0; }
+    .card.laranja  { background-color: #E65100; }
+    .card.vermelho { background-color: crimson; display: inline-block; padding: 8px 14px; }
+
+    .card-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 6px; }
+    .head-right { display: flex; gap: 4px; align-items: center; }
+    .txt { word-break: break-word; font-size: 14px; cursor: text; }
+
+    .badge {
+      background: #fff;
+      color: #b00020;
+      border-radius: 10px;
+      font-size: 11px;
+      padding: 1px 7px;
+      font-weight: bold;
+      white-space: nowrap;
+    }
+
+    .ctrl {
+      border-radius: 4px;
+      padding: 5px 8px;
+      margin: 6px 0 0 14px;
+      color: white;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: grab;
+    }
+    .ctrl .txt { font-size: 13px; flex: 1; }
+    .ctrl.verde { background-color: #2E7D32; }
+    .ctrl.teal  { background-color: #00695C; }
+
+    .delete-btn {
+      background: transparent;
+      border: none;
+      color: white;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .mini-btn {
+      background: transparent;
+      border: none;
+      color: #fff;
+      cursor: pointer;
+      font-size: 10px;
+      padding: 0 2px;
+      opacity: 0.85;
+    }
+    .mini-btn:hover { opacity: 1; }
+
+    .ef-btn {
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      font-size: 13px;
+      padding: 0;
+      line-height: 1;
+    }
+
+    .add-task { margin-top: 10px; display: flex; flex-direction: column; }
+    .add-task input { margin-bottom: 5px; }
+
+    .add-inline { display: flex; gap: 5px; margin: 6px 0 0 14px; }
+    .add-inline input {
+      flex: 1;
+      font-size: 12px;
+      border: 1px solid #90A4AE;
+      border-radius: 3px;
+      padding: 3px 5px;
+    }
+    .add-inline button {
+      font-size: 11px;
+      border: none;
+      border-radius: 3px;
+      background: #455A64;
+      color: #fff;
+      cursor: pointer;
+      padding: 3px 8px;
+    }
+
+    .inbox-wrap { display: none; margin: 4px 0 8px 0; }
+    .inbox-title { font-size: 12px; color: #455A64; font-weight: bold; margin-bottom: 3px; }
+    .inbox {
+      background: #fff;
+      border: 1px dashed #90A4AE;
+      border-radius: 6px;
+      padding: 6px;
+      min-height: 24px;
+    }
+    .inbox .ctrl { display: inline-flex; margin: 3px; }
+
+    .dragover { outline: 2px dashed #455A64; outline-offset: 2px; }
+
+    /* Faixa de análise de cobertura */
+    .cobertura {
+      margin: 8px 0 4px 0;
+      padding: 6px 12px;
+      border-radius: 4px;
+      font-weight: bold;
+      font-size: 12px;
+      text-align: center;
+    }
+    .cobertura.ok    { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+    .cobertura.gap   { background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
+    .cobertura.vazio { background-color: #eceff1; color: #455A64; border: 1px solid #90A4AE; }
+
+    /* Diagrama (projeção somente leitura) */
+    .diagram-wrap {
+      width: 96%;
+      background: #fff;
+      border: 2px solid #607D8B;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      padding: 8px;
+      margin: 4px 0 14px 0;
+    }
+    #diagram { width: 100%; height: auto; display: block; }
+    #diagram text { user-select: none; }
+  </style>
+</head>
+<body>
+
+<h1>Mábio's Bow Tie</h1>
+<div class="subtitle">Versão Final v1.3 — Híbrido · Modelo 2 (controles por caminho) · efetividade de barreiras</div>
+
+<div id="diag" class="diag">⛔ JavaScript não executou neste ambiente. Baixe o arquivo e abra no navegador (duplo clique) — mesmo fluxo do seu kanban.</div>
+<div id="errBox" class="err-box"></div>
+
+<div class="json-controls">
+  <h3>Gerenciar Dados do Bow Tie:</h3>
+  <button id="btnExportJson">📤 Exportar JSON</button>
+  <button id="btnImportJson">📥 Importar JSON</button>
+  <input type="file" id="bowtieFileInput" accept=".json">
+  <button id="btnExportSvg">🖼️ Exportar SVG</button>
+  <button id="btnLimpar">🗑️ Limpar Tudo</button>
+</div>
+
+<div id="statusMessage" class="status-message"></div>
+
+<div id="persistNote" class="persist-note"></div>
+
+<div class="legend">
+  <span class="tooltip chip">🖱️ Como usar
+    <span class="tooltiptext">
+      <strong>Adicionar:</strong> campos nos painéis (Enter funciona); controles dentro do card de cada causa/consequência.<br><br>
+      <strong>Editar:</strong> duplo clique em qualquer texto — inclusive título e evento.<br><br>
+      <strong>Efetividade:</strong> clique no ícone do controle para alternar ⚪ não avaliada → 🟢 efetiva → 🟡 parcial → 🔴 inefetiva. A borda da barreira no diagrama acompanha.<br><br>
+      <strong>Reordenar:</strong> ▲▼ movem causas, consequências e controles (a ordem dos controles = ordem das linhas de defesa no diagrama).<br><br>
+      <strong>Re-associar:</strong> arraste um controle para outro card do mesmo lado; importados de A/B chegam no bloco "A associar".<br><br>
+      <strong>Excluir:</strong> 🗑 (com controles no caminho, pede confirmação).<br><br>
+      <strong>Diagrama:</strong> projeção automática, somente leitura; "Exportar SVG" gera o artefato para relatório, já com legenda e cobertura.
+    </span>
+  </span>
+</div>
+
+<div class="editor" id="editorWrap">
+
+  <div class="evento-wrap">
+    <div class="titulo-line" id="tituloLine">Título do diagrama (duplo clique edita): <span id="tituloTxt" class="titulo-txt">…</span></div>
+    <div id="eventoCard" class="card vermelho tooltip">
+      <span>💥 Evento: </span><span id="eventoTxt" class="txt">…</span>
+      <span class="tooltiptext">
+        <strong>O que é:</strong> O evento de risco central — o momento em que se perde o controle sobre a ameaça. 1 por diagrama, imposto pela estrutura (portfólio de riscos = um arquivo JSON por risco).<br><br>
+        <strong>Editar:</strong> duplo clique no texto do evento (e no título, acima).<br><br>
+        <strong>Exemplo:</strong> Vazamento de dados pessoais; Indisponibilidade de sistema crítico; Acesso não autorizado ao ambiente de produção.
+      </span>
+    </div>
+  </div>
+
+  <div class="panels">
+
+    <div class="panel" id="panelEsq">
+      <h2 class="tooltip">⚡ Causas · 🛡️ Preventivos
+        <span class="tooltiptext">
+          <strong>O que é:</strong> Ameaças que podem desencadear o evento, cada uma com SEUS controles preventivos — barreiras que atuam antes do evento, sobre aquele caminho específico.<br><br>
+          <strong>Regra (Modelo 2):</strong> toda causa deve ter ao menos 1 controle preventivo. Sem barreira = selo ⚠ aqui e linha tracejada vermelha no diagrama.<br><br>
+          <strong>Efetividade:</strong> avalie cada barreira (⚪🟢🟡🔴). Caminho onde todas são inefetivas fica com linha vermelha contínua — cobertura nominal não é cobertura efetiva.<br><br>
+          <strong>Exemplo:</strong> Causa "Credenciais fracas" → controles: MFA; Política de senhas; Revisão periódica de acessos.
+        </span>
+      </h2>
+      <div class="inbox-wrap" id="inboxPrevWrap">
+        <div class="inbox-title">📥 A associar — arraste cada controle para a causa que ele protege:</div>
+        <div class="inbox" id="inboxPrev"></div>
+      </div>
+      <div id="listaCausas"></div>
+      <div class="add-task">
+        <input type="text" id="inpNovaCausa" placeholder="Nova causa">
+        <button id="btnAddCausa">Add +</button>
+      </div>
+    </div>
+
+    <div class="panel" id="panelDir">
+      <h2 class="tooltip">📉 Consequências · 🧯 Mitigação
+        <span class="tooltiptext">
+          <strong>O que é:</strong> Impactos caso o evento ocorra, cada um com SEUS controles de mitigação — barreiras que atuam depois do evento (atenuação e recuperação).<br><br>
+          <strong>Regra (Modelo 2):</strong> toda consequência deve ter ao menos 1 mitigador; sem barreira = ⚠ aqui e linha tracejada vermelha no diagrama.<br><br>
+          <strong>Efetividade:</strong> avalie cada barreira (⚪🟢🟡🔴). Caminho só com barreiras inefetivas fica com linha vermelha contínua.<br><br>
+          <strong>Exemplo:</strong> Consequência "Multa e sanção LGPD" → controles: Plano de resposta a incidentes; Comunicação à ANPD; Assessoria jurídica.
+        </span>
+      </h2>
+      <div class="inbox-wrap" id="inboxMitWrap">
+        <div class="inbox-title">📥 A associar — arraste cada mitigador para a consequência que ele atenua:</div>
+        <div class="inbox" id="inboxMit"></div>
+      </div>
+      <div id="listaConseq"></div>
+      <div class="add-task">
+        <input type="text" id="inpNovaConseq" placeholder="Nova consequência">
+        <button id="btnAddConseq">Add +</button>
+      </div>
+    </div>
+
+  </div>
+
+  <div id="cobertura" class="cobertura vazio"></div>
+</div>
+
+<div class="diagram-wrap" id="diagramWrap">
+  <svg id="diagram" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 420" font-family="Arial, Helvetica, sans-serif"></svg>
+</div>
+
+<script>
+  // Diagnóstico visível: qualquer erro de execução aparece na página (sem precisar de F12)
+  window.onerror = function (msg, src, line) {
+    try {
+      var b = document.getElementById('errBox');
+      b.textContent = '⛔ Erro de execução: ' + msg + ' (linha ' + line + ')';
+      b.style.display = 'block';
+    } catch (e) {}
+    return false;
+  };
+
+  // ================= Estado (fonte única de verdade) =================
+  function defaultState() {
+    return {
+      titulo: "MÉTODO BOW TIE",
+      evento: "EVENTO",
+      causas: [],          // [{id, text, controles:[{id, text, ef}]}]
+      consequencias: [],   // idem
+      inboxPrev: [],       // controles ainda sem caminho (migração de A/B)
+      inboxMit: [],
+      idCounter: 0
+    };
+  }
+
+  let state = defaultState();
+  let pendingFocus = null;
+
+  // Armazenamento tolerante a sandbox: se o localStorage estiver bloqueado
+  // (ex.: pré-visualização em iframe), a ferramenta segue 100% funcional em memória.
+  const store = (function () {
+    const api = { ok: true, onFail: null };
+    function fail() {
+      if (api.ok) {
+        api.ok = false;
+        if (api.onFail) api.onFail();
+      }
+    }
+    try {
+      const k = '__bowtie_test__';
+      window.localStorage.setItem(k, '1');
+      window.localStorage.removeItem(k);
+    } catch (e) { api.ok = false; }
+    api.get = function (k) {
+      if (!api.ok) return null;
+      try { return window.localStorage.getItem(k); } catch (e) { fail(); return null; }
+    };
+    api.set = function (k, v) {
+      if (!api.ok) return;
+      try { window.localStorage.setItem(k, v); } catch (e) { fail(); }
+    };
+    api.del = function (k) {
+      if (!api.ok) return;
+      try { window.localStorage.removeItem(k); } catch (e) { fail(); }
+    };
+    return api;
+  })();
+
+  // Autodiagnóstico do ambiente (a faixa começa em ⛔ e é substituída quando o boot roda)
+  function atualizarDiag() {
+    var el0 = document.getElementById('diag');
+    if (!el0) return;
+    var inIframe;
+    try { inIframe = (window.self !== window.top); } catch (e) { inIframe = true; }
+    el0.textContent = '✓ Bow Tie v1.3 · JS ativo · armazenamento: ' +
+      (store.ok ? 'OK (persistência automática)' : 'bloqueado (modo memória — use Exportar/Importar JSON)') +
+      ' · ambiente: ' + (inIframe ? 'embutido/preview' : 'janela própria');
+    el0.classList.add('on');
+  }
+
+  const NS = "http://www.w3.org/2000/svg";
+
+  const C = {
+    nodeFill: "#DEEBF7", nodeStroke: "#2E75B6", nodeText: "#1F3B5C",
+    evFill: "#B03A2E",  evStroke: "#8F2A22",
+    prevFill: "#E2EFDA", prevText: "#274E13",
+    mitFill: "#D9EDEA",  mitText: "#0F4C43",
+    efNulo: "#90A4AE",
+    lineOk: "#9DC3E6", lineGap: "#C62828", header: "#1F4E79", frame: "#BFBFBF"
+  };
+
+  const EFCOLOR = { efetivo: "#1B5E20", parcial: "#E6A700", inefetivo: "#C62828" };
+  const EF_ORDER = [null, "efetivo", "parcial", "inefetivo"];
+
+  function efIcon(ef) {
+    return ef === "efetivo" ? "🟢" : ef === "parcial" ? "🟡" : ef === "inefetivo" ? "🔴" : "⚪";
+  }
+  function efLabel(ef) {
+    return ef === "efetivo" ? "efetiva" : ef === "parcial" ? "parcial" : ef === "inefetivo" ? "inefetiva" : "não avaliada";
+  }
+
+  // ================= Utilidades =================
+  function novoId() { return 'n' + (state.idCounter++); }
+
+  function findItem(side, id) {
+    const arr = (side === 'prev') ? state.causas : state.consequencias;
+    return arr.find(o => o.id === id);
+  }
+
+  function listFor(side, key) {
+    if (key === 'inbox') return (side === 'prev') ? state.inboxPrev : state.inboxMit;
+    const p = findItem(side, key);
+    return p ? p.controles : null;
+  }
+
+  function wrapText(text, maxChars) {
+    const words = String(text).split(/\s+/).filter(Boolean);
+    const lines = [];
+    let cur = "";
+    words.forEach(w => {
+      const t = cur ? cur + " " + w : w;
+      if (t.length <= maxChars) {
+        cur = t;
+      } else {
+        if (cur) lines.push(cur);
+        while (w.length > maxChars) { lines.push(w.slice(0, maxChars)); w = w.slice(maxChars); }
+        cur = w;
+      }
+    });
+    if (cur) lines.push(cur);
+    return lines.length ? lines : [""];
+  }
+
+  // Edição inline por duplo clique (mesmo critério do kanban: vazio mantém o texto anterior)
+  function inlineEdit(span, current, onCommit) {
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.value = current;
+    input.style.cssText = 'width:95%;font-size:13px;border:1px solid #607D8B;border-radius:3px;padding:2px 4px;color:#333;background:#fff;';
+    span.replaceWith(input);
+    input.focus();
+    input.select();
+    let done = false;
+    const fin = (commit) => {
+      if (done) return;
+      done = true;
+      const v = input.value.trim();
+      if (commit && v) { onCommit(v); save(); }
+      renderAll();
+    };
+    input.onblur = () => fin(true);
+    input.onkeydown = (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); fin(true); }
+      else if (e.key === 'Escape') { e.preventDefault(); fin(false); }
+    };
+  }
+
+  function makeDrop(elm, side, key) {
+    elm.ondragover = (ev) => { ev.preventDefault(); elm.classList.add('dragover'); };
+    elm.ondragleave = () => elm.classList.remove('dragover');
+    elm.ondrop = (ev) => {
+      ev.preventDefault();
+      ev.stopPropagation();
+      elm.classList.remove('dragover');
+      try {
+        const d = JSON.parse(ev.dataTransfer.getData('text/plain'));
+        if (d && d.side === side) moveControle(side, d.from, key, d.id);
+      } catch (e) { /* payload inválido: ignora */ }
+    };
+  }
+
+  function miniBtn(ch, title, fn) {
+    const b = document.createElement('button');
+    b.className = 'mini-btn';
+    b.textContent = ch;
+    b.title = title;
+    b.onclick = (e) => { e.stopPropagation(); fn(); };
+    return b;
+  }
+
+  // ================= Mutações =================
+  function addCausa() {
+    const i = document.getElementById('inpNovaCausa');
+    if (!i) return;
+    const t = i.value.trim();
+    if (!t) return;
+    state.causas.push({ id: novoId(), text: t, controles: [] });
+    i.value = '';
+    save();
+    renderAll();
+    i.focus();
+  }
+
+  function addConseq() {
+    const i = document.getElementById('inpNovaConseq');
+    if (!i) return;
+    const t = i.value.trim();
+    if (!t) return;
+    state.consequencias.push({ id: novoId(), text: t, controles: [] });
+    i.value = '';
+    save();
+    renderAll();
+    i.focus();
+  }
+
+  function addControle(side, parentId, inp) {
+    const t = inp.value.trim();
+    if (!t) return;
+    const arr = listFor(side, parentId);
+    if (!arr) return;
+    arr.push({ id: novoId(), text: t, ef: null });
+    save();
+    pendingFocus = inp.id;
+    renderAll();
+  }
+
+  function removeItem(side, id) {
+    const item = findItem(side, id);
+    if (!item) return;
+    if (item.controles.length &&
+        !confirm('Excluir "' + item.text + '" e seus ' + item.controles.length + ' controle(s) do caminho?')) {
+      return;
+    }
+    if (side === 'prev') state.causas = state.causas.filter(o => o.id !== id);
+    else state.consequencias = state.consequencias.filter(o => o.id !== id);
+    save();
+    renderAll();
+  }
+
+  function removeControle(side, key, id) {
+    const arr = listFor(side, key);
+    if (!arr) return;
+    const idx = arr.findIndex(o => o.id === id);
+    if (idx >= 0) arr.splice(idx, 1);
+    save();
+    renderAll();
+  }
+
+  function moveControle(side, fromKey, toKey, id) {
+    if (fromKey === toKey) return;
+    const from = listFor(side, fromKey);
+    const to = listFor(side, toKey);
+    if (!from || !to) return;
+    const idx = from.findIndex(o => o.id === id);
+    if (idx < 0) return;
+    const o = from.splice(idx, 1)[0];
+    to.push(o);
+    save();
+    renderAll();
+  }
+
+  function cycleEf(side, key, id) {
+    const arr = listFor(side, key);
+    if (!arr) return;
+    const c = arr.find(o => o.id === id);
+    if (!c) return;
+    c.ef = EF_ORDER[(EF_ORDER.indexOf(c.ef || null) + 1) % EF_ORDER.length];
+    save();
+    renderAll();
+  }
+
+  function moveItemPos(side, id, delta) {
+    const arr = (side === 'prev') ? state.causas : state.consequencias;
+    const i = arr.findIndex(o => o.id === id);
+    const j = i + delta;
+    if (i < 0 || j < 0 || j >= arr.length) return;
+    const t = arr[i]; arr[i] = arr[j]; arr[j] = t;
+    save();
+    renderAll();
+  }
+
+  function moveCtrlPos(side, key, id, delta) {
+    const arr = listFor(side, key);
+    if (!arr) return;
+    const i = arr.findIndex(o => o.id === id);
+    const j = i + delta;
+    if (i < 0 || j < 0 || j >= arr.length) return;
+    const t = arr[i]; arr[i] = arr[j]; arr[j] = t;
+    save();
+    renderAll();
+  }
+
+  // ================= Renderização: painéis =================
+  function makeCtrlEl(side, key, c) {
+    const d = document.createElement('div');
+    d.className = 'ctrl ' + (side === 'prev' ? 'verde' : 'teal');
+    d.draggable = true;
+    d.ondragstart = (ev) => {
+      ev.dataTransfer.setData('text/plain', JSON.stringify({ side: side, id: c.id, from: key }));
+    };
+
+    const ef = document.createElement('button');
+    ef.className = 'ef-btn';
+    ef.textContent = efIcon(c.ef);
+    ef.title = 'Efetividade: ' + efLabel(c.ef) + ' — clique para alternar';
+    ef.onclick = (e) => { e.stopPropagation(); cycleEf(side, key, c.id); };
+    d.appendChild(ef);
+
+    const sp = document.createElement('span');
+    sp.className = 'txt';
+    sp.textContent = c.text;
+    sp.ondblclick = () => inlineEdit(sp, c.text, v => { c.text = v; });
+    d.appendChild(sp);
+
+    d.appendChild(miniBtn('▲', 'Mover para cima', () => moveCtrlPos(side, key, c.id, -1)));
+    d.appendChild(miniBtn('▼', 'Mover para baixo', () => moveCtrlPos(side, key, c.id, 1)));
+
+    const del = document.createElement('button');
+    del.className = 'delete-btn';
+    del.innerHTML = '🗑';
+    del.onclick = () => removeControle(side, key, c.id);
+    d.appendChild(del);
+
+    return d;
+  }
+
+  function buildInbox(side, wrapId, listId) {
+    const arr = (side === 'prev') ? state.inboxPrev : state.inboxMit;
+    const wrap = document.getElementById(wrapId);
+    const list = document.getElementById(listId);
+    if (!wrap || !list) return;
+    list.textContent = '';
+    wrap.style.display = arr.length ? 'block' : 'none';
+    arr.forEach(c => list.appendChild(makeCtrlEl(side, 'inbox', c)));
+    makeDrop(list, side, 'inbox');
+  }
+
+  function buildList(side) {
+    const isPrev = (side === 'prev');
+    const items = isPrev ? state.causas : state.consequencias;
+    const cont = document.getElementById(isPrev ? 'listaCausas' : 'listaConseq');
+    if (!cont) return;
+    cont.textContent = '';
+
+    items.forEach(item => {
+      const card = document.createElement('div');
+      card.className = 'card ' + (isPrev ? 'azul' : 'laranja');
+      makeDrop(card, side, item.id);
+
+      const head = document.createElement('div');
+      head.className = 'card-head';
+      const sp = document.createElement('span');
+      sp.className = 'txt';
+      sp.textContent = item.text;
+      sp.ondblclick = () => inlineEdit(sp, item.text, v => { item.text = v; });
+      head.appendChild(sp);
+
+      const right = document.createElement('div');
+      right.className = 'head-right';
+      right.appendChild(miniBtn('▲', 'Mover para cima', () => moveItemPos(side, item.id, -1)));
+      right.appendChild(miniBtn('▼', 'Mover para baixo', () => moveItemPos(side, item.id, 1)));
+      if (!item.controles.length) {
+        const b = document.createElement('span');
+        b.className = 'badge';
+        b.textContent = '⚠ sem barreira';
+        right.appendChild(b);
+      }
+      const del = document.createElement('button');
+      del.className = 'delete-btn';
+      del.innerHTML = '🗑';
+      del.onclick = () => removeItem(side, item.id);
+      right.appendChild(del);
+      head.appendChild(right);
+      card.appendChild(head);
+
+      item.controles.forEach(c => card.appendChild(makeCtrlEl(side, item.id, c)));
+
+      const row = document.createElement('div');
+      row.className = 'add-inline';
+      const inp = document.createElement('input');
+      inp.type = 'text';
+      inp.id = 'inpCtrl_' + item.id;
+      inp.placeholder = isPrev ? 'Novo controle preventivo' : 'Novo controle mitigador';
+      inp.onkeypress = (e) => { if (e.key === 'Enter') addControle(side, item.id, inp); };
+      const btn = document.createElement('button');
+      btn.textContent = 'Add +';
+      btn.onclick = () => addControle(side, item.id, inp);
+      row.appendChild(inp);
+      row.appendChild(btn);
+      card.appendChild(row);
+
+      cont.appendChild(card);
+    });
+  }
+
+  function renderPanels() {
+    // Título e evento são reconstruídos a cada render:
+    // sobrevivem à edição inline e a ambientes que descartem os spans do HTML.
+    const tl = document.getElementById('tituloLine');
+    if (tl) {
+      tl.textContent = 'Título do diagrama (duplo clique edita): ';
+      const tit = document.createElement('span');
+      tit.id = 'tituloTxt';
+      tit.className = 'titulo-txt';
+      tit.textContent = state.titulo;
+      tit.ondblclick = () => inlineEdit(tit, state.titulo, v => { state.titulo = v; });
+      tl.appendChild(tit);
+    }
+
+    const ec = document.getElementById('eventoCard');
+    if (ec) {
+      ec.querySelectorAll('input, #eventoTxt').forEach(n => n.remove());
+      const ev = document.createElement('span');
+      ev.id = 'eventoTxt';
+      ev.className = 'txt';
+      ev.textContent = state.evento;
+      ev.ondblclick = () => inlineEdit(ev, state.evento, v => { state.evento = v; });
+      const tip = ec.querySelector('.tooltiptext');
+      if (tip) { ec.insertBefore(ev, tip); } else { ec.appendChild(ev); }
+    }
+
+    buildInbox('prev', 'inboxPrevWrap', 'inboxPrev');
+    buildInbox('mit', 'inboxMitWrap', 'inboxMit');
+    buildList('prev');
+    buildList('mit');
+  }
+
+  // ================= Análise de cobertura =================
+  function coberturaStats() {
+    const tc = state.causas.length, tq = state.consequencias.length;
+    const cc = state.causas.filter(c => c.controles.length).length;
+    const cq = state.consequencias.filter(c => c.controles.length).length;
+    const badL = state.causas.filter(c => c.controles.length && c.controles.every(x => x.ef === 'inefetivo')).length;
+    const badR = state.consequencias.filter(c => c.controles.length && c.controles.every(x => x.ef === 'inefetivo')).length;
+    return { tc: tc, tq: tq, cc: cc, cq: cq, gaps: (tc - cc) + (tq - cq), bad: badL + badR };
+  }
+
+  function renderCoverage() {
+    const el2 = document.getElementById('cobertura');
+    if (!el2) return;
+    const s = coberturaStats();
+    if (!s.tc && !s.tq) {
+      el2.className = 'cobertura vazio';
+      el2.textContent = 'Diagrama vazio — adicione causas e consequências nos painéis acima.';
+      return;
+    }
+    const inbox = state.inboxPrev.length + state.inboxMit.length;
+    let t = 'Cobertura de barreiras: causas ' + s.cc + '/' + s.tc + ' · consequências ' + s.cq + '/' + s.tq;
+    t += s.gaps ? (' — ' + s.gaps + ' caminho(s) descoberto(s) ⚠') : ' — todos os caminhos com barreira ✅';
+    if (s.bad) t += ' · ' + s.bad + ' caminho(s) só com barreiras inefetivas 🔴';
+    if (inbox) t += ' · ' + inbox + ' controle(s) a associar 📥';
+    el2.className = 'cobertura ' + ((s.gaps || s.bad) ? 'gap' : 'ok');
+    el2.textContent = t;
+  }
+
+  // ================= Renderização: diagrama SVG (projeção somente leitura) =================
+  const D = {
+    causaX: 30, causaW: 180, causaChars: 26,
+    conseqX: 990, conseqW: 180, conseqChars: 26,
+    corrL0: 222, corrL1: 462, kneeL: 470,
+    evX: 495, evW: 210, evChars: 24,
+    kneeR: 730, corrR0: 738, corrR1: 978,
+    TOPY: 118, LGAP: 16
+  };
+
+  function el(tag, attrs, parent) {
+    const e = document.createElementNS(NS, tag);
+    for (const a in attrs) e.setAttribute(a, attrs[a]);
+    parent.appendChild(e);
+    return e;
+  }
+
+  function multiline(parent, x, yTop, lines, size, attrs) {
+    const t = el('text', Object.assign({ x: x, y: yTop, 'text-anchor': 'middle', 'font-size': size }, attrs || {}), parent);
+    lines.forEach((ln, i) => {
+      const ts = document.createElementNS(NS, 'tspan');
+      ts.setAttribute('x', x);
+      if (i > 0) ts.setAttribute('dy', size + 2);
+      ts.textContent = ln;
+      t.appendChild(ts);
+    });
+    return t;
+  }
+
+  function measureLanes(items, chars, corrW) {
+    return items.map(it => {
+      const nl = wrapText(it.text, chars);
+      const nh = Math.max(34, nl.length * 15 + 18);
+      const n = it.controles.length;
+      const slot = n ? corrW / n : 0;
+      const bw = n ? Math.max(46, Math.min(122, slot - 8)) : 0;
+      const cChars = Math.max(7, Math.floor((bw - 8) / 6.0));
+      const cts = it.controles.map(c => {
+        const cl = wrapText(c.text, cChars);
+        const ch = Math.max(26, cl.length * 13 + 12);
+        return { cl: cl, ch: ch, bw: bw, ef: c.ef || null };
+      });
+      const maxCh = cts.reduce((a, x) => Math.max(a, x.ch), 0);
+      return { it: it, nl: nl, nh: nh, cts: cts, slot: slot, laneH: Math.max(nh, maxCh, 40) };
+    });
+  }
+
+  function stackHeight(lanes) {
+    if (!lanes.length) return 0;
+    return lanes.reduce((a, l) => a + l.laneH, 0) + (lanes.length - 1) * D.LGAP;
+  }
+
+  function laneStroke(it) {
+    const n = it.controles.length;
+    if (!n) return { stroke: C.lineGap, dash: '6 4' };
+    if (it.controles.every(c => c.ef === 'inefetivo')) return { stroke: C.lineGap, dash: null };
+    return { stroke: C.lineOk, dash: null };
+  }
+
+  function renderDiagram() {
+    const svg = document.getElementById('diagram');
+    if (!svg) return;
+    const corrW = D.corrL1 - D.corrL0;
+
+    const left = measureLanes(state.causas, D.causaChars, corrW);
+    const right = measureLanes(state.consequencias, D.conseqChars, corrW);
+
+    const evLines = wrapText(state.evento, D.evChars);
+    const evH = Math.max(46, evLines.length * 16 + 22);
+
+    const sideH = Math.max(stackHeight(left), stackHeight(right), evH, 180);
+    const labelsY = D.TOPY + sideH + 26;
+    const H = labelsY + 56;
+
+    svg.setAttribute('viewBox', '0 0 1200 ' + H);
+    svg.innerHTML = "";
+
+    // fundo + moldura (saem no export)
+    el('rect', { x: 0, y: 0, width: 1200, height: H, fill: '#fff' }, svg);
+    el('rect', { x: 12, y: 12, width: 1176, height: H - 24, fill: 'none', stroke: C.frame, 'stroke-width': 1.5, rx: 2 }, svg);
+
+    // título e cabeçalhos
+    const tt = el('text', { x: 600, y: 58, 'text-anchor': 'middle', 'font-size': 20, 'font-weight': 'bold', fill: C.header }, svg);
+    tt.textContent = state.titulo;
+    const h1t = el('text', { x: D.causaX + D.causaW / 2, y: 100, 'text-anchor': 'middle', 'font-size': 13, 'font-weight': 'bold', fill: C.header, 'letter-spacing': 1 }, svg);
+    h1t.textContent = 'CAUSAS';
+    const h2t = el('text', { x: D.conseqX + D.conseqW / 2, y: 100, 'text-anchor': 'middle', 'font-size': 13, 'font-weight': 'bold', fill: C.header, 'letter-spacing': 1 }, svg);
+    h2t.textContent = 'CONSEQUÊNCIAS';
+
+    const evCy = D.TOPY + sideH / 2;
+    const evY = evCy - evH / 2;
+
+    // ---- lado esquerdo: causas → evento ----
+    let y = D.TOPY + (sideH - stackHeight(left)) / 2;
+    left.forEach(l => {
+      const yc = y + l.laneH / 2;
+      const ls = laneStroke(l.it);
+      const attrs = {
+        points: (D.causaX + D.causaW) + ',' + yc + ' ' + D.kneeL + ',' + yc + ' ' + D.evX + ',' + evCy,
+        fill: 'none',
+        stroke: ls.stroke,
+        'stroke-width': 1.5
+      };
+      if (ls.dash) attrs['stroke-dasharray'] = ls.dash;
+      el('polyline', attrs, svg);
+
+      el('rect', { x: D.causaX, y: yc - l.nh / 2, width: D.causaW, height: l.nh, rx: 4, fill: C.nodeFill, stroke: C.nodeStroke, 'stroke-width': 1.4 }, svg);
+      multiline(svg, D.causaX + D.causaW / 2, yc - l.nh / 2 + 20, l.nl, 12, { fill: C.nodeText });
+
+      l.cts.forEach((ct, i) => {
+        const bx = D.corrL0 + l.slot * i + (l.slot - ct.bw) / 2;
+        const st = ct.ef ? EFCOLOR[ct.ef] : C.efNulo;
+        el('rect', { x: bx, y: yc - ct.ch / 2, width: ct.bw, height: ct.ch, rx: 3, fill: C.prevFill, stroke: st, 'stroke-width': ct.ef ? 2 : 1.3 }, svg);
+        multiline(svg, bx + ct.bw / 2, yc - ct.ch / 2 + 16, ct.cl, 11, { fill: C.prevText });
+      });
+
+      y += l.laneH + D.LGAP;
+    });
+
+    // ---- lado direito: evento → consequências ----
+    y = D.TOPY + (sideH - stackHeight(right)) / 2;
+    right.forEach(l => {
+      const yc = y + l.laneH / 2;
+      const ls = laneStroke(l.it);
+      const attrs = {
+        points: (D.evX + D.evW) + ',' + evCy + ' ' + D.kneeR + ',' + yc + ' ' + D.conseqX + ',' + yc,
+        fill: 'none',
+        stroke: ls.stroke,
+        'stroke-width': 1.5
+      };
+      if (ls.dash) attrs['stroke-dasharray'] = ls.dash;
+      el('polyline', attrs, svg);
+
+      el('rect', { x: D.conseqX, y: yc - l.nh / 2, width: D.conseqW, height: l.nh, rx: 4, fill: C.nodeFill, stroke: C.nodeStroke, 'stroke-width': 1.4 }, svg);
+      multiline(svg, D.conseqX + D.conseqW / 2, yc - l.nh / 2 + 20, l.nl, 12, { fill: C.nodeText });
+
+      l.cts.forEach((ct, i) => {
+        const bx = D.corrR0 + l.slot * i + (l.slot - ct.bw) / 2;
+        const st = ct.ef ? EFCOLOR[ct.ef] : C.efNulo;
+        el('rect', { x: bx, y: yc - ct.ch / 2, width: ct.bw, height: ct.ch, rx: 3, fill: C.mitFill, stroke: st, 'stroke-width': ct.ef ? 2 : 1.3 }, svg);
+        multiline(svg, bx + ct.bw / 2, yc - ct.ch / 2 + 16, ct.cl, 11, { fill: C.mitText });
+      });
+
+      y += l.laneH + D.LGAP;
+    });
+
+    // ---- evento central (por cima das linhas) ----
+    el('rect', { x: D.evX, y: evY, width: D.evW, height: evH, rx: 6, fill: C.evFill, stroke: C.evStroke, 'stroke-width': 1.6 }, svg);
+    multiline(svg, D.evX + D.evW / 2, evY + (evH - evLines.length * 16) / 2 + 12, evLines, 13, { 'font-weight': 'bold', fill: '#fff' });
+
+    // ---- rótulos de base + legenda + cobertura (parte do artefato exportado) ----
+    const lb1 = el('text', { x: (D.corrL0 + D.corrL1) / 2, y: labelsY, 'text-anchor': 'middle', 'font-size': 12, 'font-weight': 'bold', fill: C.header }, svg);
+    lb1.textContent = 'Ações/Controles Preventivos';
+    const lb2 = el('text', { x: (D.corrR0 + D.corrR1) / 2, y: labelsY, 'text-anchor': 'middle', 'font-size': 12, 'font-weight': 'bold', fill: C.header }, svg);
+    lb2.textContent = 'Ações/Controles de Mitigação';
+
+    const lg1 = el('text', { x: 600, y: labelsY + 16, 'text-anchor': 'middle', 'font-size': 10, fill: '#666' }, svg);
+    lg1.textContent = 'Caixas na linha = barreiras do caminho · borda: cinza = não avaliada, verde = efetiva, âmbar = parcial, vermelha = inefetiva';
+    const lg2 = el('text', { x: 600, y: labelsY + 29, 'text-anchor': 'middle', 'font-size': 10, fill: '#666' }, svg);
+    lg2.textContent = 'Linha tracejada vermelha = caminho sem barreira · linha vermelha contínua = todas as barreiras inefetivas';
+
+    const s = coberturaStats();
+    if (s.tc || s.tq) {
+      let cov = 'Cobertura: causas ' + s.cc + '/' + s.tc + ' · consequências ' + s.cq + '/' + s.tq;
+      if (s.gaps) cov += ' · ' + s.gaps + ' sem barreira';
+      if (s.bad) cov += ' · ' + s.bad + ' caminho(s) só com barreiras inefetivas';
+      const lg3 = el('text', { x: 600, y: labelsY + 44, 'text-anchor': 'middle', 'font-size': 10, 'font-weight': 'bold', fill: '#444' }, svg);
+      lg3.textContent = cov;
+    }
+  }
+
+  function renderAll() {
+    renderPanels();
+    renderCoverage();
+    renderDiagram();
+    if (pendingFocus) {
+      const f = document.getElementById(pendingFocus);
+      if (f) f.focus();
+      pendingFocus = null;
+    }
+  }
+
+  // ================= Normalização e persistência =================
+  const EFS = ['efetivo', 'parcial', 'inefetivo'];
+
+  function normArr(arr, s) {
+    return (arr || []).map(o => ({
+      id: (o && o.id) ? String(o.id) : ('n' + (s.idCounter++)),
+      text: String((o && o.text) || '').trim(),
+      ef: (o && EFS.indexOf(o.ef) >= 0) ? o.ef : null
+    })).filter(o => o.text);
+  }
+
+  function normPaths(arr, s) {
+    return (arr || []).map(o => ({
+      id: (o && o.id) ? String(o.id) : ('n' + (s.idCounter++)),
+      text: String((o && o.text) || '').trim(),
+      controles: normArr(o && o.controles, s)
+    })).filter(o => o.text);
+  }
+
+  function normalizeState(d) {
+    const s = defaultState();
+    s.idCounter = Number(d.idCounter) || 0;
+    s.titulo = d.titulo || s.titulo;
+    s.evento = d.evento || s.evento;
+    s.causas = normPaths(d.causas, s);
+    s.consequencias = normPaths(d.consequencias, s);
+    s.inboxPrev = normArr(d.inboxPrev, s);
+    s.inboxMit = normArr(d.inboxMit, s);
+    return s;
+  }
+
+  function save() {
+    store.set("bowtieFinal_state", JSON.stringify(state));
+  }
+
+  function load() {
+    try {
+      let raw = store.get("bowtieFinal_state");
+      let migrado = false;
+      if (!raw) {
+        raw = store.get("bowtieC_state"); // migração automática da Opção C
+        migrado = !!raw;
+      }
+      if (!raw) return;
+      const d = JSON.parse(raw);
+      if (d && d.causas) {
+        state = normalizeState(d);
+        if (migrado) save();
+      }
+    } catch (e) { /* estado corrompido: começa vazio */ }
+  }
+
+  // ================= Export / Import JSON =================
+  function exportarBowtieJSON() {
+    try {
+      const exportData = {
+        bowtiePathways: {
+          titulo: state.titulo,
+          evento: state.evento,
+          causas: state.causas,
+          consequencias: state.consequencias,
+          inboxPrev: state.inboxPrev,
+          inboxMit: state.inboxMit
+        },
+        idCounter: state.idCounter,
+        exportDate: new Date().toISOString(),
+        version: "BowTie v1.3",
+        opcao: "Final — híbrido consolidado / controles por caminho / efetividade"
+      };
+
+      const jsonString = JSON.stringify(exportData, null, 2);
+      const blob = new Blob([jsonString], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `bowtie_final_${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      mostrarMensagem('Bow Tie exportado com sucesso!', 'success');
+    } catch (error) {
+      console.error('Erro ao exportar:', error);
+      mostrarMensagem('Erro ao exportar Bow Tie!', 'error');
+    }
+  }
+
+  function importarBowtieJSON(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      try {
+        const data = JSON.parse(e.target.result);
+        const avisos = [];
+        let s;
+
+        if (data.bowtiePathways) {
+          // formato nativo (Opção C e Final)
+          s = normalizeState(Object.assign({}, data.bowtiePathways, { idCounter: data.idCounter }));
+
+        } else if (data.bowtieDiagram) {
+          // compatibilidade: Opção B (pools)
+          const d = data.bowtieDiagram;
+          s = defaultState();
+          s.idCounter = Number(data.idCounter) || 0;
+          s.titulo = d.titulo || s.titulo;
+          s.evento = d.evento || s.evento;
+          s.causas = normArr(d.causas, s).map(o => ({ id: o.id, text: o.text, controles: [] }));
+          s.consequencias = normArr(d.consequencias, s).map(o => ({ id: o.id, text: o.text, controles: [] }));
+          s.inboxPrev = normArr(d.preventivos, s);
+          s.inboxMit = normArr(d.mitigadores, s);
+          if (s.inboxPrev.length + s.inboxMit.length) {
+            avisos.push('Controles importados sem associação — arraste-os do bloco "A associar" para as causas/consequências.');
+          }
+
+        } else if (data.bowtieBoard) {
+          // compatibilidade: Opção A (colunas)
+          const b = data.bowtieBoard;
+          s = defaultState();
+          s.idCounter = Number(data.taskIdCounter) || 0;
+          s.causas = normArr(b.causas, s).map(o => ({ id: o.id, text: o.text, controles: [] }));
+          s.consequencias = normArr(b.consequencias, s).map(o => ({ id: o.id, text: o.text, controles: [] }));
+          s.inboxPrev = normArr(b.preventivos, s);
+          s.inboxMit = normArr(b.mitigadores, s);
+          const evs = normArr(b.evento, s);
+          if (evs.length) {
+            s.evento = evs[0].text;
+            if (evs.length > 1) avisos.push('Só o 1º card de Evento foi usado (' + (evs.length - 1) + ' descartado(s)).');
+          }
+          if (s.inboxPrev.length + s.inboxMit.length) {
+            avisos.push('Controles importados sem associação — arraste-os do bloco "A associar".');
+          }
+
+        } else {
+          throw new Error('Arquivo JSON inválido para Bow Tie');
+        }
+
+        state = s;
+        save();
+        renderAll();
+        const aviso = avisos.length ? (' Atenção: ' + avisos.join(' ')) : '';
+        mostrarMensagem('Bow Tie importado com sucesso!' + aviso, aviso ? 'warn' : 'success');
+      } catch (error) {
+        console.error('Erro ao importar:', error);
+        mostrarMensagem('Erro ao importar arquivo JSON. Verifique se o arquivo está correto.', 'error');
+      }
+    };
+
+    reader.readAsText(file);
+    event.target.value = '';
+  }
+
+  // ================= Export SVG (artefato para relatório) =================
+  function exportarSVG() {
+    try {
+      const svg = document.getElementById('diagram');
+      const clone = svg.cloneNode(true);
+      clone.querySelectorAll('.ui-only').forEach(n => n.remove());
+      clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+
+      const str = new XMLSerializer().serializeToString(clone);
+      const blob = new Blob(['<?xml version="1.0" encoding="UTF-8"?>\n' + str], { type: 'image/svg+xml' });
+      const url = URL.createObjectURL(blob);
+
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `bowtie_final_${new Date().toISOString().split('T')[0]}.svg`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      mostrarMensagem('Diagrama SVG exportado com sucesso!', 'success');
+    } catch (error) {
+      console.error('Erro ao exportar SVG:', error);
+      mostrarMensagem('Erro ao exportar o SVG!', 'error');
+    }
+  }
+
+  // ================= Limpar =================
+  function limparBowtie() {
+    if (confirm('Tem certeza que deseja limpar todo o Bow Tie? Esta ação não pode ser desfeita.')) {
+      state = defaultState();
+      store.del("bowtieFinal_state");
+      renderAll();
+      mostrarMensagem('Bow Tie limpo com sucesso!', 'success');
+    }
+  }
+
+  // ================= Mensagens =================
+  function mostrarMensagem(texto, tipo) {
+    const messageEl = document.getElementById('statusMessage');
+    if (!messageEl) return;
+    messageEl.textContent = texto;
+    messageEl.className = `status-message ${tipo}`;
+    messageEl.style.display = 'block';
+
+    setTimeout(() => {
+      messageEl.style.display = 'none';
+    }, tipo === 'warn' ? 6000 : 3000);
+  }
+
+  // Ligações de interface por código, todas guardadas (sem atributos inline)
+  function bind(id, evento, fn) {
+    var e = document.getElementById(id);
+    if (e) e['on' + evento] = fn;
+  }
+
+  function initUI() {
+    bind('btnAddCausa', 'click', addCausa);
+    bind('btnAddConseq', 'click', addConseq);
+    bind('btnExportJson', 'click', exportarBowtieJSON);
+    bind('btnImportJson', 'click', function () {
+      var f = document.getElementById('bowtieFileInput');
+      if (f) f.click();
+    });
+    bind('bowtieFileInput', 'change', importarBowtieJSON);
+    bind('btnExportSvg', 'click', exportarSVG);
+    bind('btnLimpar', 'click', limparBowtie);
+    bind('inpNovaCausa', 'keypress', function (e) { if (e.key === 'Enter') addCausa(); });
+    bind('inpNovaConseq', 'keypress', function (e) { if (e.key === 'Enter') addConseq(); });
+  }
+
+  // Recria em tempo de execução qualquer elemento essencial que o ambiente tenha descartado do HTML
+  function ensure(id, tag, parentId, className, beforeClass) {
+    var e = document.getElementById(id);
+    if (e) return e;
+    var p = document.getElementById(parentId);
+    if (!p) return null;
+    e = (tag === 'svg') ? document.createElementNS(NS, 'svg') : document.createElement(tag);
+    e.id = id;
+    if (className) e.setAttribute('class', className);
+    var before = beforeClass ? p.querySelector('.' + beforeClass) : null;
+    if (before) { p.insertBefore(e, before); } else { p.appendChild(e); }
+    return e;
+  }
+
+  // Partida única com o DOM pronto — nenhum trabalho de DOM acontece fora daqui,
+  // não importa onde ou quando o ambiente execute este script.
+  function boot() {
+    atualizarDiag();
+
+    ensure('tituloTxt', 'span', 'tituloLine', 'titulo-txt');
+    ensure('eventoTxt', 'span', 'eventoCard', 'txt');
+    ensure('listaCausas', 'div', 'panelEsq', null, 'add-task');
+    ensure('listaConseq', 'div', 'panelDir', null, 'add-task');
+    ensure('inboxPrev', 'div', 'inboxPrevWrap', 'inbox');
+    ensure('inboxMit', 'div', 'inboxMitWrap', 'inbox');
+    ensure('cobertura', 'div', 'editorWrap', 'cobertura vazio');
+    var svgEl = ensure('diagram', 'svg', 'diagramWrap');
+    if (svgEl && !svgEl.getAttribute('viewBox')) {
+      svgEl.setAttribute('viewBox', '0 0 1200 420');
+      svgEl.setAttribute('font-family', 'Arial, Helvetica, sans-serif');
+    }
+
+    var faltando = ['listaCausas', 'listaConseq', 'inpNovaCausa', 'inpNovaConseq',
+                    'btnAddCausa', 'btnAddConseq', 'diagram'].filter(function (id) {
+      return !document.getElementById(id);
+    });
+    if (faltando.length) {
+      var b = document.getElementById('errBox');
+      if (b) {
+        b.textContent = '⛔ Este ambiente não montou parte da página e o autorreparo não conseguiu recriar: ' +
+          faltando.join(', ') + '. Baixe o arquivo e abra no navegador.';
+        b.style.display = 'block';
+      }
+      return;
+    }
+
+    initUI();
+
+    var note = document.getElementById('persistNote');
+    var showNote = function () {
+      if (!note) return;
+      note.textContent = '⚠ Armazenamento local indisponível neste ambiente (ex.: pré-visualização/sandbox). A ferramenta funciona normalmente, mas os dados não sobrevivem ao recarregar a página — use 📤 Exportar JSON para salvar e 📥 Importar JSON para retomar.';
+      note.style.display = 'block';
+    };
+    store.onFail = showNote;
+    if (!store.ok) showNote();
+
+    load();
+    renderAll();
+  }
+
+  if (document.readyState !== 'loading') {
+    boot();
+  } else {
+    document.addEventListener('DOMContentLoaded', boot);
+  }
+</script>
+
+</body>
+</html>

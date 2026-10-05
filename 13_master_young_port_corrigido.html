@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Questionário  16 Grupos</title>
+<style>
+  :root { --maxw: 920px; --radius: 12px; --gap: 14px; }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 24px; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans", "Helvetica Neue", sans-serif; background: #f7f7f9; color: #222; }
+  .app { max-width: var(--maxw); margin: 0 auto; background: #fff; border-radius: var(--radius); box-shadow: 0 6px 20px rgba(0,0,0,.06); overflow: hidden; }
+  header { padding: 22px 22px 12px; border-bottom: 1px solid #ececf1; }
+  header h1 { margin: 0 0 6px; font-size: 20px; font-weight: 700; }
+  header p { margin: 0; color: #555; font-size: 14px; }
+  .content { padding: 22px; }
+  .legend { background: #fafafa; border: 1px solid #eee; border-radius: 10px; padding: 14px; margin-bottom: 18px; }
+  .legend h2 { margin: 0 0 10px; font-size: 14px; color: #444; font-weight: 600; }
+  .legend-list { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px 14px; font-size: 14px; }
+  .legend-item b { display: inline-block; min-width: 1.2em; text-align: center; }
+  .question-card { background: #fff; border: 1px solid #eee; border-radius: 12px; padding: 18px; }
+  .qid { color: #777; font-size: 13px; margin-bottom: 8px; }
+  .qtext { font-size: 18px; line-height: 1.45; margin-bottom: 18px; }
+  .scale { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; margin-bottom: 8px; }
+  .opt { position: relative; }
+  .opt input { position: absolute; opacity: 0; pointer-events: none; }
+  .opt label { display: block; text-align: center; padding: 12px 8px; border: 1px solid #ddd; border-radius: 10px; cursor: pointer; user-select: none; font-weight: 600; }
+  .opt input:focus + label { outline: 2px solid #9ecbff; outline-offset: 2px; }
+  .opt input:checked + label { border-color: #2b6ef7; box-shadow: 0 0 0 3px rgba(43,110,247,.12) inset; }
+  .scale-foot { font-size: 12px; color: #666; text-align: center; margin-bottom: 8px; }
+  .progress-wrap { margin: 16px 0 10px; }
+  .progressbar { height: 10px; background: #eee; border-radius: 999px; overflow: hidden; }
+  .progressbar > div { height: 100%; width: 0%; background: #2b6ef7; }
+  .ptext { font-size: 13px; color: #666; margin-top: 6px; }
+  .nav { margin-top: 16px; display: flex; gap: 10px; justify-content: space-between; align-items: center; }
+  button { appearance: none; border: none; border-radius: 10px; padding: 12px 16px; font-weight: 600; cursor: pointer; background: #2b6ef7; color: #fff; }
+  button[disabled] { opacity: .55; cursor: not-allowed; }
+  .btn-secondary { background: #e7e7ee; color: #222; }
+  .muted { color: #777; font-size: 13px; }
+  .result { text-align: left; background: #fff; border: 1px solid #eee; border-radius: 12px; padding: 18px; }
+  .result h2 { margin-top: 0; }
+  .grp { margin-top: 18px; }
+  .tbl { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
+  .tbl th, .tbl td { border-bottom: 1px solid #f0f0f3; padding: 8px 6px; text-align: left; vertical-align: top; }
+  .tbl th { background: #fafafa; font-weight: 700; }
+  .foot-actions { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
+  @media (max-width: 560px) { .legend-list { grid-template-columns: 1fr; } .qtext { font-size: 17px; } }
+  .group-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; margin: 20px 0; }
+  .group-card { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 12px; }
+  .group-card h4 { margin: 0 0 8px; color: #495057; font-size: 14px; }
+  .group-stats { font-size: 13px; color: #6c757d; }
+</style>
+</head>
+<body>
+  <div class="app" role="application" aria-label="Questionário 16 Grupos, escala 1 a 6">
+    <header>
+      <h1>Questionário  16 Grupos</h1>
+      <p>Questionário com grupos PE, AB, DA, IA, DV, IS, FR, DI, VD, EM, SB, AS, IE, PI, ME, AI. Use <b>16</b> para marcar e <b>Enter</b> para avançar.</p>
+    </header>
+
+    <div class="content">
+      <section class="legend" aria-live="polite">
+        <h2>Escala (sempre visível)</h2>
+        <div class="legend-list">
+          <div class="legend-item"><b>1</b> = Inteiramente falsa</div>
+          <div class="legend-item"><b>2</b> = Em grande parte falsa</div>
+          <div class="legend-item"><b>3</b> = Levemente mais verdadeira do que falsa</div>
+          <div class="legend-item"><b>4</b> = Moderadamente verdadeira</div>
+          <div class="legend-item"><b>5</b> = Em grande parte verdadeira</div>
+          <div class="legend-item"><b>6</b> = Descreve perfeitamente</div>
+        </div>
+      </section>
+
+      <div id="quiz-view" class="question-card" role="region" aria-live="polite"></div>
+
+      <div class="progress-wrap" aria-hidden="false">
+        <div class="progressbar" aria-label="Progresso do questionário"><div id="progress"></div></div>
+        <div id="ptext" class="ptext"></div>
+      </div>
+
+      <div class="nav">
+        <div style="display:flex; gap:10px;">
+          <button id="btnPrev" class="btn-secondary" type="button">Voltar</button>
+          <button id="btnNext" type="button" disabled>Próxima</button>
+        </div>
+        <div class="muted">Questões dos 16 grupos embaralhadas a cada execução</div>
+      </div>
+
+      <div id="result-view" class="result" style="display:none;"></div>
+    </div>
+  </div>
+
+<script>
+  // ====== DEFINIO DAS 205 QUESTES EM 16 GRUPOS ======
+  
+  // Grupo 1 - PE (Privação Emocional) - Questões 1-9
+  const GROUP_1_PE = [
+    { group: 'PE', id: 1, text: "As pessoas não conseguiram satisfazer minhas necessidades emocionais" },
+    { group: 'PE', id: 2, text: "Eu não recebi amor e atenção" },
+    { group: 'PE', id: 3, text: "De um modo geral, não tenho ninguém para me dar conselhos e apoio emocional" },
+    { group: 'PE', id: 4, text: "A maior parte do tempo, não tenho ninguém para me dar carinho, compartilhar comigo e se importar profundamente com o que me acontece" },
+    { group: 'PE', id: 5, text: "Eu não tive ninguém que quisesse se aproximar e passar bastante tempo comigo em grande parte da minha vida" },
+    { group: 'PE', id: 6, text: "Em geral, não havia pessoas para me dar carinho, segurança e afeição" },
+    { group: 'PE', id: 7, text: "Eu não senti que era especial para alguém em grande parte da minha vida" },
+    { group: 'PE', id: 8, text: "Em geral, não tenho ninguém que realmente me escute, me compreenda ou esteja sintonizado com minhas verdadeiras necessidades e sentimentos" },
+    { group: 'PE', id: 9, text: "Eu raramente tenho alguma pessoa forte para me dar bons conselhos ou orientação quando não tenho certeza do que fazer" }
+  ];
+
+  // Grupo 2 - AB (Abandono) - Questões 10-27
+  const GROUP_2_AB = [
+    { group: 'AB', id: 10, text: "Eu me preocupo com a possibilidade de as pessoas que eu amo morrerem, mesmo que haja poucas razões médicas para confirmar minhas preocupações" },
+    { group: 'AB', id: 11, text: "Percebo que me agarro  s pessoas com as quais tenho intimidade, por ter medo de que elas me deixem" },
+    { group: 'AB', id: 12, text: "Eu me preocupo com a possibilidade de as pessoas de quem eu gosto me deixarem ou me abandonarem" },
+    { group: 'AB', id: 13, text: "Sinto que me falta uma base estável de apoio emocional" },
+    { group: 'AB', id: 14, text: "Não espero que os relacionamentos importantes durem; acredito que eles vão terminar" },
+    { group: 'AB', id: 15, text: "Sinto que me apego a parceiro/as que não são capazes de se comprometerem comigo" },
+    { group: 'AB', id: 16, text: "No final, acabarei só" },
+    { group: 'AB', id: 17, text: "Quando sinto que alguém com quem eu me importo está se afastando, fico desesperado" },
+    { group: 'AB', id: 18, text: "As vezes, tenho tanto medo de que as pessoas me deixem, que acabo fazendo com que se afastem" },
+    { group: 'AB', id: 19, text: "Fico incomodado quando alguém me deixa sozinha(o), mesmo que por pouco tempo" },
+    { group: 'AB', id: 20, text: "Não posso esperar que as pessoas que me apóiam estejam sempre disponíveis" },
+    { group: 'AB', id: 21, text: "Não devo ficar realmente íntimo das pessoas, porque não posso ter certeza de que poderei contar sempre com elas" },
+    { group: 'AB', id: 22, text: "Parece que as pessoas importantes da minha vida estão sempre indo e vindo" },
+    { group: 'AB', id: 23, text: "Tenho muito medo de que as pessoas que eu amo encontrem alguém que vão preferir e me deixem" },
+    { group: 'AB', id: 24, text: "As pessoas que me são próximas têm sido muito imprevisíveis: ora são legais e disponíveis, ora estão zangadas, chateadas, absorvidas em si mesmas, brigando, e assim por diante" },
+    { group: 'AB', id: 25, text: "Preciso tanto das pessoas que tenho medo de perdê-las" },
+    { group: 'AB', id: 26, text: "Eu me sinto indefeso(a) se não tiver pessoas para me proteger as quais eu me preocupo muito em perdê-las" },
+    { group: 'AB', id: 27, text: "Não posso ser eu mesma(o) ou expressar o que realmente sou pois as pessoas me deixariam" }
+  ];
+
+  // Grupo 3 - DA (Desconfiança/Abuso) - Questões 28-44
+  const GROUP_3_DA = [
+    { group: 'DA', id: 28, text: "Sinto que as pessoas querem tirar vantagem de mim" },
+    { group: 'DA', id: 29, text: "Freqüentemente, sinto que tenho de me proteger dos outros" },
+    { group: 'DA', id: 30, text: "Sinto que não posso baixar a guarda na presença dos outros pois eles me prejudicariam intencionalmente" },
+    { group: 'DA', id: 31, text: "Se uma pessoa é legal comigo, fico imaginando que ela está querendo alguma coisa" },
+    { group: 'DA', id: 32, text: " só uma questão de tempo antes que as pessoas me traiam" },
+    { group: 'DA', id: 33, text: "A maioria das pessoas só pensa em si mesma" },
+    { group: 'DA', id: 34, text: "Tenho grande dificuldade em confiar nas pessoas" },
+    { group: 'DA', id: 35, text: "Desconfio muito dos motivos dos outros" },
+    { group: 'DA', id: 36, text: "As outras pessoas raramente são honestas; elas geralmente não são o que parecem" },
+    { group: 'DA', id: 37, text: "Eu geralmente fico procurando os motivos escondidos das pessoas" },
+    { group: 'DA', id: 38, text: "Se acho que alguém quer me prejudicar, tento prejudicá-lo primeiro" },
+    { group: 'DA', id: 39, text: "As pessoas têm de provar coisas para mim antes que eu confie nelas" },
+    { group: 'DA', id: 40, text: "Invento \"testes\" para as pessoas para ver se elas estão me dizendo a verdade e se estão bem-intencionadas" },
+    { group: 'DA', id: 41, text: "Acredito no ditado: \"Quem não controla é controlado\"" },
+    { group: 'DA', id: 42, text: "Fico com raiva quando penso como fui maltratada(o) pelas pessoas durante toda a minha vida" },
+    { group: 'DA', id: 43, text: "Por toda a minha vida, pessoas que me eram próximas tiraram vantagem de mim ou me usaram para seus propósitos" },
+    { group: 'DA', id: 44, text: "Fui abusada(o) fisicamente, emocionalmente ou sexualmente por pessoas importantes na minha vida" }
+  ];
+
+  // Grupo 4 - IA (Isolamento/Alienação) - Questões 45-54
+  const GROUP_4_IA = [
+    { group: 'IA', id: 45, text: "Eu não me encaixo" },
+    { group: 'IA', id: 46, text: "Sou fundamentalmente diferente das outras pessoas" },
+    { group: 'IA', id: 47, text: "Eu não pertenço a ninguém; sou um(a) solitário(a)" },
+    { group: 'IA', id: 48, text: "Sinto-me alienada(o) das outras pessoas" },
+    { group: 'IA', id: 49, text: "Eu me sinto isolada(o) e sozinha(o)" },
+    { group: 'IA', id: 50, text: "Sempre me sinto excluída(o) dos grupos" },
+    { group: 'IA', id: 51, text: "Ninguém me entende realmente" },
+    { group: 'IA', id: 52, text: "A minha família sempre foi diferente das famílias que nos cercavam" },
+    { group: 'IA', id: 53, text: "s vezes, eu me sinto um(a) alienígena" },
+    { group: 'IA', id: 54, text: "Se eu desaparecesse amanhã, ninguém perceberia" }
+  ];
+
+  // Grupo 5 - DV (Deficiência/Vergonha) - Questões 55-78
+  const GROUP_5_DV = [
+    { group: 'DV', id: 55, text: "Nenhum(a) homem/mulher que eu desejar vai me amar depois de saber dos meus defeitos" },
+    { group: 'DV', id: 56, text: "Ninguém que eu desejar vai querer ficar perto de mim depois que conhecer meu verdadeiro eu" },
+    { group: 'DV', id: 57, text: "Sou inerentemente defeituosa(o) e cheia(o) de falhas" },
+    { group: 'DV', id: 58, text: "Por mais que eu tente, sinto que não conseguirei que um(a) homem/mulher significativa me respeite ou sinta que eu tenho valor" },
+    { group: 'DV', id: 59, text: "Não sou digna(o) do amor, da atenção e do respeito dos outros" },
+    { group: 'DV', id: 60, text: "Sinto que não mereço ser amada(o)" },
+    { group: 'DV', id: 61, text: "Sou inaceitável demais, de todas as maneiras possíveis, para me revelar aos outros" },
+    { group: 'DV', id: 62, text: "Se as pessoas descobrissem meus defeitos básicos, eu não conseguiria encará-las" },
+    { group: 'DV', id: 63, text: "Quando as pessoas gostam de mim, sinto que as estou enganando" },
+    { group: 'DV', id: 64, text: "Freqüentemente, sou atraída(o) por pessoas que são muito críticas ou me rejeitam" },
+    { group: 'DV', id: 65, text: "Tenho segredos que não quero que as pessoas próximas a mim descubram" },
+    { group: 'DV', id: 66, text: "Foi por minha culpa que meus pais não conseguiram me amar o suficiente" },
+    { group: 'DV', id: 67, text: "Não deixo que as pessoas conheçam meu verdadeiro eu" },
+    { group: 'DV', id: 68, text: "Um dos meus maiores medos é que meus defeitos sejam expostos" },
+    { group: 'DV', id: 69, text: "Não posso compreender como ninguém conseguiu me amar" },
+    { group: 'DV', id: 70, text: "Não sou sexualmente atraente" },
+    { group: 'DV', id: 71, text: "Sou gorda(o) demais" },
+    { group: 'DV', id: 72, text: "Sou feia(o)" },
+    { group: 'DV', id: 73, text: "Sou incapaz de manter uma conversa decente" },
+    { group: 'DV', id: 74, text: "Sou chata(o) e desinteressante em situações sociais" },
+    { group: 'DV', id: 75, text: "As pessoas que valorizo não iriam querer se associar a mim devido ao meu status social (por exemplo, renda, nível de instrução, profissão)" },
+    { group: 'DV', id: 76, text: "Nunca sei o que dizer socialmente" },
+    { group: 'DV', id: 77, text: "As pessoas não querem me incluir em seus grupos" },
+    { group: 'DV', id: 78, text: "Fico muito inibida(o) perto das outras pessoas" }
+  ];
+
+  // Grupo 6 - IS (Incompetência/Sentimentos de fracasso) - Questões 79-87
+  const GROUP_6_IS = [
+    { group: 'IS', id: 79, text: "Quase nada do que eu faço no trabalho (ou na escola) é tão bom quanto o que os outros fazem" },
+    { group: 'IS', id: 80, text: "Sou incompetente no que se refere a realizações" },
+    { group: 'IS', id: 81, text: "A maioria das pessoas é mais capaz do que eu no trabalho e em suas realizações" },
+    { group: 'IS', id: 82, text: "Eu sou um fracasso" },
+    { group: 'IS', id: 83, text: "Não tenho tanto talento quanto a maioria das pessoas tem em sua profissão" },
+    { group: 'IS', id: 84, text: "Não sou tão inteligente quanto a maioria das pessoas no que se refere a trabalho (ou estudo)" },
+    { group: 'IS', id: 85, text: "Sinto-me humilhada(o) por meus fracassos e inadequações na esfera do trabalho" },
+    { group: 'IS', id: 86, text: "Freqüentemente me sinto embaraçada(o) perto das pessoas porque não estou   altura delas em termos de realizações" },
+    { group: 'IS', id: 87, text: "Muitas vezes comparo minhas realizações com as dos outros e acho que eles são muito mais bem-sucedidos" }
+  ];
+
+  // Grupo 7 - FR (Funcionamento dependente/Incompetência) - Questões 88-102
+  const GROUP_7_FR = [
+    { group: 'FR', id: 88, text: "Não me sinto capaz de me arranjar sozinha(o) no dia-a-dia" },
+    { group: 'FR', id: 89, text: "Preciso que as outras pessoas me ajudem a fazer as coisas" },
+    { group: 'FR', id: 90, text: "Não me sinto capaz de manejar bem as situações sem ajuda" },
+    { group: 'FR', id: 91, text: "Acredito que as pessoas podem cuidar de mim melhor do que eu mesmo(a)" },
+    { group: 'FR', id: 92, text: "Tenho dificuldade em lidar com tarefas novas fora do trabalho, a menos que tenha alguém para me orientar" },
+    { group: 'FR', id: 93, text: "Penso em mim como uma pessoa dependente, no que se refere ao funcionamento cotidiano" },
+    { group: 'FR', id: 94, text: "Acabo estragando tudo o que tento fazer, mesmo fora do trabalho (ou da escola)" },
+    { group: 'FR', id: 95, text: "Sou incapaz em quase todas as áreas da vida" },
+    { group: 'FR', id: 96, text: "Se eu confiar no meu próprio julgamento nas situações do dia-a-dia, tomarei a decisão errada" },
+    { group: 'FR', id: 97, text: "Falta-me bom senso" },
+    { group: 'FR', id: 98, text: "Não se pode confiar em meu julgamento nas situações do dia-a-dia" },
+    { group: 'FR', id: 99, text: "Não confio em minha capacidade de resolver os problemas que surgem no cotidiano" },
+    { group: 'FR', id: 100, text: "Sinto que preciso de alguém em quem eu possa confiar para me dar conselhos sobre questões práticas" },
+    { group: 'FR', id: 101, text: "Sinto-me mais como uma criança do que como um adulto quando é preciso assumir responsabilidades do cotidiano" },
+    { group: 'FR', id: 102, text: "Acho as responsabilidades do dia-a-dia esmagadoras" }
+  ];
+
+  // Grupo 8 - DI (Vulnerabilidade ao dano/Doença) - Questões 103-116
+  const GROUP_8_DI = [
+    { group: 'DI', id: 103, text: "Não consigo deixar de sentir que algo de ruim vai acontecer" },
+    { group: 'DI', id: 104, text: "Sinto que algum desastre (natural, criminal, financeiro ou médico) vai acontecer a qualquer momento" },
+    { group: 'DI', id: 105, text: "Tenho medo de me tornar um(a) sem-teto ou um(a) vadio(a)" },
+    { group: 'DI', id: 106, text: "Tenho medo de ser atacada(o)" },
+    { group: 'DI', id: 107, text: "Sinto que devo ter muito cuidado com dinheiro, ou acabarei sem nada" },
+    { group: 'DI', id: 108, text: "Tomo muitas precauções para não adoecer e não me machucar" },
+    { group: 'DI', id: 109, text: "Tenho medo de perder todo o meu dinheiro e ficar pobre" },
+    { group: 'DI', id: 110, text: "Tenho medo de pegar uma doença séria, mesmo que nada de sério tenha sido diagnosticado pelos médicos" },
+    { group: 'DI', id: 111, text: "Sou uma pessoa medrosa" },
+    { group: 'DI', id: 112, text: "Eu me preocupo muito com todas as coisas horríveis que acontecem no mundo: crime, poluição, e assim por diante" },
+    { group: 'DI', id: 113, text: "Muitas vezes, acho que posso enlouquecer" },
+    { group: 'DI', id: 114, text: "Sinto, freqüentemente, que vou ter um ataque de ansiedade" },
+    { group: 'DI', id: 115, text: "Tenho muito medo de ter um ataque cardíaco, embora haja poucas razões médicas que justifiquem minha preocupação" },
+    { group: 'DI', id: 116, text: "Acho que o mundo é um lugar perigoso" }
+  ];
+
+  // Grupo 9 - VD (Self emaranhado/Não desenvolvido) - Questões 117-127
+  const GROUP_9_VD = [
+    { group: 'VD', id: 117, text: "Não consegui me separar de meu pai/minha mãe, ou de ambos, assim como outras pessoas da minha idade parecem conseguir" },
+    { group: 'VD', id: 118, text: "Meu pai/minha mãe, ou ambos, e eu tendemos a nos envolver excessivamente com a vida e com os problemas uns dos outros" },
+    { group: 'VD', id: 119, text: " muito difícil para meu pai/minha mãe, ou ambos, e eu escondermos detalhes íntimos uns dos outros sem nos sentirmos traídos ou culpados" },
+    { group: 'VD', id: 120, text: "Meu pai/minha mãe, ou ambos, e eu temos que nos falar quase todos os dias, ou um de nós se sente culpado, magoado, desapontado ou sozinho" },
+    { group: 'VD', id: 121, text: "Muitas vezes, sinto que não tenho uma identidade separada da de meus pais ou parceiro(a)" },
+    { group: 'VD', id: 122, text: "Muitas vezes me parece que meus pais estão vivendo por intermédio de mim - eu não tenho uma vida própria" },
+    { group: 'VD', id: 123, text: " muito difícil para mim manter alguma distância das pessoas de quem sou íntimo(a); não é fácil para mim ter um senso separado de mim mesmo(a)" },
+    { group: 'VD', id: 124, text: "Estou tão envolvida(o) com meu/minha parceiro(a) ou com meus pais que não sei realmente quem sou, ou o que quero" },
+    { group: 'VD', id: 125, text: "Tenho dificuldade em separar meu ponto de vista, ou opinião, do de meus pais ou parceiro(a)" },
+    { group: 'VD', id: 126, text: "Sinto que não tenho nenhuma privacidade no que se refere aos meus pais ou parceiro(a)" },
+    { group: 'VD', id: 127, text: "Sinto que meus pais estão, ou ficariam, muito magoados por eu morar sozinha(o), longe deles" }
+  ];
+
+  // Grupo 10 - EM (Submissão) - Questões 128-143
+  const GROUP_10_EM = [
+    { group: 'EM', id: 128, text: "Deixo as pessoas fazerem o que querem porque tenho medo das conseqüências" },
+    { group: 'EM', id: 129, text: "Acho que se eu fizer o que quero, só vou arranjar problemas" },
+    { group: 'EM', id: 130, text: "Sinto que não tenho escolha além de ceder ao desejo das pessoas, ou elas vão me rejeitar ou me retaliar de alguma maneira" },
+    { group: 'EM', id: 131, text: "Nos meus relacionamentos, deixo a outra pessoa ter o controle" },
+    { group: 'EM', id: 132, text: "Sempre deixei os outros escolherem por mim, de modo que não sei realmente o que quero" },
+    { group: 'EM', id: 133, text: "Sinto que as maiores decisões da minha vida não foram realmente minhas" },
+    { group: 'EM', id: 134, text: "Eu me preocupo muito em agradar aos outros para que eles não me rejeitem" },
+    { group: 'EM', id: 135, text: "Tenho grande dificuldade em exigir que meus direitos sejam respeitados e que meus sentimentos sejam levados em conta" },
+    { group: 'EM', id: 136, text: "Eu me vingo das pessoas de maneira sutil, em vez de demonstrar minha raiva" },
+    { group: 'EM', id: 137, text: "Vou muito além do que a maioria das pessoas para evitar confrontações" },
+    { group: 'EM', id: 138, text: "Coloco as necessidades dos outros antes das minhas, ou me sinto culpada(o)" },
+    { group: 'EM', id: 139, text: "Sinto culpa quando desaponto as pessoas" },
+    { group: 'EM', id: 140, text: "Dou mais  s pessoas do que recebo delas" },
+    { group: 'EM', id: 141, text: "Sou aquela(e) que geralmente acaba cuidando das pessoas de quem sou próxima(o)" },
+    { group: 'EM', id: 142, text: "Não há praticamente nada que eu não possa aceitar quando amo alguém" },
+    { group: 'EM', id: 143, text: "Sou uma boa pessoa pois penso nos outros mais do que em mim mesma(o)" }
+  ];
+
+  // Grupo 11 - SB (Sacrifício) - Questões 144-154
+  const GROUP_11_SB = [
+    { group: 'SB', id: 144, text: "No trabalho, normalmente sou aquela(e) que se apresenta como voluntária(o) para fazer tarefas extras, ou trabalhar mais tempo" },
+    { group: 'SB', id: 145, text: "Por mais ocupada(o) que esteja, eu sempre arranjo tempo para os outros" },
+    { group: 'SB', id: 146, text: "Consigo me virar com muito pouco, porque as minhas necessidades são mínimas" },
+    { group: 'SB', id: 147, text: "Só me sinto feliz quando aqueles que me cercam estão felizes" },
+    { group: 'SB', id: 148, text: "Fico tão ocupada(o) fazendo coisas para as pessoas de quem gosto que tenho muito pouco tempo para mim" },
+    { group: 'SB', id: 149, text: "Sempre fui aquela(e) que escuta os problemas de todo o mundo" },
+    { group: 'SB', id: 150, text: "Fico mais   vontade dando um presente do que recebendo" },
+    { group: 'SB', id: 151, text: "As pessoas me vêem fazendo demais pelos outros e pouco por mim" },
+    { group: 'SB', id: 152, text: "Por mais que eu dê, nunca é suficiente" },
+    { group: 'SB', id: 153, text: "Se faço o que quero, me sinto muito mal" },
+    { group: 'SB', id: 154, text: " muito difícil para mim pedir aos outros que atendam  s minhas necessidades" }
+  ];
+
+  // Grupo 12 - AS (Inibição emocional) - Questões 155-163
+  const GROUP_12_AS = [
+    { group: 'AS', id: 155, text: "Tenho medo de perder o controle das minhas ações" },
+    { group: 'AS', id: 156, text: "Tenho medo de machucar muito as pessoas física ou emocionalmente, caso perca o controle da minha raiva" },
+    { group: 'AS', id: 157, text: "Sinto que preciso controlar as minhas emoções e impulsos, ou algo de ruim pode acontecer" },
+    { group: 'AS', id: 158, text: "Dentro de mim há muita raiva e ressentimento que eu não expresso" },
+    { group: 'AS', id: 159, text: "Tenho muita vergonha de demonstrar sentimentos positivos em relação aos outros (por exemplo, afeição, sinais de cuidado)" },
+    { group: 'AS', id: 160, text: "Acho embaraçoso expressar meus sentimentos para os outros" },
+    { group: 'AS', id: 161, text: "Tenho dificuldade em ser carinhosa(o) e espontânea(o)" },
+    { group: 'AS', id: 162, text: "Eu me controlo tanto que as pessoas acham que não sou emotiva" },
+    { group: 'AS', id: 163, text: "As pessoas me vêem como emocionalmente contida(o)" }
+  ];
+
+  // Grupo 13 - IE (Padrões rígidos/Hipercriticismo) - Questões 164-179
+  const GROUP_13_IE = [
+    { group: 'IE', id: 164, text: "Preciso ser a(o) melhor em tudo o que faço; não consigo aceitar vir em segundo lugar" },
+    { group: 'IE', id: 165, text: "Tento manter quase tudo em perfeita ordem" },
+    { group: 'IE', id: 166, text: "Preciso causar a melhor impressão, praticamente, o tempo todo" },
+    { group: 'IE', id: 167, text: "Tento fazer o melhor; não consigo aceitar o \"suficientemente bom\"" },
+    { group: 'IE', id: 168, text: "Tenho tantas coisas para fazer que quase não me sobra tempo para relaxar de verdade" },
+    { group: 'IE', id: 169, text: "Quase nada é bom o bastante; sempre posso fazer melhor" },
+    { group: 'IE', id: 170, text: "Preciso cumprir todas as minhas responsabilidades" },
+    { group: 'IE', id: 171, text: "Sinto que existe uma pressão constante sobre mim para conquistar e fazer coisas" },
+    { group: 'IE', id: 172, text: "Meus relacionamentos são prejudicados porque exijo demais de mim" },
+    { group: 'IE', id: 173, text: "Minha saúde sofre porque me pressiono demais para me sair bem" },
+    { group: 'IE', id: 174, text: "Muitas vezes eu sacrifico prazer e felicidade para estar   altura dos meus padrões" },
+    { group: 'IE', id: 175, text: "Se cometo um erro, mereço ser muito criticado" },
+    { group: 'IE', id: 176, text: "Não consigo me soltar ou me desculpar por meus erros com facilidade" },
+    { group: 'IE', id: 177, text: "Sou uma pessoa muito competitiva" },
+    { group: 'IE', id: 178, text: "Dou muito valor a dinheiro e status" },
+    { group: 'IE', id: 179, text: "Tenho que ser sempre a(o) \"Número 1\" em termos de desempenho" }
+  ];
+
+  // Grupo 14 - PI (Grandiosidade/Arrogância) - Questões 180-190
+  const GROUP_14_PI = [
+    { group: 'PI', id: 180, text: "Tenho muita dificuldade em aceitar um \"não\" como resposta quando quero alguma coisa de alguém" },
+    { group: 'PI', id: 181, text: "Geralmente me zango, ou me irrito, quando não consigo aquilo que quero" },
+    { group: 'PI', id: 182, text: "Sou especial e não deveria ter que aceitar muitas das restrições impostas  s outras pessoas" },
+    { group: 'PI', id: 183, text: "Detesto ser obrigada(o) a fazer alguma coisa, ou impedida(o) de fazer o que quero" },
+    { group: 'PI', id: 184, text: "Acho que não deveria ter que obedecer  s regras e convenções normais assim como os outros" },
+    { group: 'PI', id: 185, text: "Sinto que aquilo que tenho a oferecer é muito mais valioso do que as contribuições dos outros" },
+    { group: 'PI', id: 186, text: "Geralmente coloco as minhas necessidades acima das necessidades dos outros" },
+    { group: 'PI', id: 187, text: "Muitas vezes sinto que estou tão envolvida(o) com as minhas prioridades que não tenho tempo para os amigos ou a família" },
+    { group: 'PI', id: 188, text: "As pessoas freqüentemente me dizem que sou muito controlador(a) em relação a como as coisas devem ser feitas" },
+    { group: 'PI', id: 189, text: "Fico muito irritada(o) quando as pessoas não fazem o que eu lhes peço" },
+    { group: 'PI', id: 190, text: "Não tolero que as pessoas me digam o que fazer" }
+  ];
+
+  // Grupo 15 - ME (Autocontrole/Autodisciplina insuficientes) - Questões 191-205
+  const GROUP_15_ME = [
+    { group: 'ME', id: 191, text: "Tenho grande dificuldade para deixar de beber, fumar, comer demais e modificar outros comportamentos problemáticos" },
+    { group: 'ME', id: 192, text: "Parece que não consigo me disciplinar e levar até o fim tarefas rotineiras ou chatas" },
+    { group: 'ME', id: 193, text: "Muitas vezes, me permito obedecer impulsos e expressar emoções que me trazem problemas ou machucam as pessoas" },
+    { group: 'ME', id: 194, text: "Quando não consigo atingir algum objetivo, fico facilmente frustrada(o) e desisto" },
+    { group: 'ME', id: 195, text: "Para mim, é muito difícil sacrificar uma gratificação imediata para atingir um objetivo a longo prazo" },
+    { group: 'ME', id: 196, text: "Depois que começo a sentir raiva, é comum não conseguir controlá-la" },
+    { group: 'ME', id: 197, text: "Tendo a fazer muitas coisas em excesso, mesmo sabendo que isso não é bom para mim" },
+    { group: 'ME', id: 198, text: "Eu me aborreço muito facilmente" },
+    { group: 'ME', id: 199, text: "Quando as tarefas ficam difíceis, geralmente não consigo perseverar e concluí-las" },
+    { group: 'ME', id: 200, text: "Não consigo me concentrar em nada por muito tempo" },
+    { group: 'ME', id: 201, text: "Não consigo me obrigar a fazer coisas de que não gosto, mesmo sabendo que é para o meu próprio bem" },
+    { group: 'ME', id: 202, text: "Perco a calma diante da ofensa mais insignificante" },
+    { group: 'ME', id: 203, text: "Raramente consigo cumprir minhas resoluções" },
+    { group: 'ME', id: 204, text: "Quase nunca deixo de mostrar  s pessoas o que realmente sinto seja qual for o custo disso" },
+    { group: 'ME', id: 205, text: "Freqüentemente faço, por impulso, coisas que mais tarde lamento" }
+  ];
+
+  // Grupo 16 - AI (Busca de aprovação/Reconhecimento)
+  // Baseado na referência "Grupo 16 - AI" no final do PDF
+  const GROUP_16_AI = [
+    // Questões que devem ser adicionadas conforme documento completo
+    // Por enquanto, grupo vazio até obter as questões específicas
+  ];
+
+  // ========================================
+
+  // Junta todos os grupos (incluindo o Grupo 16)
+  const ALL_QUESTIONS = [
+    ...GROUP_1_PE, ...GROUP_2_AB, ...GROUP_3_DA, ...GROUP_4_IA,
+    ...GROUP_5_DV, ...GROUP_6_IS, ...GROUP_7_FR, ...GROUP_8_DI,
+    ...GROUP_9_VD, ...GROUP_10_EM, ...GROUP_11_SB, ...GROUP_12_AS,
+    ...GROUP_13_IE, ...GROUP_14_PI, ...GROUP_15_ME, ...GROUP_16_AI
+  ];
+
+  // Util - Embaralhar (FisherYates)
+  function shuffle(array) {
+    const a = array.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  // Estado global
+  const STATE = {
+    order: shuffle(ALL_QUESTIONS), // mistura todas as 205+ questões
+    index: 0,
+    answers: {}, // { key: value }, onde key = `${group}:${id}`
+  };
+
+  // Elementos
+  const quizView = document.getElementById('quiz-view');
+  const resultView = document.getElementById('result-view');
+  const btnPrev = document.getElementById('btnPrev');
+  const btnNext = document.getElementById('btnNext');
+  const progressBar = document.getElementById('progress');
+  const ptext = document.getElementById('ptext');
+
+  function keyFor(q) { return `${q.group}:${q.id}`; }
+
+  function render() {
+    // Finalizado?
+    if (STATE.index >= STATE.order.length) { showResults(); return; }
+
+    const q = STATE.order[STATE.index];
+    const k = keyFor(q);
+    const selected = STATE.answers[k] ?? null;
+
+    quizView.innerHTML = `
+      <div class="qid">Grupo ${q.group}  ID ${q.id}  Pergunta ${STATE.index + 1} de ${STATE.order.length}</div>
+      <div class="qtext" id="qtext">${escapeHtml(q.text)}</div>
+      <form id="formScale" aria-labelledby="qtext">
+        <div class="scale" role="radiogroup" aria-label="Selecione de 1 a 6">
+          ${[1,2,3,4,5,6].map(v => renderOption(k, v, selected)).join("")}
+        </div>
+        <div class="scale-foot">Use as teclas 16 para marcar rapidamente</div>
+      </form>
+    `;
+
+    const pct = (STATE.index / STATE.order.length) * 100;
+    progressBar.style.width = `${pct}%`;
+    ptext.textContent = `Progresso: ${STATE.index} / ${STATE.order.length}`;
+
+    btnPrev.disabled = STATE.index === 0;
+    btnNext.disabled = selected == null;
+
+    setTimeout(() => { const el = document.getElementById('qtext'); if (el) el.setAttribute('tabindex','-1'), el.focus(); }, 0);
+
+    document.querySelectorAll(`input[name="${cssEscape(k)}"]`).forEach(inp => {
+      inp.addEventListener('change', (e) => {
+        STATE.answers[k] = parseInt(e.target.value, 10);
+        btnNext.disabled = false;
+      });
+    });
+  }
+
+  function renderOption(key, value, selected) {
+    const checked = value === selected ? 'checked' : '';
+    const optId = `${key.replace(':','_')}_${value}`;
+    return `
+      <div class="opt">
+        <input id="${optId}" type="radio" name="${escapeHtml(key)}" value="${value}" ${checked} />
+        <label for="${optId}" title="${value}">${value}</label>
+      </div>
+    `;
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  }
+  // escape para name selector
+  function cssEscape(s){ return s.replace(/([:.])/g,'\\$1'); }
+
+  // Navegação
+  btnPrev.addEventListener('click', () => {
+    if (STATE.index > 0) { STATE.index -= 1; render(); }
+  });
+  btnNext.addEventListener('click', () => {
+    const q = STATE.order[STATE.index];
+    const k = keyFor(q);
+    if (typeof STATE.answers[k] !== 'number') return;
+    STATE.index += 1; render();
+  });
+
+  // Atalhos
+  document.addEventListener('keydown', (e) => {
+    if (resultView.style.display !== 'none') return;
+    if (e.key >= '1' && e.key <= '6') {
+      const q = STATE.order[STATE.index]; const k = keyFor(q);
+      const val = parseInt(e.key,10);
+      const input = document.getElementById(`${k.replace(':','_')}_${val}`);
+      if (input) { input.checked = true; STATE.answers[k] = val; btnNext.disabled = false; }
+    } else if (e.key === 'Enter') {
+      e.preventDefault(); if (!btnNext.disabled) btnNext.click();
+    }
+  });
+
+  // Funções de resultado
+  function sumFor(group) {
+    const items = STATE.order.filter(q => q.group === group);
+    return items.reduce((acc, q) => acc + (STATE.answers[keyFor(q)] || 0), 0);
+  }
+  function countFor(group) {
+    return STATE.order.filter(q => q.group === group).length;
+  }
+  function tableRowsFor(group) {
+    return STATE.order
+      .map((q, i) => ({ idx:i, q }))
+      .filter(({q}) => q.group === group)
+      .map(({idx, q}) => {
+        const v = STATE.answers[keyFor(q)];
+        return `<tr><td>${idx+1}</td><td>${q.group}</td><td>${q.id}</td><td>${escapeHtml(q.text)}</td><td>${v}</td></tr>`;
+      }).join("");
+  }
+
+  // Nomes dos grupos para exibição
+  const GROUP_NAMES = {
+    'PE': 'Privação Emocional',
+    'AB': 'Abandono',
+    'DA': 'Desconfiança/Abuso',
+    'IA': 'Isolamento/Alienação',
+    'DV': 'Deficiência/Vergonha',
+    'IS': 'Incompetência/Sentimentos de fracasso',
+    'FR': 'Funcionamento dependente/Incompetência',
+    'DI': 'Vulnerabilidade ao dano/Doença',
+    'VD': 'Self emaranhado/Não desenvolvido',
+    'EM': 'Submissão',
+    'SB': 'Sacrifício',
+    'AS': 'Inibição emocional',
+    'IE': 'Padrões rígidos/Hipercriticismo',
+    'PI': 'Grandiosidade/Arrogância',
+    'ME': 'Autocontrole/Autodisciplina insuficientes',
+    'AI': 'Busca de aprovação/Reconhecimento'
+  };
+
+  function showResults() {
+    progressBar.style.width = '100%';
+    ptext.textContent = `Progresso: ${STATE.order.length} / ${STATE.order.length}`;
+
+    // Calcula estatísticas para todos os 16 grupos
+    const groups = ['PE','AB','DA','IA','DV','IS','FR','DI','VD','EM','SB','AS','IE','PI','ME','AI'];
+    let totalSum = 0;
+    let totalCount = 0;
+    let summaryCards = '';
+
+    groups.forEach(groupCode => {
+      const count = countFor(groupCode);
+      const sum = sumFor(groupCode);
+      const mean = count ? (sum/count).toFixed(2) : '-';
+      const minPossible = 1 * count;
+      const maxPossible = 6 * count;
+      
+      if (count > 0) {
+        totalSum += sum;
+        totalCount += count;
+        
+        summaryCards += `
+          <div class="group-card">
+            <h4>${groupCode} - ${GROUP_NAMES[groupCode]} (${count} questões)</h4>
+            <div class="group-stats">
+              Soma: ${sum} (min ${minPossible}  máx ${maxPossible})<br>
+              Média: ${mean}
+            </div>
+          </div>
+        `;
+      }
+    });
+
+    const overallMean = totalCount ? (totalSum/totalCount).toFixed(2) : '-';
+
+    resultView.innerHTML = `
+      <h2>Resultados  16 Grupos</h2>
+      
+      <div class="grp">
+        <h3>Resumo Geral</h3>
+        <p><b>Total de questões:</b> ${totalCount}  <b>Somatório geral:</b> ${totalSum}  <b>Média geral:</b> ${overallMean}</p>
+        <div class="group-summary">
+          ${summaryCards}
+        </div>
+      </div>
+
+      ${groups.map(groupCode => {
+        const count = countFor(groupCode);
+        if (count === 0) return '';
+        const sum = sumFor(groupCode);
+        const mean = count ? (sum/count).toFixed(2) : '-';
+        const minPossible = 1 * count;
+        const maxPossible = 6 * count;
+        
+        return `
+          <div class="grp">
+            <h3>Grupo ${groupCode} - ${GROUP_NAMES[groupCode]}</h3>
+            <p><b>Somatório:</b> ${sum} (min ${minPossible}  máx ${maxPossible})  <b>Média:</b> ${mean}</p>
+            <table class="tbl" aria-label="Respostas Grupo ${groupCode}">
+              <thead><tr><th># (ordem global)</th><th>Grupo</th><th>ID</th><th>Pergunta</th><th>Resp. (16)</th></tr></thead>
+              <tbody>${tableRowsFor(groupCode)}</tbody>
+            </table>
+          </div>
+        `;
+      }).join('')}
+
+      <div class="foot-actions">
+        <button type="button" class="btn-secondary" id="btnRestart">Reiniciar (embaralhar novamente)</button>
+        <button type="button" id="btnDownload">Baixar respostas (CSV)</button>
+      </div>
+      <p class="muted">Clique em "Reiniciar" para nova aplicação com ordem aleatória.</p>
+    `;
+    
+    resultView.style.display = 'block';
+    quizView.style.display = 'none';
+    document.querySelector('.nav').style.display = 'none';
+    document.querySelector('.legend').setAttribute('aria-hidden', 'true');
+
+    document.getElementById('btnRestart').addEventListener('click', restart);
+    document.getElementById('btnDownload').addEventListener('click', downloadCSV);
+  }
+
+  function restart() {
+    STATE.order = shuffle(ALL_QUESTIONS);
+    STATE.index = 0;
+    STATE.answers = {};
+    resultView.style.display = 'none';
+    quizView.style.display = 'block';
+    document.querySelector('.nav').style.display = 'flex';
+    document.querySelector('.legend').setAttribute('aria-hidden', 'false');
+    render();
+  }
+
+  function downloadCSV() {
+    const headers = ["ordem_global","grupo","id","pergunta","resposta"];
+    const lines = [headers.join(",")];
+
+    STATE.order.forEach((q, i) => {
+      const v = STATE.answers[keyFor(q)] ?? "";
+      const row = [
+        i+1,
+        q.group,
+        q.id,
+        `"${(q.text || "").replace(/"/g,'""')}"`,
+        v
+      ].join(",");
+      lines.push(row);
+    });
+
+    // Adiciona estatísticas dos grupos
+    lines.push("");
+    lines.push("# ESTATÍSTICAS POR GRUPO");
+    const groups = ['PE','AB','DA','IA','DV','IS','FR','DI','VD','EM','SB','AS','IE','PI','ME','AI'];
+    groups.forEach(groupCode => {
+      const count = countFor(groupCode);
+      const sum = sumFor(groupCode);
+      const mean = count ? (sum/count).toFixed(2) : "";
+      lines.push(`"somatorio_${groupCode}",${sum}`);
+      lines.push(`"media_${groupCode}",${mean}`);
+      lines.push(`"count_${groupCode}",${count}`);
+    });
+
+    const totalCount = groups.reduce((acc, g) => acc + countFor(g), 0);
+    const totalSum = groups.reduce((acc, g) => acc + sumFor(g), 0);
+    lines.push(`"somatorio_total",${totalSum}`);
+    lines.push(`"media_total",${totalCount ? (totalSum/totalCount).toFixed(2) : ""}`);
+    lines.push(`"count_total",${totalCount}`);
+
+    const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = "respostas_questionario_16grupos.csv";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  // Inicialização
+  render();
+</script>
+</body>
+</html>

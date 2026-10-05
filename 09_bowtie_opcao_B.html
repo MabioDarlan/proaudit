@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Mábio's Bow Tie — Opção B</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f5f5f5;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin: 0;
+      padding: 0;
+    }
+
+    h1 {
+      margin: 10px 0 0 0;
+      font-size: 35px;
+    }
+
+    .subtitle {
+      margin: 0 0 8px 0;
+      color: #607D8B;
+      font-size: 13px;
+      font-weight: bold;
+    }
+
+    .json-controls {
+      margin: 5px 0 8px 0;
+      padding: 10px;
+      background-color: white;
+      border: 2px solid #607D8B;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .json-controls h3 {
+      margin: 0;
+      color: #607D8B;
+      font-size: 14px;
+    }
+
+    .json-controls button {
+      padding: 8px 15px;
+      background-color: #607D8B;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+      transition: background-color 0.3s;
+    }
+
+    .json-controls button:hover {
+      background-color: #455A64;
+    }
+
+    .json-controls input[type="file"] {
+      display: none;
+    }
+
+    .status-message {
+      margin: 5px 0;
+      padding: 8px;
+      border-radius: 4px;
+      text-align: center;
+      font-weight: bold;
+      display: none;
+      font-size: 12px;
+    }
+
+    .status-message.success {
+      background-color: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+
+    .status-message.warn {
+      background-color: #fff3cd;
+      color: #856404;
+      border: 1px solid #ffeeba;
+    }
+
+    .status-message.error {
+      background-color: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+
+    /* Camada metodológica: mesmos textos da Opção A, agora em chips (não há colunas) */
+    .legend {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin: 2px 0 8px 0;
+    }
+
+    .chip {
+      background: #fff;
+      border: 1px solid #607D8B;
+      color: #455A64;
+      border-radius: 12px;
+      padding: 3px 10px;
+      font-size: 12px;
+      cursor: help;
+    }
+
+    .tooltip {
+      position: relative;
+    }
+
+    .tooltiptext {
+      visibility: hidden;
+      width: 260px;
+      background-color: #333;
+      color: #fff;
+      text-align: left;
+      padding: 10px;
+      border-radius: 6px;
+      position: absolute;
+      top: 130%;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 5;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    .legend .chip:first-child .tooltiptext { left: 0; transform: none; }
+    .legend .chip:last-child .tooltiptext { left: auto; right: 0; transform: none; }
+
+    .tooltip:hover .tooltiptext {
+      visibility: visible;
+    }
+
+    .diagram-wrap {
+      width: 96%;
+      background: #fff;
+      border: 2px solid #607D8B;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      padding: 8px;
+      margin-bottom: 14px;
+    }
+
+    #diagram {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    #diagram text {
+      user-select: none;
+    }
+
+    #diagram .node,
+    #diagram .addbtn {
+      cursor: pointer;
+    }
+
+    #diagram .del {
+      opacity: 0;
+      cursor: pointer;
+    }
+
+    #diagram g.node:hover .del {
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+
+<h1>Mábio's Bow Tie</h1>
+<div class="subtitle">Opção B — Diagrama SVG editável · Modelo 1 (pools independentes)</div>
+
+<div class="json-controls">
+  <h3>Gerenciar Dados do Bow Tie:</h3>
+  <button onclick="exportarBowtieJSON()">📤 Exportar JSON</button>
+  <button onclick="document.getElementById('bowtieFileInput').click()">📥 Importar JSON</button>
+  <input type="file" id="bowtieFileInput" accept=".json" onchange="importarBowtieJSON(event)">
+  <button onclick="exportarSVG()">🖼️ Exportar SVG</button>
+  <button onclick="limparBowtie()">🗑️ Limpar Tudo</button>
+</div>
+
+<div id="statusMessage" class="status-message"></div>
+
+<div class="legend">
+  <span class="tooltip chip">⚡ Causas
+    <span class="tooltiptext">
+      <strong>O que é:</strong> Ameaças e fontes de risco que podem desencadear o evento central. Cada caixa = uma causa distinta e específica.<br><br>
+      <strong>Regra:</strong> Formule como condição verificável ("Patch crítico não aplicado"), não como negação genérica do evento ("falta de segurança").<br><br>
+      <strong>Exemplo:</strong> Credenciais fracas ou compartilhadas; Fornecedor com acesso não monitorado; Configuração incorreta de firewall.
+    </span>
+  </span>
+  <span class="tooltip chip">🛡️ Preventivos
+    <span class="tooltiptext">
+      <strong>O que é:</strong> Barreiras que atuam ANTES do evento — reduzem a probabilidade de as causas o desencadearem.<br><br>
+      <strong>Regra:</strong> Todo controle deve poder ser associado a pelo menos uma causa. Neste Modelo 1 (pools), a associação fica implícita — limitação a observar no teste.<br><br>
+      <strong>Exemplo:</strong> MFA; Gestão de patches; Segregação de funções; Revisão periódica de acessos.
+    </span>
+  </span>
+  <span class="tooltip chip">💥 Evento
+    <span class="tooltiptext">
+      <strong>O que é:</strong> O evento de risco central — o momento em que se perde o controle sobre a ameaça (o perigo se materializa).<br><br>
+      <strong>Regra:</strong> Na forma canônica do método, 1 evento por diagrama — aqui a estrutura do desenho impõe isso naturalmente.<br><br>
+      <strong>Exemplo:</strong> Vazamento de dados pessoais; Indisponibilidade de sistema crítico; Acesso não autorizado ao ambiente de produção.
+    </span>
+  </span>
+  <span class="tooltip chip">🧯 Mitigação
+    <span class="tooltiptext">
+      <strong>O que é:</strong> Barreiras que atuam DEPOIS do evento — reduzem a severidade das consequências (atenuação e recuperação).<br><br>
+      <strong>Regra:</strong> Todo controle mitigador deve mirar pelo menos uma consequência específica.<br><br>
+      <strong>Exemplo:</strong> Plano de resposta a incidentes; Backups testados e restauráveis; Comunicação à ANPD e aos titulares.
+    </span>
+  </span>
+  <span class="tooltip chip">📉 Consequências
+    <span class="tooltiptext">
+      <strong>O que é:</strong> Impactos para a organização caso o evento ocorra, mesmo com os controles existentes.<br><br>
+      <strong>Regra:</strong> Descreva o impacto final ("Multa e sanção LGPD"), não etapas intermediárias do incidente.<br><br>
+      <strong>Exemplo:</strong> Multa e sanção LGPD; Dano reputacional; Paralisação de processo finalístico.
+    </span>
+  </span>
+  <span class="tooltip chip">🖱️ Como usar
+    <span class="tooltiptext">
+      <strong>Adicionar:</strong> clique em "+ adicionar" no fim de cada pilha — a edição abre na hora.<br><br>
+      <strong>Editar:</strong> duplo clique em qualquer caixa, no evento ou no título. Enter confirma, Esc cancela.<br><br>
+      <strong>Excluir:</strong> passe o mouse na caixa e clique no ✕.<br><br>
+      <strong>Limitação desta opção:</strong> sem arrastar — a ordem dos itens é a ordem de criação.
+    </span>
+  </span>
+</div>
+
+<div class="diagram-wrap">
+  <svg id="diagram" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 460" font-family="Arial, Helvetica, sans-serif"></svg>
+</div>
+
+<script>
+  // ---------- Estado (fonte única de verdade; o SVG é projeção) ----------
+  function defaultState() {
+    return {
+      titulo: "MÉTODO BOW TIE",
+      evento: "EVENTO",
+      causas: [],
+      preventivos: [],
+      mitigadores: [],
+      consequencias: [],
+      idCounter: 0
+    };
+  }
+
+  let state = defaultState();
+  let geom = {};      // geometria dos elementos editáveis, preenchida a cada render
+  let editing = null; // trava de edição
+
+  const NS = "http://www.w3.org/2000/svg";
+
+  const C = {
+    nodeFill: "#DEEBF7", nodeStroke: "#2E75B6", nodeText: "#1F3B5C",
+    evFill: "#B03A2E",  evStroke: "#8F2A22",
+    prevFill: "#E2EFDA", prevStroke: "#548235", prevText: "#274E13",
+    mitFill: "#D9EDEA",  mitStroke: "#1F6E63",  mitText: "#0F4C43",
+    line: "#9DC3E6", header: "#1F4E79", frame: "#BFBFBF"
+  };
+
+  const ZONES = {
+    causas:        { x: 40,  w: 230, chars: 32, fill: C.nodeFill, stroke: C.nodeStroke, txt: C.nodeText, add: "Nova causa" },
+    preventivos:   { x: 315, w: 180, chars: 24, fill: C.prevFill, stroke: C.prevStroke, txt: C.prevText, add: "Novo controle preventivo" },
+    mitigadores:   { x: 705, w: 180, chars: 24, fill: C.mitFill,  stroke: C.mitStroke,  txt: C.mitText,  add: "Novo controle mitigador" },
+    consequencias: { x: 930, w: 230, chars: 32, fill: C.nodeFill, stroke: C.nodeStroke, txt: C.nodeText, add: "Nova consequência" }
+  };
+
+  const LINEH = 15, PADV = 9, MINH = 34, GAP = 12, ADDH = 26, TOPY = 120;
+
+  // ---------- Utilidades ----------
+  function wrapText(text, maxChars) {
+    const words = String(text).split(/\s+/).filter(Boolean);
+    const lines = [];
+    let cur = "";
+    words.forEach(w => {
+      const t = cur ? cur + " " + w : w;
+      if (t.length <= maxChars) {
+        cur = t;
+      } else {
+        if (cur) lines.push(cur);
+        while (w.length > maxChars) {
+          lines.push(w.slice(0, maxChars));
+          w = w.slice(maxChars);
+        }
+        cur = w;
+      }
+    });
+    if (cur) lines.push(cur);
+    return lines.length ? lines : [""];
+  }
+
+  function el(tag, attrs, parent) {
+    const e = document.createElementNS(NS, tag);
+    for (const a in attrs) e.setAttribute(a, attrs[a]);
+    (parent || document.getElementById('diagram')).appendChild(e);
+    return e;
+  }
+
+  function txtEl(x, y, str, attrs, parent) {
+    const t = el('text', Object.assign({ x: x, y: y }, attrs), parent);
+    t.textContent = str;
+    return t;
+  }
+
+  function multiline(x, yTop, lines, attrs, parent) {
+    const t = el('text', Object.assign({ x: x, y: yTop }, attrs), parent);
+    lines.forEach((ln, i) => {
+      const ts = document.createElementNS(NS, 'tspan');
+      ts.setAttribute('x', x);
+      if (i > 0) ts.setAttribute('dy', LINEH);
+      ts.textContent = ln;
+      t.appendChild(ts);
+    });
+    return t;
+  }
+
+  // ---------- Renderização ----------
+  function render() {
+    const svg = document.getElementById('diagram');
+    geom = {};
+
+    // 1) medir
+    const meas = {};
+    Object.keys(ZONES).forEach(k => {
+      meas[k] = state[k].map(it => {
+        const lines = wrapText(it.text, ZONES[k].chars);
+        const h = Math.max(MINH, lines.length * LINEH + 2 * PADV);
+        return { it: it, lines: lines, h: h };
+      });
+    });
+    const stackH = k => meas[k].reduce((a, m) => a + m.h + GAP, 0) + ADDH;
+
+    const evLines = wrapText(state.evento, 24);
+    const evH = Math.max(44, evLines.length * 16 + 22);
+    const evW = 200, evX = 600 - evW / 2;
+
+    const sideH = Math.max(stackH('causas'), stackH('consequencias'),
+                           stackH('preventivos'), stackH('mitigadores'), evH, 220);
+    const labelsY = TOPY + sideH + 28;
+    const H = labelsY + 40;
+
+    svg.setAttribute('viewBox', '0 0 1200 ' + H);
+    svg.innerHTML = "";
+
+    // fundo e moldura (como o painel do slide) — ficam no SVG para sair no export
+    el('rect', { x: 0, y: 0, width: 1200, height: H, fill: '#fff' });
+    el('rect', { x: 12, y: 12, width: 1176, height: H - 24, fill: 'none', stroke: C.frame, 'stroke-width': 1.5, rx: 2 });
+
+    // título (editável)
+    const titleT = txtEl(600, 58, state.titulo, {
+      'text-anchor': 'middle', 'font-size': 20, 'font-weight': 'bold', fill: C.header
+    });
+    titleT.style.cursor = 'text';
+    titleT.ondblclick = () => startEdit('titulo', null, false);
+    geom['titulo'] = { x: 380, y: 38, w: 440, h: 30, big: true };
+
+    // cabeçalhos de zona (como no slide)
+    txtEl(ZONES.causas.x + ZONES.causas.w / 2, 100, 'CAUSAS',
+      { 'text-anchor': 'middle', 'font-size': 13, 'font-weight': 'bold', fill: C.header, 'letter-spacing': 1 });
+    txtEl(ZONES.consequencias.x + ZONES.consequencias.w / 2, 100, 'CONSEQUÊNCIAS',
+      { 'text-anchor': 'middle', 'font-size': 13, 'font-weight': 'bold', fill: C.header, 'letter-spacing': 1 });
+
+    // 2) posicionar pilhas (centralizadas verticalmente na área útil)
+    const posy = {};
+    Object.keys(ZONES).forEach(k => {
+      const h = stackH(k);
+      let y = TOPY + (sideH - h) / 2;
+      posy[k] = [];
+      meas[k].forEach(m => { posy[k].push(y); y += m.h + GAP; });
+      posy[k + '_add'] = y;
+    });
+
+    const evY = TOPY + sideH / 2 - evH / 2;
+    geom['evento'] = { x: evX, y: evY, w: evW, h: evH };
+
+    // 3) linhas primeiro (as caixas de controle ficam "sobre" os caminhos)
+    meas.causas.forEach((m, i) => {
+      el('line', {
+        x1: ZONES.causas.x + ZONES.causas.w, y1: posy.causas[i] + m.h / 2,
+        x2: evX, y2: evY + evH / 2, stroke: C.line, 'stroke-width': 1.4
+      });
+    });
+    meas.consequencias.forEach((m, i) => {
+      el('line', {
+        x1: evX + evW, y1: evY + evH / 2,
+        x2: ZONES.consequencias.x, y2: posy.consequencias[i] + m.h / 2,
+        stroke: C.line, 'stroke-width': 1.4
+      });
+    });
+
+    // 4) nós de cada zona + botão de adicionar
+    Object.keys(ZONES).forEach(k => {
+      const z = ZONES[k];
+      meas[k].forEach((m, i) => {
+        const y = posy[k][i];
+        const g = el('g', { 'class': 'node' });
+        el('rect', { x: z.x, y: y, width: z.w, height: m.h, rx: 4, fill: z.fill, stroke: z.stroke, 'stroke-width': 1.4 }, g);
+        multiline(z.x + z.w / 2, y + PADV + 11, m.lines,
+          { 'text-anchor': 'middle', 'font-size': 12, fill: z.txt }, g);
+        g.ondblclick = (e) => { e.stopPropagation(); startEdit(k, m.it.id, false); };
+
+        const dg = el('g', { 'class': 'del ui-only' }, g);
+        el('circle', { cx: z.x + z.w - 10, cy: y + 10, r: 7, fill: '#fff', stroke: '#b00020', 'stroke-width': 1 }, dg);
+        txtEl(z.x + z.w - 10, y + 13.5, '✕',
+          { 'text-anchor': 'middle', 'font-size': 9, fill: '#b00020', 'font-weight': 'bold' }, dg);
+        dg.onclick = (e) => { e.stopPropagation(); removeItem(k, m.it.id); };
+
+        geom[k + ':' + m.it.id] = { x: z.x, y: y, w: z.w, h: m.h };
+      });
+
+      const ay = posy[k + '_add'];
+      const ag = el('g', { 'class': 'addbtn ui-only' });
+      el('rect', { x: z.x, y: ay, width: z.w, height: ADDH, rx: 4, fill: '#FAFAFA', stroke: '#90A4AE', 'stroke-dasharray': '4 3' }, ag);
+      txtEl(z.x + z.w / 2, ay + 17, '+ adicionar', { 'text-anchor': 'middle', 'font-size': 11, fill: '#607D8B' }, ag);
+      ag.onclick = () => addItem(k);
+    });
+
+    // 5) evento central
+    const eg = el('g', { 'class': 'node' });
+    el('rect', { x: evX, y: evY, width: evW, height: evH, rx: 6, fill: C.evFill, stroke: C.evStroke, 'stroke-width': 1.6 }, eg);
+    multiline(600, evY + (evH - evLines.length * 16) / 2 + 12, evLines,
+      { 'text-anchor': 'middle', 'font-size': 13, 'font-weight': 'bold', fill: '#fff' }, eg);
+    eg.ondblclick = () => startEdit('evento', null, false);
+
+    // 6) rótulos de base (como no slide)
+    txtEl(405, labelsY, 'Ações/Controles Preventivos',
+      { 'text-anchor': 'middle', 'font-size': 12, 'font-weight': 'bold', fill: C.header });
+    txtEl(795, labelsY, 'Ações/Controles de Mitigação',
+      { 'text-anchor': 'middle', 'font-size': 12, 'font-weight': 'bold', fill: C.header });
+  }
+
+  // ---------- Mutações ----------
+  function addItem(kind) {
+    const id = 'n' + (state.idCounter++);
+    state[kind].push({ id: id, text: ZONES[kind].add });
+    save();
+    render();
+    startEdit(kind, id, true);
+  }
+
+  function removeItem(kind, id) {
+    state[kind] = state[kind].filter(o => o.id !== id);
+    save();
+    render();
+  }
+
+  // ---------- Edição via overlay (duplo clique, Enter confirma, Esc cancela) ----------
+  function startEdit(kind, id, fresh) {
+    if (editing) return;
+    const key = id ? kind + ':' + id : kind;
+    const g0 = geom[key];
+    if (!g0) return;
+
+    const svg = document.getElementById('diagram');
+    const fo = document.createElementNS(NS, 'foreignObject');
+    fo.setAttribute('x', g0.x);
+    fo.setAttribute('y', g0.y);
+    fo.setAttribute('width', g0.w);
+    fo.setAttribute('height', Math.max(g0.h, MINH));
+    fo.setAttribute('class', 'ui-only');
+
+    const inp = document.createElement('input');
+    inp.type = 'text';
+    const cur = id ? state[kind].find(o => o.id === id).text : state[kind];
+    inp.value = fresh ? '' : cur;
+    if (fresh && ZONES[kind]) inp.placeholder = ZONES[kind].add;
+    inp.style.cssText =
+      'width:100%;height:100%;box-sizing:border-box;border:2px solid #607D8B;border-radius:4px;' +
+      'font-family:Arial, sans-serif;font-size:' + (g0.big ? '16px' : '12px') + ';padding:2px 6px;background:#fff;color:#333;';
+
+    fo.appendChild(inp);
+    svg.appendChild(fo);
+    editing = { kind: kind, id: id, fresh: !!fresh };
+    inp.focus();
+    if (!fresh) inp.select();
+
+    const commit = () => {
+      if (!editing) return;
+      const e = editing;
+      editing = null;
+      const v = inp.value.trim();
+      if (e.id) {
+        if (v) {
+          state[e.kind].find(o => o.id === e.id).text = v;
+        } else if (e.fresh) {
+          state[e.kind] = state[e.kind].filter(o => o.id !== e.id);
+        } // vazio em item existente: mantém o texto anterior (mesmo critério do kanban)
+      } else if (v) {
+        state[e.kind] = v; // 'titulo' ou 'evento'
+      }
+      save();
+      render();
+    };
+
+    const cancel = () => {
+      if (!editing) return;
+      const e = editing;
+      editing = null;
+      if (e.fresh && e.id) state[e.kind] = state[e.kind].filter(o => o.id !== e.id);
+      render();
+    };
+
+    inp.onkeydown = (ev) => {
+      if (ev.key === 'Enter') { ev.preventDefault(); commit(); }
+      else if (ev.key === 'Escape') { ev.preventDefault(); cancel(); }
+    };
+    inp.onblur = commit;
+  }
+
+  // ---------- Persistência ----------
+  function save() {
+    localStorage.setItem("bowtieB_state", JSON.stringify(state));
+  }
+
+  function load() {
+    try {
+      const d = JSON.parse(localStorage.getItem("bowtieB_state"));
+      if (d && d.causas) state = Object.assign(defaultState(), d);
+    } catch (e) { /* estado corrompido: começa vazio */ }
+  }
+
+  // ---------- Export / Import JSON ----------
+  function exportarBowtieJSON() {
+    try {
+      const exportData = {
+        bowtieDiagram: {
+          titulo: state.titulo,
+          evento: state.evento,
+          causas: state.causas,
+          preventivos: state.preventivos,
+          mitigadores: state.mitigadores,
+          consequencias: state.consequencias
+        },
+        idCounter: state.idCounter,
+        exportDate: new Date().toISOString(),
+        version: "BowTie v1.0",
+        opcao: "B — diagrama SVG / pools independentes"
+      };
+
+      const jsonString = JSON.stringify(exportData, null, 2);
+      const blob = new Blob([jsonString], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `bowtie_B_${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      mostrarMensagem('Bow Tie exportado com sucesso!', 'success');
+    } catch (error) {
+      console.error('Erro ao exportar:', error);
+      mostrarMensagem('Erro ao exportar Bow Tie!', 'error');
+    }
+  }
+
+  function importarBowtieJSON(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      try {
+        const data = JSON.parse(e.target.result);
+        let aviso = '';
+
+        if (data.bowtieDiagram) {
+          // formato nativo da Opção B
+          const d = data.bowtieDiagram;
+          const s = defaultState();
+          s.titulo = d.titulo || s.titulo;
+          s.evento = d.evento || s.evento;
+          s.idCounter = Number(data.idCounter) || 0;
+          ['causas', 'preventivos', 'mitigadores', 'consequencias'].forEach(k => {
+            s[k] = (d[k] || []).map(o => ({
+              id: (o && o.id) ? String(o.id) : ('n' + (s.idCounter++)),
+              text: String((o && o.text) || '').trim()
+            })).filter(o => o.text);
+          });
+          state = s;
+
+        } else if (data.bowtieBoard) {
+          // compatibilidade: JSON exportado pela Opção A (colunas)
+          const b = data.bowtieBoard;
+          const s = defaultState();
+          s.idCounter = Number(data.taskIdCounter) || 0;
+          ['causas', 'preventivos', 'mitigadores', 'consequencias'].forEach(k => {
+            (b[k] || []).forEach(t => {
+              const tx = String((t && t.text) || '').trim();
+              if (tx) s[k].push({ id: 'n' + (s.idCounter++), text: tx });
+            });
+          });
+          const evs = b.evento || [];
+          if (evs.length) {
+            s.evento = String(evs[0].text || 'EVENTO');
+            if (evs.length > 1) {
+              aviso = ' Atenção: só o 1º card de Evento foi usado (' + (evs.length - 1) + ' descartado(s) — diagrama canônico = 1 evento).';
+            }
+          }
+          state = s;
+
+        } else {
+          throw new Error('Arquivo JSON inválido para Bow Tie');
+        }
+
+        save();
+        render();
+        mostrarMensagem('Bow Tie importado com sucesso!' + aviso, aviso ? 'warn' : 'success');
+      } catch (error) {
+        console.error('Erro ao importar:', error);
+        mostrarMensagem('Erro ao importar arquivo JSON. Verifique se o arquivo está correto.', 'error');
+      }
+    };
+
+    reader.readAsText(file);
+    event.target.value = '';
+  }
+
+  // ---------- Export SVG (artefato para relatório) ----------
+  function exportarSVG() {
+    try {
+      const svg = document.getElementById('diagram');
+      const clone = svg.cloneNode(true);
+      clone.querySelectorAll('.ui-only').forEach(n => n.remove());
+      clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+
+      const str = new XMLSerializer().serializeToString(clone);
+      const blob = new Blob(['<?xml version="1.0" encoding="UTF-8"?>\n' + str], { type: 'image/svg+xml' });
+      const url = URL.createObjectURL(blob);
+
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `bowtie_B_${new Date().toISOString().split('T')[0]}.svg`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      mostrarMensagem('Diagrama SVG exportado com sucesso!', 'success');
+    } catch (error) {
+      console.error('Erro ao exportar SVG:', error);
+      mostrarMensagem('Erro ao exportar o SVG!', 'error');
+    }
+  }
+
+  // ---------- Limpar ----------
+  function limparBowtie() {
+    if (confirm('Tem certeza que deseja limpar todo o Bow Tie? Esta ação não pode ser desfeita.')) {
+      state = defaultState();
+      localStorage.removeItem("bowtieB_state");
+      render();
+      mostrarMensagem('Bow Tie limpo com sucesso!', 'success');
+    }
+  }
+
+  // ---------- Mensagens ----------
+  function mostrarMensagem(texto, tipo) {
+    const messageEl = document.getElementById('statusMessage');
+    messageEl.textContent = texto;
+    messageEl.className = `status-message ${tipo}`;
+    messageEl.style.display = 'block';
+
+    setTimeout(() => {
+      messageEl.style.display = 'none';
+    }, tipo === 'warn' ? 6000 : 3000);
+  }
+
+  window.onload = function() {
+    load();
+    render();
+  };
+</script>
+
+</body>
+</html>

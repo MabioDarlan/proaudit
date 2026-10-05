@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Classificador: Projetos x Áreas</title>
+  <style>
+    :root{
+      /* Paleta suave estilo iOS/macOS */
+      --bg: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+      --panel: rgba(255, 255, 255, 0.8);
+      --card: rgba(255, 255, 255, 0.9);
+      --muted: #64748b;
+      --text: #1e293b;
+      --text-secondary: #475569;
+      --accent: #007aff;        /* azul iOS */
+      --accent-2: #34c759;      /* verde iOS */
+      --warn: #ff9500;          /* laranja iOS */
+      --danger: #ff3b30;        /* vermelho iOS */
+      --border: rgba(0, 0, 0, 0.08);
+      --border-focus: rgba(0, 122, 255, 0.3);
+      --shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+      --shadow-hover: 0 8px 30px rgba(0, 0, 0, 0.12);
+    }
+    
+    *{box-sizing:border-box}
+    
+    body{
+      margin:0;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height:100vh; 
+      display:flex; 
+      align-items:center; 
+      justify-content:center; 
+      padding:24px;
+      line-height: 1.5;
+    }
+    
+    .app{
+      width:min(980px, 100%);
+      background: var(--panel);
+      border: 1px solid var(--border);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-radius: 20px;
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+    
+    header{
+      display:flex; 
+      gap:12px; 
+      align-items:center; 
+      justify-content:space-between;
+      padding:20px 24px; 
+      border-bottom: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.6);
+    }
+    
+    header h1{
+      font-size: clamp(18px, 2.2vw, 22px);
+      margin:0; 
+      font-weight: 600;
+      color: var(--text);
+      letter-spacing: -0.02em;
+    }
+    
+    .actions{
+      display:flex; 
+      gap:12px; 
+      align-items:center; 
+      flex-wrap:wrap
+    }
+    
+    input[type="text"]{
+      background: rgba(255, 255, 255, 0.9);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 12px 16px; 
+      border-radius: 10px;
+      width: min(320px, 48vw);
+      outline: none;
+      font-size: 14px;
+      transition: all 0.2s ease;
+    }
+    
+    input[type="text"]::placeholder{ 
+      color: var(--muted);
+    }
+    
+    input[type="text"]:focus{ 
+      box-shadow: 0 0 0 4px var(--border-focus);
+      border-color: var(--accent);
+    }
+    
+    button{
+      appearance:none; 
+      border:none; 
+      padding:12px 20px; 
+      border-radius:10px;
+      background: var(--card);
+      color: var(--text); 
+      cursor:pointer;
+      border: 1px solid var(--border);
+      transition: all 0.2s ease;
+      font-weight: 500;
+      font-size: 14px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+    
+    button:hover{ 
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-hover);
+      border-color: rgba(0, 0, 0, 0.12);
+    }
+    
+    button:active{ 
+      transform: translateY(0) scale(.98);
+    }
+    
+    .btn-primary{
+      background: var(--accent);
+      color: white;
+      border-color: var(--accent);
+    }
+    
+    .btn-primary:hover{
+      background: #0056d6;
+      border-color: #0056d6;
+    }
+    
+    .btn-outline{
+      background: transparent;
+      color: var(--text-secondary);
+    }
+    
+    .btn-rose{
+      background: var(--accent-2);
+      color: white;
+      border-color: var(--accent-2);
+    }
+    
+    .btn-rose:hover{
+      background: #28a745;
+      border-color: #28a745;
+    }
+    
+    .content{ 
+      padding: 24px; 
+      display:grid; 
+      grid-template-columns: 1fr; 
+      gap:20px;
+    }
+    
+    .question-card{
+      border: 1px solid var(--border);
+      background: var(--card);
+      border-radius: 16px; 
+      padding: 24px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+    }
+    
+    .question{ 
+      font-size: clamp(18px, 2.8vw, 24px); 
+      margin: 12px 0 20px; 
+      font-weight: 600;
+      color: var(--text);
+      line-height: 1.3;
+    }
+    
+    .explain{
+      margin-top:16px; 
+      padding:16px 20px; 
+      border-radius: 12px;
+      background: rgba(0, 122, 255, 0.05);
+      border: 1px solid rgba(0, 122, 255, 0.1);
+      line-height:1.6;
+      display:none;
+      color: var(--text-secondary);
+    }
+    
+    .qa-buttons{ 
+      display:flex; 
+      gap:12px; 
+      flex-wrap:wrap;
+    }
+    
+    .trace{
+      padding: 20px; 
+      border-radius: 16px;
+      background: rgba(255, 149, 0, 0.05);
+      border: 1px solid rgba(255, 149, 0, 0.1);
+      font-size: 14px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    }
+    
+    .trace strong{ 
+      color: var(--warn);
+      font-weight: 600;
+    }
+    
+    .pill{
+      display:inline-flex; 
+      align-items:center; 
+      gap:8px;
+      padding:8px 14px; 
+      border-radius:20px;
+      background: rgba(0, 122, 255, 0.08); 
+      border: 1px solid rgba(0, 122, 255, 0.15);
+      font-size: 12px; 
+      font-weight: 500;
+      color: var(--accent);
+    }
+    
+    .result{
+      border: 1px solid var(--border);
+      background: var(--card);
+      border-radius: 16px; 
+      padding: 24px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+    }
+    
+    .result.projeto{ 
+      border-color: rgba(0, 122, 255, 0.3);
+      background: rgba(0, 122, 255, 0.02);
+    }
+    
+    .result.area{ 
+      border-color: rgba(52, 199, 89, 0.3);
+      background: rgba(52, 199, 89, 0.02);
+    }
+    
+    .result.arquivo{ 
+      border-color: rgba(255, 149, 0, 0.3);
+      background: rgba(255, 149, 0, 0.02);
+    }
+    
+    .result.semvinculo{ 
+      border-color: rgba(255, 59, 48, 0.3);
+      background: rgba(255, 59, 48, 0.02);
+    }
+    
+    .result h2{ 
+      margin:0 0 12px; 
+      font-size: clamp(18px, 2.6vw, 22px);
+      font-weight: 600;
+      color: var(--text);
+    }
+    
+    .result p{ 
+      margin:8px 0;
+      color: var(--text-secondary);
+    }
+    
+    .result ul {
+      margin: 16px 0;
+      padding-left: 20px;
+    }
+    
+    .result li {
+      margin: 8px 0;
+      color: var(--text-secondary);
+    }
+    
+    .grid{ 
+      display:grid; 
+      grid-template-columns: 1fr; 
+      gap:12px;
+    }
+    
+    @media (min-width:880px){
+      .content{ 
+        grid-template-columns: 1.2fr .8fr;
+      }
+    }
+    
+    .tiny{ 
+      font-size:12px; 
+      color: var(--muted);
+    }
+    
+    footer{ 
+      padding: 16px 24px 20px; 
+      color: var(--muted); 
+      font-size:12px; 
+      text-align:center;
+      background: rgba(255, 255, 255, 0.4);
+      border-top: 1px solid var(--border);
+    }
+    
+    .hidden{ 
+      display:none !important;
+    }
+    
+    .name-badge{ 
+      font-weight: 600; 
+      color: var(--accent);
+    }
+    
+    code {
+      background: rgba(0, 0, 0, 0.05);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 13px;
+      font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <h2>Classificador Interativo — Projetos x Áreas</h2>
+      <div class="actions">
+        <input id="itemName" type="text" placeholder="Digite o nome do item (ex.: Auditoria de Contratos 2025)" />
+        <button id="startBtn" class="btn-primary">Iniciar</button>
+        <button id="restart" class="btn-outline" title="Reinicia o fluxo">Reiniciar</button>
+        <button id="export" class="btn-rose" title="Exporta o caminho/decisão">Exportar (JSON)</button>
+      </div>
+    </header>
+
+    <div class="content">
+      <section class="question-card">
+        <div class="pill">Passo <span id="step">1</span> • <span class="tiny">Classificando: <span id="nameShown" class="name-badge">—</span></span></div>
+        <div id="question" class="question">Tem prazo definido e data de conclusão?</div>
+        <div class="qa-buttons">
+          <button id="btnYes" class="btn-primary">Sim</button>
+          <button id="btnNo" class="btn-outline">Não</button>
+        </div>
+        <div id="explain" class="explain"></div>
+        <div class="tiny">Dica: Responda e veja a explicação do porquê do próximo passo.</div>
+      </section>
+
+      <aside class="trace" id="trace">
+        <div><strong>Caminho & justificativas</strong></div>
+        <div class="tiny" style="margin-top:6px">Item: <span id="nameShown2" class="name-badge">—</span></div>
+        <ol id="log" style="margin:12px 0 0 20px; padding:0"></ol>
+      </aside>
+
+      <section id="resultBox" class="result hidden"></section>
+    </div>
+    <footer>
+	<p> Projeto: Você pode dizer “concluí e acabou? Evento/atividade com objetivo específico + prazo definido. É como uma missão ➜ tem início, plano, execução e entrega.      </p>
+	<p> Área: Você mantém e revisita constantemente? Responsabilidade ou tema contínuo, sem prazo final. É como um departamento ➜ mantém coisas funcionando sempre.     </p>
+	
+	<p> Fluxo: prazo ➜ resultado único ➜ entregas ➜ responsabilidade contínua ➜ arquivamento     </p>
+	
+	</footer>
+  </div>
+
+<script>
+// Fluxo decisório
+const flow = {
+  q1: {
+    id:'q1',
+    text: "Tem prazo definido e data de conclusão?",
+    onYes: 'q2',
+    onNo:  'q4',
+    explain: {
+      yes: "Prazo e data de conclusão indicam <strong>escopo temporário</strong> — característica típica de <em>projetos</em>. Vamos confirmar isso.",
+      no:  "Sem prazo definido, tende a ser algo <strong>contínuo</strong>. Vamos checar se é uma <em>responsabilidade recorrente</em>."
+    }
+  },
+  q2: {
+    id:'q2',
+    text: "Resultado único, claro e mensurável?",
+    onYes: 'q3',
+    onNo:  'q4',
+    explain: {
+      yes: "Um <strong>resultado único e mensurável</strong> reforça o padrão de projeto. Próximo passo: verificar as entregas.",
+      no:  "Sem um resultado único, pode ser um <strong>fluxo contínuo</strong>. Vamos avaliar responsabilidade/função."
+    }
+  },
+  q3: {
+    id:'q3',
+    text: "Vai gerar um conjunto de entregas específicas?",
+    onYes: 'res_projeto',
+    onNo:  'q4',
+    explain: {
+      yes: "Um conjunto de <strong>entregas específicas</strong> sustenta a classificação como <em>Projeto</em>.",
+      no:  "Sem entregas específicas, talvez não seja projeto. Vamos checar se é uma <em>responsabilidade contínua</em>."
+    }
+  },
+  q4: {
+    id:'q4',
+    text: "Está ligada a uma responsabilidade contínua ou função?",
+    onYes: 'res_area',
+    onNo:  'q5',
+    explain: {
+      yes: "Vinculada a uma <strong>responsabilidade contínua</strong> ⇒ classifica como <em>Área</em> (rotina).",
+      no:  "Sem vínculo de rotina. Antes de arquivar, vamos ver se isso será <em>descontinuado</em>."
+    }
+  },
+  q5: {
+    id:'q5',
+    text: "Área ou responsabilidade será descontinuada?",
+    onYes: 'res_arquivo',
+    onNo:  'res_semvinculo',
+    explain: {
+      yes: "Se será descontinuada, o destino natural é o <strong>Arquivo</strong> para referência.",
+      no:  "Não é rotina, não tem prazo/resultado claro e não será descontinuada ⇒ <strong>item sem vínculo</strong>. Reavaliar classificação ou estacionar na Inbox."
+    }
+  }
+};
+
+const results = {
+  res_projeto: {
+    title: (name) => `Encaminhar "${name}" para 01_Projetos ✅`,
+    css: "projeto",
+    summary: (name) => `"${name}" cumpre critérios de projeto: temporal, resultado único e entregas específicas.`,
+    guidance: (name) => [
+      `Estrutura fixa sugerida: <code>01_Admin / 02_Planejamento / 03_Execucao / 04_Entrega</code> (${name}).`,
+      "Exemplos: auditoria_srh, auditoria com escopo definido, evento com data final."
+    ]
+  },
+  res_area: {
+    title: (name) => `Encaminhar "${name}" para 02_Áreas ✅`,
+    css: "area",
+    summary: (name) => `"${name}" se liga a uma <em>responsabilidade contínua</em> ou função recorrente.`,
+    guidance: (name) => [
+      "Estrutura adaptada à rotina (ex.: <code>01_Processos / 02_Indicadores / 03_Cadastros / 04_Rituais</code>).",
+      "Exemplos: atividades mensal-semestral-anual, atendimento contínuo, governança recorrente."
+    ]
+  },
+  res_arquivo: {
+    title: (name) => `Mover "${name}" para 04_Arquivo 🗂️`,
+    css: "arquivo",
+    summary: (name) => `"${name}" será descontinuado e mantém valor apenas como referência histórica.`,
+    guidance: (name) => [
+      "Padronize nomes com data (<code>AAAA-MM-DD</code>) e palavras-chave.",
+      "Considere retenção e descarte periódico."
+    ]
+  },
+  res_semvinculo: {
+    title: (name) => `"${name}" sem vínculo claro — Estacionar & Reavaliar ⚠️`,
+    css: "semvinculo",
+    summary: (name) => `Não é rotina, não tem prazo/resultado claro e não será descontinuado.`,
+    guidance: (name) => [
+      "Estacione na sua <code>00_Inbox</code> e volte a classificar quando houver mais contexto.",
+      "Alternativas: transformar em projeto (definindo prazo/resultado) ou anexar a uma área existente."
+    ]
+  }
+};
+
+// Estado
+let current = flow.q1;
+let step = 1;
+const history = []; // {q, answer, explain}
+let itemName = "";
+
+// UI refs
+const elStep = document.getElementById('step');
+const elQuestion = document.getElementById('question');
+const elExplain = document.getElementById('explain');
+const elBtnYes = document.getElementById('btnYes');
+const elBtnNo = document.getElementById('btnNo');
+const elTrace = document.getElementById('log');
+const elResult = document.getElementById('resultBox');
+const elRestart = document.getElementById('restart');
+const elExport = document.getElementById('export');
+const elItemName = document.getElementById('itemName');
+const elStart = document.getElementById('startBtn');
+const elNameShown = document.getElementById('nameShown');
+const elNameShown2 = document.getElementById('nameShown2');
+
+function renderQuestion(){
+  elQuestion.innerHTML = current.text;
+  elStep.textContent = step;
+  elExplain.style.display = 'none';
+  elExplain.innerHTML = '';
+  elResult.classList.add('hidden');
+}
+
+function appendTrace(q, answer, why){
+  const li = document.createElement('li');
+  li.style.margin = '8px 0';
+  li.innerHTML = `<strong>${q}</strong> — resposta: <em>${answer}</em><br><span class="tiny">${why.replace(/<[^>]*>?/gm,'')}</span>`;
+  elTrace.appendChild(li);
+}
+
+function showExplain(html){
+  elExplain.innerHTML = html + `<div style="margin-top:16px"><button class="btn-rose" id="nextBtn">Continuar</button></div>`;
+  elExplain.style.display = 'block';
+  setTimeout(()=>{
+    const nb = document.getElementById('nextBtn');
+    if(nb){ nb.focus(); nb.addEventListener('click', goNext) }
+  },0);
+}
+
+function goNext(){
+  const last = history[history.length-1];
+  const nextId = last.answer === 'Sim' ? current.onYes : current.onNo;
+  if(nextId && nextId.startsWith('res_')){
+    showResult(nextId);
+  }else{
+    current = flow[nextId];
+    step += 1;
+    renderQuestion();
+  }
+}
+
+function showResult(resId){
+  const res = results[resId];
+  elResult.className = 'result ' + res.css;
+  elResult.innerHTML = `
+    <h2>${res.title(itemName)}</h2>
+    <p>${res.summary(itemName)}</p>
+    <ul style="margin-top:16px">
+      ${res.guidance(itemName).map(g=>`<li>${g}</li>`).join('')}
+    </ul>
+    <div style="margin-top:20px; display:flex; gap:12px; flex-wrap:wrap">
+      <span class="pill">Decisão concluída</span>
+      <button class="btn-outline" onclick="window.scrollTo({top:0, behavior:'smooth'})">Voltar ao topo</button>
+      <button class="btn-primary" onclick="restart()">Classificar outro item</button>
+    </div>
+  `;
+  elResult.classList.remove('hidden');
+  const li = document.createElement('li');
+  li.style.margin = '8px 0';
+  li.innerHTML = `<strong>Resultado</strong>: ${res.title(itemName)}`;
+  elTrace.appendChild(li);
+  elResult.scrollIntoView({behavior:'smooth', block:'center'});
+}
+
+function answer(choice){
+  const why = flow[current.id].explain[choice === 'yes' ? 'yes' : 'no'];
+  history.push({ q: current.text, answer: (choice==='yes' ? 'Sim' : 'Não'), why });
+  appendTrace(current.text, (choice==='yes' ? 'Sim' : 'Não'), why);
+  showExplain(why);
+}
+
+function restart(){
+  current = flow.q1; step = 1;
+  history.splice(0, history.length);
+  elTrace.innerHTML = '';
+  renderQuestion();
+  elResult.classList.add('hidden');
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function exportDecision(){
+  const payload = {
+    timestamp: new Date().toISOString(),
+    item: itemName || null,
+    path: history,
+    final: elResult.textContent ? elResult.textContent.trim() : null
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `decisao_${(itemName||'item').replace(/\s+/g,'_')}.json`;
+  document.body.appendChild(a); a.click();
+  setTimeout(()=>{ URL.revokeObjectURL(url); a.remove(); }, 0);
+}
+
+function initName(){
+  const val = elItemName.value.trim();
+  itemName = val || "Item sem nome";
+  elNameShown.textContent = itemName;
+  elNameShown2.textContent = itemName;
+  elItemName.value = itemName;
+}
+
+function ensureName(){
+  if (!elItemName.value.trim()){
+    elItemName.focus();
+    elItemName.placeholder = "⚠️ Digite o nome antes de iniciar";
+    elItemName.style.borderColor = "rgba(255,59,48,.5)";
+    return false;
+  }
+  return true;
+}
+
+// Bindings
+document.getElementById('btnYes').addEventListener('click', ()=>answer('yes'));
+document.getElementById('btnNo').addEventListener('click',  ()=>answer('no'));
+elRestart.addEventListener('click', restart);
+elExport.addEventListener('click', exportDecision);
+elStart.addEventListener('click', ()=>{ if(ensureName()){ initName(); restart(); }});
+elItemName.addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ elStart.click(); }});
+
+// Keyboard shortcuts
+document.addEventListener('keydown', (e)=>{
+  if(['y','s','Y','S'].includes(e.key)) document.getElementById('btnYes').click();
+  if(['n','N'].includes(e.key)) document.getElementById('btnNo').click();
+  if(e.key === 'Enter' && document.getElementById('explain').style.display === 'block'){
+    const nb = document.getElementById('nextBtn'); if(nb) nb.click();
+  }
+});
+
+// Init
+initName();
+renderQuestion();
+</script>
+</body>
+</html>

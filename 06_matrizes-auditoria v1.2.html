@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Matrizes de Auditoria — Planejamento, Achados e Relatório</title>
+<style>
+  :root{
+    --paper:#F2F4F3; --card:#FFFFFF; --ink:#1B2A2F; --muted:#5C6E72;
+    --line:#D8DFDE; --plan:#0E5A5A; --plan-soft:#E3EFEE;
+    --achado:#8C4A0E; --achado-soft:#F6EDE2;
+    --rel:#3E4C7A; --rel-soft:#E8EAF4;
+    --focus:#0E5A5A;
+    font-size:15px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);
+    font-family:ui-sans-serif,system-ui,"Segoe UI",Roboto,Arial,sans-serif;line-height:1.45}
+  header{background:var(--ink);color:#EDF2F1;padding:14px 22px}
+  header h1{margin:0;font-size:1.05rem;font-weight:600;letter-spacing:.02em}
+  header p{margin:2px 0 0;font-size:.78rem;color:#9FB4B6}
+
+  nav.fases{display:flex;gap:0;border-bottom:1px solid var(--line);background:var(--card)}
+  nav.fases button{
+    flex:1;padding:12px 8px;border:none;background:transparent;cursor:pointer;
+    font:inherit;font-size:.82rem;color:var(--muted);border-bottom:3px solid transparent}
+  nav.fases button strong{display:block;font-size:.95rem;color:var(--ink)}
+  nav.fases button.ativa[data-view="plan"]{border-bottom-color:var(--plan);background:var(--plan-soft)}
+  nav.fases button.ativa[data-view="achados"]{border-bottom-color:var(--achado);background:var(--achado-soft)}
+  nav.fases button.ativa[data-view="relatorio"]{border-bottom-color:var(--rel);background:var(--rel-soft)}
+  nav.fases button:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
+
+  main{max-width:1080px;margin:0 auto;padding:18px 22px 80px}
+
+  .arquivo{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:16px}
+  .arquivo .sep{flex:1}
+  button.acao{font:inherit;font-size:.82rem;padding:7px 14px;border-radius:6px;cursor:pointer;
+    border:1px solid var(--line);background:var(--card);color:var(--ink)}
+  button.acao.primaria{background:var(--ink);color:#fff;border-color:var(--ink)}
+  button.acao:hover{border-color:var(--muted)}
+  button.acao:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+  #status{font-size:.78rem;color:var(--muted)}
+  .view-relatorio #btnAdd{display:none}
+
+  fieldset.ident{border:1px solid var(--line);border-radius:8px;background:var(--card);
+    padding:12px 14px;margin:0 0 18px;display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  fieldset.ident legend{font-size:.78rem;font-weight:600;color:var(--muted);
+    text-transform:uppercase;letter-spacing:.06em;padding:0 6px}
+  .campo{display:flex;flex-direction:column;gap:3px}
+  .campo label{font-size:.72rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+  .campo input,.campo textarea,.campo select{
+    font:inherit;font-size:.86rem;padding:6px 8px;border:1px solid var(--line);
+    border-radius:5px;background:#FCFDFD;color:var(--ink);width:100%}
+  .campo textarea{resize:vertical;min-height:52px}
+  .campo input:focus,.campo textarea:focus,.campo select:focus{outline:2px solid var(--focus);outline-offset:0;border-color:var(--focus)}
+
+  .linha{background:var(--card);border:1px solid var(--line);border-radius:8px;margin-bottom:14px;overflow:hidden}
+  .linha>.topo{display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid var(--line)}
+  .view-plan .linha>.topo{background:var(--plan-soft)}
+  .view-achados .linha>.topo{background:var(--achado-soft)}
+  .tag{font-family:ui-monospace,Consolas,monospace;font-size:.78rem;font-weight:700;
+    padding:2px 8px;border-radius:4px;color:#fff}
+  .view-plan .tag{background:var(--plan)}
+  .view-achados .tag{background:var(--achado)}
+  .topo .resumo{flex:1;font-size:.85rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .topo button{border:none;background:none;cursor:pointer;font-size:.78rem;color:var(--muted);padding:4px 6px}
+  .topo button:hover{color:#A3341F}
+  .linha .grade{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:12px}
+  .campo.larga{grid-column:1/-1}
+  .campo.media{grid-column:span 2}
+
+  .vinculo{grid-column:1/-1;display:grid;grid-template-columns:1fr 2fr;gap:10px;
+    padding:10px;border:1px dashed var(--achado);border-radius:6px;background:#FDFAF6}
+  .vinculo .nota{grid-column:1/-1;font-size:.72rem;color:var(--muted);margin:-4px 0 0}
+
+  .vazio{border:1px dashed var(--line);border-radius:8px;padding:26px;text-align:center;
+    color:var(--muted);font-size:.86rem;background:var(--card)}
+
+  /* ---------- Relatório (documento) ---------- */
+  .doc{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:34px 40px;
+    max-width:900px;margin:0 auto}
+  .doc h2.titulo{margin:0 0 4px;font-size:1.35rem;letter-spacing:.01em;color:var(--rel)}
+  .doc .subtitulo{margin:0 0 22px;font-size:.8rem;color:var(--muted);
+    text-transform:uppercase;letter-spacing:.08em}
+  .doc table.identTab{width:100%;border-collapse:collapse;margin-bottom:26px;font-size:.86rem}
+  .doc table.identTab th{width:220px;text-align:left;padding:6px 10px;background:var(--rel-soft);
+    color:var(--rel);font-weight:600;border:1px solid var(--line);vertical-align:top}
+  .doc table.identTab td{padding:6px 10px;border:1px solid var(--line)}
+  .doc table.identTab td:empty::after{content:"—";color:var(--muted)}
+  .doc h3.secao{font-size:.85rem;text-transform:uppercase;letter-spacing:.08em;color:var(--rel);
+    border-bottom:2px solid var(--rel);padding-bottom:4px;margin:30px 0 14px}
+  .doc h4.questao{font-size:.95rem;margin:22px 0 8px;color:var(--ink)}
+  .doc h4.questao .qtag{font-family:ui-monospace,Consolas,monospace;font-size:.75rem;
+    background:var(--plan);color:#fff;border-radius:4px;padding:2px 7px;margin-right:8px}
+  .doc article.achadoDoc{border-left:3px solid var(--achado);padding:2px 0 2px 16px;margin:0 0 18px}
+  .doc article.achadoDoc h5{margin:0 0 8px;font-size:.92rem}
+  .doc article.achadoDoc h5 .atag{font-family:ui-monospace,Consolas,monospace;font-size:.72rem;
+    background:var(--achado);color:#fff;border-radius:4px;padding:2px 7px;margin-right:8px}
+  .doc dl{margin:0;display:grid;grid-template-columns:200px 1fr;gap:4px 14px;font-size:.85rem}
+  .doc dt{font-weight:600;color:var(--muted);text-transform:uppercase;font-size:.7rem;
+    letter-spacing:.05em;padding-top:2px}
+  .doc dd{margin:0;white-space:pre-wrap}
+  .doc .semDados{font-size:.85rem;color:var(--muted);font-style:italic}
+  .doc .campo.conclusao textarea{min-height:140px}
+  .doc .dica{font-size:.72rem;color:var(--muted);margin-top:6px}
+
+  .add{margin-top:4px}
+  @media (max-width:760px){
+    fieldset.ident,.linha .grade{grid-template-columns:1fr}
+    .campo.media{grid-column:auto}
+    nav.fases button span{display:none}
+    .doc{padding:20px 16px}
+    .doc dl{grid-template-columns:1fr}
+  }
+  @media print{
+    header,nav.fases,.arquivo,fieldset.ident{display:none}
+    body{background:#fff}
+    .doc{border:none;padding:0}
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>Matrizes de Auditoria</h1>
+  <p>Matriz de Planejamento → Matriz de Achados → Relatório · modelo CGU/ENAP · dados locais com importação e exportação em JSON</p>
+</header>
+
+<nav class="fases" role="tablist" aria-label="Navegação entre documentos da auditoria">
+  <button data-view="plan" class="ativa" role="tab" aria-selected="true">
+    <span>Fase de Planejamento</span><strong>Matriz de Planejamento</strong>
+  </button>
+  <button data-view="achados" role="tab" aria-selected="false">
+    <span>Fase de Execução</span><strong>Matriz de Achados</strong>
+  </button>
+  <button data-view="relatorio" role="tab" aria-selected="false">
+    <span>Comunicação de Resultados</span><strong>Relatório</strong>
+  </button>
+</nav>
+
+<main>
+  <div class="arquivo">
+    <button class="acao primaria" id="btnAdd">+ Nova linha</button>
+    <span class="sep"></span>
+    <span id="status"></span>
+    <button class="acao" id="btnImport">Importar JSON</button>
+    <button class="acao" id="btnExport">Exportar JSON</button>
+    <input type="file" id="fileInput" accept=".json,application/json" hidden>
+  </div>
+
+  <fieldset class="ident">
+    <legend>Identificação do trabalho</legend>
+    <div class="campo"><label for="id_unidade">Unidade</label><input id="id_unidade" data-ident="unidade"></div>
+    <div class="campo"><label for="id_objeto">Objeto examinado</label><input id="id_objeto" data-ident="objeto"></div>
+    <div class="campo"><label for="id_objetivo">Objetivo</label><input id="id_objetivo" data-ident="objetivo"></div>
+    <div class="campo"><label for="id_equipe">Equipe de auditoria</label><input id="id_equipe" data-ident="equipe"></div>
+    <div class="campo"><label for="id_supervisor">Supervisor</label><input id="id_supervisor" data-ident="supervisor"></div>
+    <div class="campo"><label for="id_os">Nº da Ordem de Serviço</label><input id="id_os" data-ident="ordemServico"></div>
+  </fieldset>
+
+  <section id="lista"></section>
+</main>
+
+<script>
+"use strict";
+/* ---------- Modelo de dados ---------- */
+const CAMPOS_PLAN = [
+  ["problema","Problema ou risco","larga","Descrição do que motivou a auditoria"],
+  ["questao","Questão de auditoria","media","Objetivo do trabalho em forma de pergunta"],
+  ["subquestoes","Subquestões",null,""],
+  ["criterio","Critério (o que deve ser)","larga",""],
+  ["infoRequeridas","Informações requeridas",null,""],
+  ["fontes","Fontes de informação",null,""],
+  ["procedimentos","Procedimentos de auditoria",null,""],
+  ["limitacoes","Possíveis limitações",null,""],
+  ["responsavel","Responsável pela execução",null,""],
+  ["periodo","Período",null,""],
+  ["possiveisAchados","O que a análise vai permitir dizer / possíveis achados","larga",""]
+];
+const CAMPOS_ACHADO = [
+  ["descricaoSumaria","Descrição sumária do achado","larga","Situação encontrada de forma resumida"],
+  ["condicao","Condição (o que é)","media",""],
+  ["evidencias","Evidências",null,""],
+  ["infoEvidencias","Informação extraída das evidências","larga",""],
+  ["causas","Causas",null,""],
+  ["efeitos","Efeitos",null,""],
+  ["boasPraticas","Boas práticas",null,""],
+  ["recomendacoes","Recomendações","media",""],
+  ["beneficios","Benefícios esperados",null,""]
+];
+/* Campos exibidos por achado na seção Desenvolvimento do relatório */
+const CAMPOS_DOC = [
+  ["criterio","Critério (o que deveria ser)"],
+  ["condicao","Condição (o que é)"],
+  ["evidencias","Evidências"],
+  ["infoEvidencias","Informação extraída das evidências"],
+  ["causas","Causas"],
+  ["efeitos","Efeitos"],
+  ["boasPraticas","Boas práticas"],
+  ["recomendacoes","Recomendações"],
+  ["beneficios","Benefícios esperados"]
+];
+const IDENT_ROTULOS = [
+  ["unidade","Unidade"],["objeto","Objeto examinado"],["objetivo","Objetivo"],
+  ["equipe","Equipe de auditoria"],["supervisor","Supervisor"],["ordemServico","Nº da Ordem de Serviço"]
+];
+
+const RELATORIO_VAZIO = { introducao:"", conclusao:"", manifestacao:"", analiseEquipe:"" };
+let dados = {
+  versao: "1.2",
+  tipo: "matrizes-auditoria-cgu",
+  identificacao: { unidade:"", objeto:"", objetivo:"", equipe:"", supervisor:"", ordemServico:"" },
+  planejamento: [],
+  achados: [],
+  relatorio: { ...RELATORIO_VAZIO }
+};
+let viewAtual = "plan";
+
+const $ = s => document.querySelector(s);
+const lista = $("#lista");
+
+/* ---------- Renderização ---------- */
+function render(){
+  document.body.className = "view-" + viewAtual;
+  document.querySelectorAll("nav.fases button").forEach(b=>{
+    const on = b.dataset.view===viewAtual;
+    b.classList.toggle("ativa",on); b.setAttribute("aria-selected",on);
+  });
+  lista.innerHTML = "";
+  if(viewAtual==="relatorio"){ lista.appendChild(docRelatorio()); return; }
+  const arr = viewAtual==="plan" ? dados.planejamento : dados.achados;
+  if(!arr.length){
+    const v = document.createElement("div");
+    v.className="vazio";
+    v.textContent = viewAtual==="plan"
+      ? "Nenhuma questão de auditoria registrada. Comece pelo planejamento: cada linha corresponde a uma questão."
+      : "Nenhum achado registrado. Cada achado deve estar vinculado a uma questão da Matriz de Planejamento.";
+    lista.appendChild(v);
+  }
+  arr.forEach((item,i)=> lista.appendChild(viewAtual==="plan" ? cardPlan(item,i) : cardAchado(item,i)));
+}
+
+function campoHtml(def, valor, onInput){
+  const [chave,rotulo,tamanho,placeholder] = def;
+  const wrap = document.createElement("div");
+  wrap.className = "campo" + (tamanho ? " "+tamanho : "");
+  const lab = document.createElement("label"); lab.textContent = rotulo;
+  const ta = document.createElement("textarea");
+  ta.value = valor||""; ta.placeholder = placeholder||""; ta.rows = 2;
+  ta.addEventListener("input", ()=> onInput(chave, ta.value));
+  wrap.append(lab, ta);
+  return wrap;
+}
+
+function topo(tag, resumo, onDel){
+  const t = document.createElement("div"); t.className="topo";
+  const sp = document.createElement("span"); sp.className="tag"; sp.textContent = tag;
+  const rs = document.createElement("span"); rs.className="resumo"; rs.textContent = resumo||"";
+  const del = document.createElement("button"); del.textContent="✕ excluir"; del.title="Excluir linha";
+  del.addEventListener("click", onDel);
+  t.append(sp, rs, del);
+  return t;
+}
+
+function cardPlan(item, i){
+  const c = document.createElement("article"); c.className="linha";
+  c.appendChild(topo("Q"+(i+1), item.questao, ()=>{
+    if(confirm("Excluir a questão Q"+(i+1)+"? Achados vinculados perderão o vínculo.")){
+      dados.planejamento.splice(i,1);
+      dados.achados.forEach(a=>{ if(a.questaoRef===i) a.questaoRef=null; else if(a.questaoRef>i) a.questaoRef--; });
+      render(); marcarAlterado();
+    }
+  }));
+  const g = document.createElement("div"); g.className="grade";
+  CAMPOS_PLAN.forEach(def=> g.appendChild(campoHtml(def, item[def[0]], (k,v)=>{
+    item[k]=v; if(k==="questao") c.querySelector(".resumo").textContent=v; marcarAlterado();
+  })));
+  c.appendChild(g);
+  return c;
+}
+
+function cardAchado(item, i){
+  const c = document.createElement("article"); c.className="linha";
+  c.appendChild(topo("A"+(i+1), item.descricaoSumaria, ()=>{
+    if(confirm("Excluir o achado A"+(i+1)+"?")){ dados.achados.splice(i,1); render(); marcarAlterado(); }
+  }));
+  const g = document.createElement("div"); g.className="grade";
+
+  const v = document.createElement("div"); v.className="vinculo";
+  const selWrap = document.createElement("div"); selWrap.className="campo";
+  const selLab = document.createElement("label"); selLab.textContent="Questão de auditoria (da Matriz de Planejamento)";
+  const sel = document.createElement("select");
+  sel.innerHTML = '<option value="">— sem vínculo —</option>' +
+    dados.planejamento.map((q,qi)=>`<option value="${qi}">Q${qi+1} · ${escapeHtml((q.questao||"(sem texto)").slice(0,80))}</option>`).join("");
+  sel.value = (item.questaoRef ?? "") === "" || item.questaoRef===null ? "" : String(item.questaoRef);
+  const critWrap = document.createElement("div"); critWrap.className="campo";
+  const critLab = document.createElement("label"); critLab.textContent="Critério (o que deveria ser)";
+  const crit = document.createElement("textarea"); crit.rows=2; crit.value=item.criterio||"";
+  crit.addEventListener("input",()=>{ item.criterio=crit.value; marcarAlterado(); });
+  sel.addEventListener("change",()=>{
+    item.questaoRef = sel.value==="" ? null : Number(sel.value);
+    if(item.questaoRef!==null){
+      const q = dados.planejamento[item.questaoRef];
+      if(q && q.criterio && !item.criterio){ item.criterio=q.criterio; crit.value=q.criterio; }
+      item.subquestoes = item.subquestoes || (q ? q.subquestoes : "");
+    }
+    marcarAlterado();
+  });
+  const nota = document.createElement("p"); nota.className="nota";
+  nota.textContent = "Questões, subquestões e critério são os campos comuns às duas matrizes — o vínculo garante a rastreabilidade planejamento → achado → relatório. O critério é herdado da questão, mas pode ser ajustado.";
+  selWrap.append(selLab, sel); critWrap.append(critLab, crit);
+  v.append(selWrap, critWrap, nota);
+  g.appendChild(v);
+
+  g.appendChild(campoHtml(["subquestoes","Subquestões",null,""], item.subquestoes, (k,val)=>{ item[k]=val; marcarAlterado(); }));
+  CAMPOS_ACHADO.forEach(def=> g.appendChild(campoHtml(def, item[def[0]], (k,val)=>{
+    item[k]=val; if(k==="descricaoSumaria") c.querySelector(".resumo").textContent=val; marcarAlterado();
+  })));
+  c.appendChild(g);
+  return c;
+}
+
+/* ---------- Aba Relatório ---------- */
+function docRelatorio(){
+  const doc = document.createElement("div"); doc.className="doc";
+
+  const h2 = document.createElement("h2"); h2.className="titulo";
+  h2.textContent = "Relatório de Auditoria";
+  const sub = document.createElement("p"); sub.className="subtitulo";
+  sub.textContent = dados.identificacao.objeto ? "Objeto: "+dados.identificacao.objeto : "Comunicação de resultados";
+  doc.append(h2, sub);
+
+  /* 1. Identificação do trabalho */
+  doc.appendChild(secao("1. Identificação do trabalho"));
+  const tab = document.createElement("table"); tab.className="identTab";
+  IDENT_ROTULOS.forEach(([k,rot])=>{
+    const tr = document.createElement("tr");
+    const th = document.createElement("th"); th.textContent = rot;
+    const td = document.createElement("td"); td.textContent = dados.identificacao[k]||"";
+    tr.append(th,td); tab.appendChild(tr);
+  });
+  doc.appendChild(tab);
+  const dicaId = document.createElement("p"); dicaId.className="dica";
+  dicaId.textContent = "Os dados acima são preenchidos no bloco \"Identificação do trabalho\" (comum às três abas) e refletidos aqui automaticamente.";
+  doc.appendChild(dicaId);
+
+  /* 2. Introdução — editável, com rascunho derivável do planejamento */
+  doc.appendChild(secao("2. Introdução"));
+  doc.appendChild(secaoEditavel("introducao", "Introdução",
+    "Contexto do objeto auditado, problema ou risco que motivou o trabalho, escopo e finalidade da auditoria.", 120));
+  const btnRascunho = document.createElement("button");
+  btnRascunho.className = "acao"; btnRascunho.type = "button";
+  btnRascunho.textContent = "Gerar rascunho a partir da Matriz de Planejamento";
+  btnRascunho.addEventListener("click", ()=>{
+    const rascunho = rascunhoIntroducao();
+    if(!rascunho){ status_("Preencha identificação e/ou Matriz de Planejamento para gerar o rascunho."); return; }
+    if(dados.relatorio.introducao && !confirm("A introdução já tem texto. Substituir pelo rascunho gerado?")) return;
+    dados.relatorio.introducao = rascunho;
+    render(); marcarAlterado();
+  });
+  const dicaIntro = document.createElement("p"); dicaIntro.className="dica";
+  dicaIntro.textContent = "O rascunho é montado com o objeto/objetivo da identificação, os problemas/riscos e as questões da Matriz de Planejamento — revise e ajuste o texto.";
+  doc.append(btnRascunho, dicaIntro);
+
+  /* 3. Desenvolvimento — achados agregados dinamicamente */
+  doc.appendChild(secao("3. Desenvolvimento"));
+  if(!dados.achados.length){
+    const p = document.createElement("p"); p.className="semDados";
+    p.textContent = "Nenhum achado registrado na Matriz de Achados. Os achados preenchidos na fase de execução aparecerão aqui automaticamente, agrupados por questão de auditoria.";
+    doc.appendChild(p);
+  } else {
+    /* agrupar por questão vinculada */
+    const grupos = new Map();
+    dados.achados.forEach((a,i)=>{
+      const chave = (a.questaoRef===null || a.questaoRef===undefined || !dados.planejamento[a.questaoRef]) ? -1 : a.questaoRef;
+      if(!grupos.has(chave)) grupos.set(chave,[]);
+      grupos.get(chave).push([a,i]);
+    });
+    [...grupos.keys()].sort((x,y)=> (x===-1)-(y===-1) || x-y).forEach(chave=>{
+      const h4 = document.createElement("h4"); h4.className="questao";
+      if(chave===-1){
+        h4.textContent = "Achados sem vínculo com questão de auditoria";
+      } else {
+        const qtag = document.createElement("span"); qtag.className="qtag"; qtag.textContent="Q"+(chave+1);
+        h4.appendChild(qtag);
+        h4.appendChild(document.createTextNode(dados.planejamento[chave].questao || "(questão sem texto)"));
+      }
+      doc.appendChild(h4);
+      grupos.get(chave).forEach(([a,i])=> doc.appendChild(achadoDoc(a,i)));
+    });
+  }
+
+  /* 4. Conclusão */
+  doc.appendChild(secao("4. Conclusão"));
+  doc.appendChild(secaoEditavel("conclusao", "Conclusão do relatório",
+    "Síntese da avaliação final da auditoria: em que medida as questões de auditoria foram respondidas, os principais achados e o efeito esperado das recomendações.", 140));
+
+  /* 5. Manifestação da unidade auditada */
+  doc.appendChild(secao("5. Manifestação da unidade auditada"));
+  doc.appendChild(secaoEditavel("manifestacao", "Manifestação da unidade auditada",
+    "Registro das explicações, justificativas, concordâncias, discordâncias ou informações complementares apresentadas pela unidade auditada sobre os achados e recomendações.", 120));
+
+  /* 6. Análise da equipe de auditoria */
+  doc.appendChild(secao("6. Análise da equipe de auditoria"));
+  doc.appendChild(secaoEditavel("analiseEquipe", "Análise da equipe de auditoria",
+    "Posicionamento da equipe sobre a manifestação recebida: achados mantidos, redações ajustadas, conclusões revisadas ou recomendações reforçadas.", 120));
+
+  const dica = document.createElement("p"); dica.className="dica";
+  dica.textContent = "Todas as seções do relatório são gravadas no mesmo arquivo JSON das matrizes (chave \"relatorio\").";
+  doc.appendChild(dica);
+
+  return doc;
+}
+
+/* Seção editável do relatório, persistida em dados.relatorio[chave] */
+function secaoEditavel(chave, rotulo, placeholder, alturaMin){
+  const cw = document.createElement("div"); cw.className="campo conclusao";
+  const cl = document.createElement("label"); cl.setAttribute("for","rel_"+chave);
+  cl.textContent = rotulo;
+  const ta = document.createElement("textarea"); ta.id="rel_"+chave;
+  ta.placeholder = placeholder; ta.style.minHeight = (alturaMin||120)+"px";
+  ta.value = dados.relatorio[chave] || "";
+  ta.addEventListener("input", ()=>{ dados.relatorio[chave] = ta.value; marcarAlterado(); });
+  cw.append(cl, ta);
+  return cw;
+}
+
+/* Rascunho da introdução derivado da identificação e da Matriz de Planejamento */
+function rascunhoIntroducao(){
+  const id = dados.identificacao;
+  const partes = [];
+  if(id.objeto || id.unidade){
+    partes.push("O presente relatório apresenta os resultados da auditoria realizada"
+      + (id.objeto ? " sobre " + id.objeto : "")
+      + (id.unidade ? ", no âmbito da unidade " + id.unidade : "") + ".");
+  }
+  if(id.objetivo) partes.push("O objetivo do trabalho foi " + minusculaInicial(id.objetivo) + ".");
+  const problemas = dados.planejamento.map(q=>(q.problema||"").trim()).filter(Boolean);
+  if(problemas.length){
+    partes.push("A auditoria foi motivada pelo(s) seguinte(s) problema(s) ou risco(s): "
+      + problemas.join("; ") + ".");
+  }
+  const questoes = dados.planejamento.map((q,i)=> q.questao ? "Q"+(i+1)+" — "+q.questao.trim() : null).filter(Boolean);
+  if(questoes.length){
+    partes.push("O escopo do trabalho foi delimitado pelas seguintes questões de auditoria:\n"
+      + questoes.map(q=>"• "+q).join("\n"));
+  }
+  return partes.join("\n\n");
+}
+function minusculaInicial(s){ s=s.trim(); return s ? s[0].toLowerCase()+s.slice(1) : s; }
+
+function secao(txt){
+  const h3 = document.createElement("h3"); h3.className="secao"; h3.textContent = txt;
+  return h3;
+}
+
+function achadoDoc(a, i){
+  const art = document.createElement("article"); art.className="achadoDoc";
+  const h5 = document.createElement("h5");
+  const atag = document.createElement("span"); atag.className="atag"; atag.textContent="A"+(i+1);
+  h5.appendChild(atag);
+  h5.appendChild(document.createTextNode(a.descricaoSumaria || "(achado sem descrição sumária)"));
+  art.appendChild(h5);
+  const dl = document.createElement("dl");
+  let temCampo = false;
+  const linhas = [["subquestoes","Subquestões"], ...CAMPOS_DOC];
+  linhas.forEach(([k,rot])=>{
+    const val = (a[k]||"").trim();
+    if(!val) return;
+    temCampo = true;
+    const dt = document.createElement("dt"); dt.textContent = rot;
+    const dd = document.createElement("dd"); dd.textContent = val;
+    dl.append(dt,dd);
+  });
+  if(temCampo) art.appendChild(dl);
+  else {
+    const p = document.createElement("p"); p.className="semDados";
+    p.textContent = "Campos ainda não preenchidos na Matriz de Achados.";
+    art.appendChild(p);
+  }
+  return art;
+}
+
+function escapeHtml(s){ return s.replace(/[&<>"']/g, m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m])); }
+
+/* ---------- Ações ---------- */
+$("#btnAdd").addEventListener("click", ()=>{
+  if(viewAtual==="relatorio") return;
+  if(viewAtual==="plan"){
+    dados.planejamento.push(Object.fromEntries(CAMPOS_PLAN.map(d=>[d[0],""])));
+  } else {
+    const a = Object.fromEntries(CAMPOS_ACHADO.map(d=>[d[0],""]));
+    a.questaoRef = null; a.criterio=""; a.subquestoes="";
+    dados.achados.push(a);
+  }
+  render(); marcarAlterado();
+  lista.lastElementChild.querySelector("textarea,select")?.focus();
+});
+
+document.querySelectorAll("nav.fases button").forEach(b=>
+  b.addEventListener("click", ()=>{ viewAtual=b.dataset.view; render(); }));
+
+document.querySelectorAll("[data-ident]").forEach(inp=>
+  inp.addEventListener("input", ()=>{
+    dados.identificacao[inp.dataset.ident]=inp.value;
+    marcarAlterado();
+    if(viewAtual==="relatorio") render();
+  }));
+
+/* Exportar */
+$("#btnExport").addEventListener("click", ()=>{
+  const blob = new Blob([JSON.stringify(dados,null,2)], {type:"application/json"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  const nome = (dados.identificacao.objeto||"matrizes-auditoria").toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")||"matrizes-auditoria";
+  a.download = nome + ".json";
+  a.click(); URL.revokeObjectURL(a.href);
+  status_("Arquivo JSON exportado.");
+});
+
+/* Importar */
+$("#btnImport").addEventListener("click", ()=> $("#fileInput").click());
+$("#fileInput").addEventListener("change", e=>{
+  const f = e.target.files[0]; if(!f) return;
+  const r = new FileReader();
+  r.onload = ()=>{
+    try{
+      const j = JSON.parse(r.result);
+      if(!j || typeof j!=="object" || !Array.isArray(j.planejamento) || !Array.isArray(j.achados))
+        throw new Error("Estrutura inesperada: o arquivo precisa conter 'planejamento' e 'achados'.");
+      dados = Object.assign({versao:"1.2",tipo:"matrizes-auditoria-cgu",
+        identificacao:{unidade:"",objeto:"",objetivo:"",equipe:"",supervisor:"",ordemServico:""}}, j);
+      dados.versao = "1.2";
+      dados.relatorio = Object.assign({...RELATORIO_VAZIO}, j.relatorio||{});
+      document.querySelectorAll("[data-ident]").forEach(inp=> inp.value = dados.identificacao[inp.dataset.ident]||"");
+      render(); status_("Arquivo importado: "+f.name);
+    }catch(err){ status_("Falha ao importar: "+err.message); }
+    e.target.value="";
+  };
+  r.readAsText(f);
+});
+
+let t=null;
+function marcarAlterado(){ status_("Alterações não exportadas"); }
+function status_(msg){ clearTimeout(t); $("#status").textContent=msg; t=setTimeout(()=>{$("#status").textContent="";},6000); }
+
+render();
+</script>
+</body>
+</html>

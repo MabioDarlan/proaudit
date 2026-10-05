@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estimativa de Estudos - I'Mabio Training</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+            max-width: 600px;
+            width: 100%;
+            animation: slideIn 0.6s ease-out;
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            color: #4a5568;
+            font-size: 2.5em;
+            font-weight: 700;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .header p {
+            color: #718096;
+            font-size: 1.1em;
+        }
+        
+        .form-group {
+            margin-bottom: 25px;
+        }
+        
+        label {
+            display: block;
+            color: #4a5568;
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 1.1em;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background: white;
+        }
+        
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            transform: translateY(-2px);
+        }
+        
+        .range-container {
+            position: relative;
+            margin-top: 10px;
+        }
+        
+        input[type="range"] {
+            width: 100%;
+            height: 8px;
+            background: #e2e8f0;
+            border-radius: 4px;
+            outline: none;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+        
+        .range-value {
+            position: absolute;
+            top: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #4a5568;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        
+        .range-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: #718096;
+            margin-top: 5px;
+        }
+        
+        .calculate-btn {
+            width: 100%;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 18px;
+            border-radius: 12px;
+            font-size: 1.2em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .calculate-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        }
+        
+        .calculate-btn:active {
+            transform: translateY(-1px);
+        }
+        
+        .results {
+            margin-top: 30px;
+            padding: 25px;
+            background: linear-gradient(135deg, #f7fafc, #edf2f7);
+            border-radius: 15px;
+            border-left: 5px solid #667eea;
+            display: none;
+            animation: fadeInUp 0.5s ease-out;
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .results h3 {
+            color: #4a5568;
+            margin-bottom: 15px;
+            font-size: 1.4em;
+        }
+        
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .result-item:last-child {
+            border-bottom: none;
+        }
+        
+        .result-label {
+            color: #718096;
+            font-weight: 500;
+        }
+        
+        .result-value {
+            color: #4a5568;
+            font-weight: 700;
+            font-size: 1.1em;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #e2e8f0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 15px;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            width: 0%;
+            transition: width 1s ease-out;
+            border-radius: 10px;
+        }
+        
+        .tips {
+            margin-top: 20px;
+            padding: 20px;
+            background: #fef5e7;
+            border-radius: 12px;
+            border-left: 4px solid #f6ad55;
+        }
+        
+        .tips h4 {
+            color: #c05621;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+        
+        .tips p {
+            color: #744210;
+            line-height: 1.5;
+        }
+        
+        .reset-btn {
+            width: 100%;
+            background: #e2e8f0;
+            color: #4a5568;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 500;
+            cursor: pointer;
+            margin-top: 15px;
+            transition: all 0.3s ease;
+        }
+        
+        .reset-btn:hover {
+            background: #cbd5e0;
+            transform: translateY(-2px);
+        }
+        
+        .error {
+            color: #e53e3e;
+            font-size: 14px;
+            margin-top: 5px;
+            display: none;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 25px;
+                margin: 10px;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+		<label>📖 I'Mabio Training 2025 ⏱️</label>
+            <h1>📚 Estimativa de Estudos</h1>
+            <p>Calcule quanto tempo você precisará para dominar sua matéria</p>
+        </div>
+        
+        <form id="studyForm">
+            <div class="form-group">
+                <label for="nome">👤 Seu Nome:</label>
+                <input type="text" id="nome" placeholder="Digite seu nome" required>
+                <div class="error" id="nomeError">Por favor, digite seu nome</div>
+            </div>
+            
+            <div class="form-group">
+                <label for="materia">📖 Matéria de Estudo:</label>
+                <input type="text" id="materia" placeholder="Ex: Matemática, História, Programação..." required>
+                <div class="error" id="materiaError">Por favor, informe a matéria</div>
+            </div>
+            
+            <div class="form-group">
+                <label for="tipoEstudo">📋 Tipo de Material:</label>
+                <select id="tipoEstudo" required>
+                    <option value="">Selecione o tipo</option>
+                    <option value="paginas">📄 Páginas de Livro/PDF</option>
+                    <option value="videoaulas">🎥 Vídeo-aulas</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="quantidade">🔢 Quantidade Total:</label>
+                <input type="number" id="quantidade" placeholder="Ex: 300 páginas ou 50 vídeos" min="1" required>
+                <div class="error" id="quantidadeError">Digite uma quantidade válida</div>
+            </div>
+            
+            <div class="form-group">
+                <label for="tempoUnidade">⏱️ Tempo por Unidade (minutos):</label>
+                <div class="range-container">
+                    <input type="range" id="tempoUnidade" min="1" max="120" value="15">
+                    <div class="range-value" id="tempoUnidadeValue">15 min</div>
+                </div>
+                <div class="range-labels">
+                    <span>1 min</span>
+                    <span>120 min</span>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="horasDiarias">🕐 Horas de Estudo por Dia:</label>
+                <div class="range-container">
+                    <input type="range" id="horasDiarias" min="0.5" max="12" step="0.5" value="2">
+                    <div class="range-value" id="horasDiariasValue">2.0 horas</div>
+                </div>
+                <div class="range-labels">
+                    <span>30 min</span>
+                    <span>12 horas</span>
+                </div>
+            </div>
+            
+            <button type="submit" class="calculate-btn">
+                🚀 Calcular Estimativa
+            </button>
+        </form>
+        
+        <div class="results" id="results">
+            <h3>📊 Sua Análise de Estudo</h3>
+            <div class="result-item">
+                <span class="result-label">Tempo Total Necessário:</span>
+                <span class="result-value" id="tempoTotal">-</span>
+            </div>
+            <div class="result-item">
+                <span class="result-label">Dias para Conclusão:</span>
+                <span class="result-value" id="diasEstudo">-</span>
+            </div>
+            <div class="result-item">
+                <span class="result-label">Data Prevista de Conclusão:</span>
+                <span class="result-value" id="dataConclusao">-</span>
+            </div>
+            
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            
+            <div class="tips" id="tips">
+                <h4>💡 Dica Personalizada</h4>
+                <p id="tipText">-</p>
+            </div>
+            
+            <button type="button" class="reset-btn" onclick="resetForm()">
+                🔄 Nova Estimativa
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Elementos do DOM
+        const form = document.getElementById('studyForm');
+        const results = document.getElementById('results');
+        const tempoUnidadeSlider = document.getElementById('tempoUnidade');
+        const horasDiariasSlider = document.getElementById('horasDiarias');
+        const tempoUnidadeValue = document.getElementById('tempoUnidadeValue');
+        const horasDiariasValue = document.getElementById('horasDiariasValue');
+
+        // Atualizar valores dos sliders em tempo real
+        tempoUnidadeSlider.addEventListener('input', function() {
+            tempoUnidadeValue.textContent = this.value + ' min';
+            updateRangeValuePosition(this, tempoUnidadeValue);
+        });
+
+        horasDiariasSlider.addEventListener('input', function() {
+            const horas = parseFloat(this.value);
+            const horasTexto = horas % 1 === 0 ? horas.toFixed(0) : horas.toFixed(1);
+            horasDiariasValue.textContent = horasTexto + ' horas';
+            updateRangeValuePosition(this, horasDiariasValue);
+        });
+
+        // Posicionar valor do slider
+        function updateRangeValuePosition(slider, valueElement) {
+            const percent = (slider.value - slider.min) / (slider.max - slider.min);
+            const offset = percent * (slider.offsetWidth - 24);
+            valueElement.style.left = `${offset + 12}px`;
+        }
+
+        // Inicializar posições dos valores
+        window.addEventListener('load', function() {
+            updateRangeValuePosition(tempoUnidadeSlider, tempoUnidadeValue);
+            updateRangeValuePosition(horasDiariasSlider, horasDiariasValue);
+        });
+
+        // Validação em tempo real
+        function validateField(field, errorElement, message) {
+            if (!field.value.trim()) {
+                errorElement.textContent = message;
+                errorElement.style.display = 'block';
+                field.style.borderColor = '#e53e3e';
+                return false;
+            } else {
+                errorElement.style.display = 'none';
+                field.style.borderColor = '#e2e8f0';
+                return true;
+            }
+        }
+
+        // Event listeners para validação
+        document.getElementById('nome').addEventListener('blur', function() {
+            validateField(this, document.getElementById('nomeError'), 'Por favor, digite seu nome');
+        });
+
+        document.getElementById('materia').addEventListener('blur', function() {
+            validateField(this, document.getElementById('materiaError'), 'Por favor, informe a matéria');
+        });
+
+        document.getElementById('quantidade').addEventListener('blur', function() {
+            const isValid = this.value && parseInt(this.value) > 0;
+            if (!isValid) {
+                document.getElementById('quantidadeError').style.display = 'block';
+                this.style.borderColor = '#e53e3e';
+            } else {
+                document.getElementById('quantidadeError').style.display = 'none';
+                this.style.borderColor = '#e2e8f0';
+            }
+        });
+
+        // Submissão do formulário
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Obter valores
+            const nome = document.getElementById('nome').value.trim();
+            const materia = document.getElementById('materia').value.trim();
+            const tipoEstudo = document.getElementById('tipoEstudo').value;
+            const quantidade = parseInt(document.getElementById('quantidade').value);
+            const tempoUnidade = parseInt(document.getElementById('tempoUnidade').value);
+            const horasDiarias = parseFloat(document.getElementById('horasDiarias').value);
+            
+            // Validar campos
+            let isValid = true;
+            
+            if (!nome) {
+                validateField(document.getElementById('nome'), document.getElementById('nomeError'), 'Por favor, digite seu nome');
+                isValid = false;
+            }
+            
+            if (!materia) {
+                validateField(document.getElementById('materia'), document.getElementById('materiaError'), 'Por favor, informe a matéria');
+                isValid = false;
+            }
+            
+            if (!tipoEstudo) {
+                document.getElementById('tipoEstudo').style.borderColor = '#e53e3e';
+                alert('Por favor, selecione o tipo de material de estudo.');
+                isValid = false;
+            } else {
+                document.getElementById('tipoEstudo').style.borderColor = '#e2e8f0';
+            }
+            
+            if (!quantidade || quantidade <= 0) {
+                document.getElementById('quantidadeError').style.display = 'block';
+                document.getElementById('quantidade').style.borderColor = '#e53e3e';
+                isValid = false;
+            }
+            
+            if (!isValid) return;
+            
+            // Calcular estimativa
+            calcularEstimativa(nome, materia, tipoEstudo, quantidade, tempoUnidade, horasDiarias);
+        });
+
+        function calcularEstimativa(nome, materia, tipo, quantidade, tempoUnidade, horasDiarias) {
+            console.log('Calculando:', { nome, materia, tipo, quantidade, tempoUnidade, horasDiarias });
+            
+            // Validar se todos os valores são válidos
+            if (!quantidade || quantidade <= 0 || !tempoUnidade || !horasDiarias) {
+                alert('Por favor, preencha todos os campos corretamente.');
+                return;
+            }
+            
+            // Cálculos (seguindo a lógica do código Java original)
+            const totalMinutos = quantidade * tempoUnidade;
+            const totalHoras = totalMinutos / 60;
+            const minutosDiarios = horasDiarias * 60;
+            const diasEstudo = totalMinutos / minutosDiarios;
+            
+            console.log('Resultados:', { totalMinutos, totalHoras, diasEstudo });
+            
+            // Data de conclusão
+            const hoje = new Date();
+            const dataConclusao = new Date(hoje.getTime() + (Math.ceil(diasEstudo) * 24 * 60 * 60 * 1000));
+            
+            // Exibir resultados
+            document.getElementById('tempoTotal').textContent = 
+                `${totalHoras.toFixed(1)} horas (${totalMinutos.toFixed(0)} minutos)`;
+            
+            document.getElementById('diasEstudo').textContent = 
+                `${diasEstudo.toFixed(1)} dias`;
+            
+            document.getElementById('dataConclusao').textContent = 
+                dataConclusao.toLocaleDateString('pt-BR', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
+            
+            // Gerar dica personalizada
+            const dica = gerarDica(diasEstudo, horasDiarias, tipo, nome, materia);
+            document.getElementById('tipText').textContent = dica;
+            
+            // Mostrar resultados com animação
+            results.style.display = 'block';
+            
+            // Animar barra de progresso baseado na intensidade do estudo
+            setTimeout(() => {
+                const progressPercent = Math.min((horasDiarias / 8) * 100, 100);
+                document.getElementById('progressFill').style.width = progressPercent + '%';
+            }, 300);
+            
+            // Scroll suave para os resultados
+            setTimeout(() => {
+                results.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }, 100);
+        }
+
+        function gerarDica(dias, horasDiarias, tipo, nome, materia) {
+            const tipoTexto = tipo === 'paginas' ? 'páginas' : 'vídeo-aulas';
+            
+            if (dias <= 7) {
+                return `Parabéns ${nome}! Você concluirá ${materia} (${tipoTexto}) em apenas uma semana. Mantenha a disciplina e foque na qualidade do aprendizado.`;
+            } else if (dias <= 30) {
+                return `Ótimo ritmo, ${nome}! Um mês é um prazo realista para ${materia}. Considere fazer pausas regulares e revisões semanais para melhor fixação.`;
+            } else if (dias <= 90) {
+                return `Planejamento de longo prazo para ${materia} - excelente, ${nome}! Divida em etapas menores e comemore cada marco conquistado.`;
+            } else {
+                return `${nome}, considere aumentar as horas diárias ou dividir ${materia} em módulos menores. Estudos muito longos podem afetar a motivação.`;
+            }
+        }
+
+        function resetForm() {
+            form.reset();
+            results.style.display = 'none';
+            
+            // Resetar valores dos sliders
+            tempoUnidadeValue.textContent = '15 min';
+            horasDiariasValue.textContent = '2.0 horas';
+            
+            // Resetar estilos de erro
+            const inputs = form.querySelectorAll('input, select');
+            inputs.forEach(input => {
+                input.style.borderColor = '#e2e8f0';
+            });
+            
+            const errors = form.querySelectorAll('.error');
+            errors.forEach(error => {
+                error.style.display = 'none';
+            });
+            
+            // Scroll para o topo
+            document.querySelector('.header').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Formatação automática de campos
+        document.getElementById('nome').addEventListener('input', function() {
+            this.value = this.value.replace(/[^a-záàâãéèêíïóôõöúçñ\s]/gi, '');
+        });
+
+        document.getElementById('materia').addEventListener('input', function() {
+            this.value = this.value.replace(/[^a-záàâãéèêíïóôõöúçñ0-9\s]/gi, '');
+        });
+    </script>
+</body>
+</html>

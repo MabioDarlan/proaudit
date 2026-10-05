@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Mábio's Bow Tie — Opção A</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f5f5f5;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin: 0;
+      padding: 0;
+    }
+
+    h1 {
+      margin: 10px 0 0 0;
+      font-size: 35px;
+    }
+
+    .subtitle {
+      margin: 0 0 8px 0;
+      color: #607D8B;
+      font-size: 13px;
+      font-weight: bold;
+    }
+
+    .board {
+      display: flex;
+      justify-content: space-between;
+      width: 96%;
+      margin: 10px;
+    }
+
+    .column {
+      background-color: #e0e0e0;
+      border-radius: 8px;
+      padding: 10px;
+      width: 19%;
+      min-height: 300px;
+    }
+
+    .column h2 {
+      text-align: center;
+      font-size: 17px;
+    }
+
+    .column h2 .icon {
+      margin-right: 6px;
+    }
+
+    .task {
+      border-radius: 4px;
+      padding: 8px;
+      margin: 8px 0;
+      cursor: grab;
+      color: white;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .task span {
+      word-break: break-word;
+      margin-right: 6px;
+      font-size: 14px;
+    }
+
+    .task input {
+      width: 100%;
+      border: none;
+      background: transparent;
+      color: white;
+      font-size: 14px;
+    }
+
+    /* Cores por coluna (semântica do método, no lugar de estados do kanban) */
+    .task.azul      { background-color: #1565C0; } /* Causas */
+    .task.verde     { background-color: #2E7D32; } /* Controles Preventivos */
+    .task.vermelho  { background-color: crimson; } /* Evento */
+    .task.teal      { background-color: #00695C; } /* Controles de Mitigação */
+    .task.laranja   { background-color: #E65100; } /* Consequências */
+
+    .delete-btn {
+      background: transparent;
+      border: none;
+      color: white;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .add-task {
+      margin-top: 10px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .add-task input {
+      margin-bottom: 5px;
+    }
+
+    .tooltip {
+      position: relative;
+    }
+
+    .tooltiptext {
+      visibility: hidden;
+      width: 240px;
+      background-color: #333;
+      color: #fff;
+      text-align: left;
+      padding: 10px;
+      border-radius: 6px;
+      position: absolute;
+      top: 0;
+      left: 105%;
+      z-index: 1;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    /* As duas últimas colunas abrem o tooltip para a esquerda para não estourar a tela */
+    #mitigadores .tooltiptext,
+    #consequencias .tooltiptext {
+      left: auto;
+      right: 105%;
+    }
+
+    .tooltip:hover .tooltiptext {
+      visibility: visible;
+    }
+
+    .json-controls {
+      margin: 5px 0 10px 0;
+      padding: 10px;
+      background-color: white;
+      border: 2px solid #607D8B;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .json-controls h3 {
+      margin: 0;
+      color: #607D8B;
+      font-size: 14px;
+    }
+
+    .json-controls button {
+      padding: 8px 15px;
+      background-color: #607D8B;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+      transition: background-color 0.3s;
+    }
+
+    .json-controls button:hover {
+      background-color: #455A64;
+    }
+
+    .json-controls input[type="file"] {
+      display: none;
+    }
+
+    .status-message {
+      margin: 5px 0;
+      padding: 8px;
+      border-radius: 4px;
+      text-align: center;
+      font-weight: bold;
+      display: none;
+      font-size: 12px;
+    }
+
+    .status-message.success {
+      background-color: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+
+    .status-message.error {
+      background-color: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+  </style>
+</head>
+<body>
+
+<h1>Mábio's Bow Tie</h1>
+<div class="subtitle">Opção A — Colunas estilo kanban · Modelo 1 (pools independentes)</div>
+
+<div class="json-controls">
+  <h3>Gerenciar Dados do Bow Tie:</h3>
+  <button onclick="exportarBowtieJSON()">📤 Exportar JSON</button>
+  <button onclick="document.getElementById('bowtieFileInput').click()">📥 Importar JSON</button>
+  <input type="file" id="bowtieFileInput" accept=".json" onchange="importarBowtieJSON(event)">
+  <button onclick="limparBowtie()">🗑️ Limpar Tudo</button>
+</div>
+
+<div id="statusMessage" class="status-message"></div>
+
+<div class="board">
+
+<div class="column tooltip" id="causas" ondrop="drop(event)" ondragover="allowDrop(event)">
+  <h2><span class="icon">⚡</span>Causas</h2>
+  <div class="tooltiptext">
+    <strong>O que é:</strong> Ameaças e fontes de risco que podem desencadear o evento central. Cada card = uma causa distinta e específica.<br><br>
+    <strong>Regra:</strong> Formule como condição verificável ("Patch crítico não aplicado"), não como negação genérica do evento ("falta de segurança").<br><br>
+    <strong>Exemplo:</strong> Credenciais fracas ou compartilhadas; Fornecedor com acesso não monitorado; Configuração incorreta de firewall.
+  </div>
+  <div class="add-task">
+    <input type="text" id="newCausa" placeholder="Nova causa">
+    <button onclick="addTask('causas', 'newCausa')">Add +</button>
+  </div>
+</div>
+
+<div class="column tooltip" id="preventivos" ondrop="drop(event)" ondragover="allowDrop(event)">
+  <h2><span class="icon">🛡️</span>Ações/Controles Preventivos</h2>
+  <div class="tooltiptext">
+    <strong>O que é:</strong> Barreiras que atuam ANTES do evento — reduzem a probabilidade de as causas o desencadearem.<br><br>
+    <strong>Regra:</strong> Todo controle deve poder ser associado a pelo menos uma causa. Neste Modelo 1 (pools), a associação fica implícita — limitação a observar no teste.<br><br>
+    <strong>Exemplo:</strong> MFA; Gestão de patches; Segregação de funções; Revisão periódica de acessos.
+  </div>
+  <div class="add-task">
+    <input type="text" id="newPreventivo" placeholder="Novo controle preventivo">
+    <button onclick="addTask('preventivos', 'newPreventivo')">Add +</button>
+  </div>
+</div>
+
+<div class="column tooltip" id="evento" ondrop="drop(event)" ondragover="allowDrop(event)">
+  <h2><span class="icon">💥</span>Evento</h2>
+  <div class="tooltiptext">
+    <strong>O que é:</strong> O evento de risco central — o momento em que se perde o controle sobre a ameaça (o perigo se materializa).<br><br>
+    <strong>Regra:</strong> Na forma canônica do método, 1 evento por diagrama. Como no kanban (limite de WIP), a regra fica documentada aqui e não é imposta pelo código.<br><br>
+    <strong>Exemplo:</strong> Vazamento de dados pessoais; Indisponibilidade de sistema crítico; Acesso não autorizado ao ambiente de produção.
+  </div>
+  <div class="add-task">
+    <input type="text" id="newEvento" placeholder="Evento de risco">
+    <button onclick="addTask('evento', 'newEvento')">Add +</button>
+  </div>
+</div>
+
+<div class="column tooltip" id="mitigadores" ondrop="drop(event)" ondragover="allowDrop(event)">
+  <h2><span class="icon">🧯</span>Ações/Controles de Mitigação</h2>
+  <div class="tooltiptext">
+    <strong>O que é:</strong> Barreiras que atuam DEPOIS do evento — reduzem a severidade das consequências (atenuação e recuperação).<br><br>
+    <strong>Regra:</strong> Todo controle mitigador deve mirar pelo menos uma consequência específica.<br><br>
+    <strong>Exemplo:</strong> Plano de resposta a incidentes; Backups testados e restauráveis; Comunicação à ANPD e aos titulares.
+  </div>
+  <div class="add-task">
+    <input type="text" id="newMitigador" placeholder="Novo controle mitigador">
+    <button onclick="addTask('mitigadores', 'newMitigador')">Add +</button>
+  </div>
+</div>
+
+<div class="column tooltip" id="consequencias" ondrop="drop(event)" ondragover="allowDrop(event)">
+  <h2><span class="icon">📉</span>Consequências</h2>
+  <div class="tooltiptext">
+    <strong>O que é:</strong> Impactos para a organização caso o evento ocorra, mesmo com os controles existentes.<br><br>
+    <strong>Regra:</strong> Descreva o impacto final ("Multa e sanção LGPD"), não etapas intermediárias do incidente.<br><br>
+    <strong>Exemplo:</strong> Multa e sanção LGPD; Dano reputacional; Paralisação de processo finalístico.
+  </div>
+  <div class="add-task">
+    <input type="text" id="newConsequencia" placeholder="Nova consequência">
+    <button onclick="addTask('consequencias', 'newConsequencia')">Add +</button>
+  </div>
+</div>
+
+</div>
+
+<script>
+  const COLUNAS = ["causas", "preventivos", "evento", "mitigadores", "consequencias"];
+  const CORES = {
+    causas: "azul",
+    preventivos: "verde",
+    evento: "vermelho",
+    mitigadores: "teal",
+    consequencias: "laranja"
+  };
+  const INPUTS = {
+    newCausa: "causas",
+    newPreventivo: "preventivos",
+    newEvento: "evento",
+    newMitigador: "mitigadores",
+    newConsequencia: "consequencias"
+  };
+
+  let taskId = Number(localStorage.getItem("bowtieA_taskIdCounter")) || 0;
+
+  function allowDrop(ev) {
+    ev.preventDefault();
+  }
+
+  function drag(ev) {
+    ev.dataTransfer.setData("text", ev.target.id);
+  }
+
+  function drop(ev) {
+    ev.preventDefault();
+    const data = ev.dataTransfer.getData("text");
+    const task = document.getElementById(data);
+    const newColumn = ev.target.closest('.column');
+    if (newColumn && task) {
+      newColumn.appendChild(task);
+      updateTaskColor(task, newColumn.id);
+      saveBoardState();
+    }
+  }
+
+  function addTask(columnId, inputId) {
+    const input = document.getElementById(inputId);
+    const taskText = input.value.trim();
+    if (!taskText) return;
+
+    const task = createTaskElement(taskText, columnId);
+    document.getElementById(columnId).appendChild(task);
+    input.value = "";
+    saveBoardState();
+  }
+
+  function createTaskElement(text, columnId) {
+    const task = document.createElement("div");
+    task.className = "task";
+    task.draggable = true;
+    task.id = "task" + taskId++;
+    task.ondragstart = drag;
+
+    const span = document.createElement("span");
+    span.textContent = text;
+    span.ondblclick = () => editTask(span);
+
+    const del = document.createElement("button");
+    del.className = "delete-btn";
+    del.innerHTML = "🗑";
+    del.onclick = () => {
+      task.remove();
+      saveBoardState();
+    };
+
+    task.appendChild(span);
+    task.appendChild(del);
+    updateTaskColor(task, columnId);
+
+    localStorage.setItem("bowtieA_taskIdCounter", taskId);
+    return task;
+  }
+
+  function editTask(span) {
+    const oldText = span.textContent;
+    const input = document.createElement("input");
+    input.value = oldText;
+    span.replaceWith(input);
+    input.focus();
+
+    input.onblur = () => {
+      const newSpan = document.createElement("span");
+      newSpan.textContent = input.value.trim() || oldText;
+      newSpan.ondblclick = () => editTask(newSpan);
+      input.parentElement.replaceChild(newSpan, input);
+      saveBoardState();
+    };
+
+    input.onkeypress = (e) => {
+      if (e.key === 'Enter') {
+        input.blur();
+      }
+    };
+  }
+
+  function updateTaskColor(task, columnId) {
+    task.classList.remove("azul", "verde", "vermelho", "teal", "laranja");
+    task.classList.add(CORES[columnId]);
+  }
+
+  function saveBoardState() {
+    const boardData = {};
+    COLUNAS.forEach(columnId => {
+      const column = document.getElementById(columnId);
+      const tasks = [...column.querySelectorAll(".task")].map(task => ({
+        id: task.id,
+        text: task.querySelector("span").textContent
+      }));
+      boardData[columnId] = tasks;
+    });
+    localStorage.setItem("bowtieA_board", JSON.stringify(boardData));
+  }
+
+  function loadBoardState() {
+    const data = JSON.parse(localStorage.getItem("bowtieA_board"));
+    if (!data) return;
+
+    Object.keys(data).forEach(columnId => {
+      const column = document.getElementById(columnId);
+      if (!column) return;
+      data[columnId].forEach(taskData => {
+        const task = createTaskElement(taskData.text, columnId);
+        task.id = taskData.id;
+        column.appendChild(task);
+      });
+    });
+  }
+
+  function exportarBowtieJSON() {
+    try {
+      const boardData = {};
+      COLUNAS.forEach(columnId => {
+        const column = document.getElementById(columnId);
+        const tasks = [...column.querySelectorAll(".task")].map(task => ({
+          id: task.id,
+          text: task.querySelector("span").textContent
+        }));
+        boardData[columnId] = tasks;
+      });
+
+      const exportData = {
+        bowtieBoard: boardData,
+        taskIdCounter: taskId,
+        exportDate: new Date().toISOString(),
+        version: "BowTie v1.0",
+        opcao: "A — colunas / pools independentes"
+      };
+
+      const jsonString = JSON.stringify(exportData, null, 2);
+      const blob = new Blob([jsonString], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `bowtie_A_${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      mostrarMensagem('Bow Tie exportado com sucesso!', 'success');
+    } catch (error) {
+      console.error('Erro ao exportar:', error);
+      mostrarMensagem('Erro ao exportar Bow Tie!', 'error');
+    }
+  }
+
+  function importarBowtieJSON(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      try {
+        const data = JSON.parse(e.target.result);
+
+        if (!data.bowtieBoard) {
+          throw new Error('Arquivo JSON inválido para Bow Tie');
+        }
+
+        COLUNAS.forEach(columnId => {
+          const column = document.getElementById(columnId);
+          const tasks = column.querySelectorAll('.task');
+          tasks.forEach(task => task.remove());
+        });
+
+        if (data.taskIdCounter) {
+          taskId = data.taskIdCounter;
+          localStorage.setItem("bowtieA_taskIdCounter", taskId);
+        }
+
+        Object.keys(data.bowtieBoard).forEach(columnId => {
+          const column = document.getElementById(columnId);
+          if (column && data.bowtieBoard[columnId]) {
+            data.bowtieBoard[columnId].forEach(taskData => {
+              const task = createTaskElement(taskData.text, columnId);
+              if (taskData.id) {
+                task.id = taskData.id;
+              }
+              column.appendChild(task);
+            });
+          }
+        });
+
+        saveBoardState();
+
+        mostrarMensagem('Bow Tie importado com sucesso!', 'success');
+      } catch (error) {
+        console.error('Erro ao importar:', error);
+        mostrarMensagem('Erro ao importar arquivo JSON. Verifique se o arquivo está correto.', 'error');
+      }
+    };
+
+    reader.readAsText(file);
+    event.target.value = '';
+  }
+
+  function limparBowtie() {
+    if (confirm('Tem certeza que deseja limpar todo o Bow Tie? Esta ação não pode ser desfeita.')) {
+      COLUNAS.forEach(columnId => {
+        const column = document.getElementById(columnId);
+        const tasks = column.querySelectorAll('.task');
+        tasks.forEach(task => task.remove());
+      });
+
+      localStorage.removeItem("bowtieA_board");
+      localStorage.removeItem("bowtieA_taskIdCounter");
+      taskId = 0;
+
+      mostrarMensagem('Bow Tie limpo com sucesso!', 'success');
+    }
+  }
+
+  function mostrarMensagem(texto, tipo) {
+    const messageEl = document.getElementById('statusMessage');
+    messageEl.textContent = texto;
+    messageEl.className = `status-message ${tipo}`;
+    messageEl.style.display = 'block';
+
+    setTimeout(() => {
+      messageEl.style.display = 'none';
+    }, 3000);
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    Object.keys(INPUTS).forEach(inputId => {
+      const input = document.getElementById(inputId);
+      if (input) {
+        input.addEventListener('keypress', function(e) {
+          if (e.key === 'Enter') {
+            addTask(INPUTS[inputId], inputId);
+          }
+        });
+      }
+    });
+  });
+
+  window.onload = loadBoardState;
+</script>
+
+</body>
+</html>

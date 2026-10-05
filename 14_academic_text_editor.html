@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editor de Textos Acadêmicos</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+
+        .sidebar {
+            width: 300px;
+            background: #2c3e50;
+            color: white;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            background: #34495e;
+            border-bottom: 1px solid #4a5f7a;
+        }
+
+        .sidebar-header h2 {
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+
+        .project-info {
+            background: #3d566e;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-size: 12px;
+        }
+
+        .project-info input {
+            width: 100%;
+            padding: 5px;
+            margin: 3px 0;
+            border: none;
+            border-radius: 3px;
+            font-size: 11px;
+        }
+
+        .chapters-list {
+            flex: 1;
+            padding: 10px;
+            overflow-y: auto;
+        }
+
+        .chapter-item {
+            padding: 10px;
+            margin: 5px 0;
+            background: #34495e;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chapter-item:hover {
+            background: #4a5f7a;
+        }
+
+        .chapter-item.active {
+            background: #3498db;
+        }
+
+        .chapter-controls {
+            display: flex;
+            gap: 5px;
+        }
+
+        .chapter-controls button {
+            background: transparent;
+            border: 1px solid #fff;
+            color: white;
+            padding: 3px 6px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 10px;
+        }
+
+        .sidebar-footer {
+            padding: 15px;
+            border-top: 1px solid #4a5f7a;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: background 0.3s;
+        }
+
+        .btn:hover {
+            background: #2980b9;
+        }
+
+        .btn.danger {
+            background: #e74c3c;
+        }
+
+        .btn.danger:hover {
+            background: #c0392b;
+        }
+
+        .btn.success {
+            background: #27ae60;
+        }
+
+        .btn.success:hover {
+            background: #229954;
+        }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: white;
+        }
+
+        .toolbar {
+            padding: 15px;
+            background: #ecf0f1;
+            border-bottom: 1px solid #bdc3c7;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .toolbar button {
+            padding: 8px 12px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .toolbar button:hover {
+            background: #2980b9;
+        }
+
+        .editor-container {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .chapter-title {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+
+        .editor {
+            min-height: 400px;
+            border: 1px solid #bdc3c7;
+            border-radius: 5px;
+            padding: 15px;
+            line-height: 1.6;
+            font-size: 14px;
+        }
+
+        .editor:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 5px rgba(52, 152, 219, 0.3);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+        }
+
+        .modal-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 500px;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+
+        .close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #999;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .form-group textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .file-input {
+            margin: 10px 0;
+        }
+
+        .file-input input[type="file"] {
+            display: none;
+        }
+
+        .file-input label {
+            display: inline-block;
+            padding: 10px 15px;
+            background: #3498db;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .file-input label:hover {
+            background: #2980b9;
+        }
+
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-size: 12px;
+        }
+
+        .status.success {
+            background: #d5f4e6;
+            color: #27ae60;
+            border: 1px solid #27ae60;
+        }
+
+        .status.error {
+            background: #fdf2f2;
+            color: #e74c3c;
+            border: 1px solid #e74c3c;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h2>TCC e Livros</h2>
+                <div class="project-info">
+                    <input type="text" id="projectTitle" placeholder="Título do TCC/Livro" value="Novo TCC/Livro">
+                    <input type="text" id="projectAuthor" placeholder="Autor" value="">
+                    <input type="text" id="projectAdvisor" placeholder="Orientador" value="">
+                    <input type="text" id="projectCourse" placeholder="Curso" value="">
+                    <input type="text" id="projectInstitution" placeholder="Instituição" value="">
+                    <input type="text" id="projectCity" placeholder="Cidade" value="">
+                    <input type="text" id="projectYear" placeholder="Ano" value="2026">
+                </div>
+            </div>
+            
+            <div class="chapters-list" id="chaptersList">
+                <div class="chapter-item active" data-id="intro">
+                    <span>Introdução</span>
+                    <div class="chapter-controls">
+                        <button onclick="renameChapter('intro')" title="Renomear">✏️</button>
+                    </div>
+                </div>
+                <div class="chapter-item" data-id="conclusion">
+                    <span>Conclusão</span>
+                    <div class="chapter-controls">
+                        <button onclick="renameChapter('conclusion')" title="Renomear">✏️</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="sidebar-footer">
+                <button class="btn" onclick="addChapter()">➕ Novo Capítulo</button>
+                <button class="btn success" onclick="exportJSON()">📤 Exportar JSON</button>
+                <div class="file-input">
+                    <label for="importJSON">📥 Importar JSON</label>
+                    <input type="file" id="importJSON" accept=".json" onchange="importJSON(event)">
+                </div>
+                <button class="btn danger" onclick="generatePDF()">📄 Gerar PDF</button>
+            </div>
+        </div>
+        
+        <div class="main-content">
+            <div class="toolbar">
+                <button onclick="formatText('bold')"><b>B</b></button>
+                <button onclick="formatText('italic')"><i>I</i></button>
+                <button onclick="formatText('underline')"><u>U</u></button>
+                <button onclick="formatText('justifyLeft')">⬅️</button>
+                <button onclick="formatText('justifyCenter')">↔️</button>
+                <button onclick="formatText('justifyRight')">➡️</button>
+                <button onclick="formatText('insertOrderedList')">1. Lista</button>
+                <button onclick="formatText('insertUnorderedList')">• Lista</button>
+                <select onchange="formatText('fontSize', this.value)">
+                    <option value="">Tamanho</option>
+                    <option value="1">8pt</option>
+                    <option value="2">10pt</option>
+                    <option value="3">12pt</option>
+                    <option value="4">14pt</option>
+                    <option value="5">18pt</option>
+                    <option value="6">24pt</option>
+                    <option value="7">36pt</option>
+                </select>
+            </div>
+            
+            <div class="editor-container">
+                <div class="chapter-title" id="chapterTitle">Introdução</div>
+                <div class="editor" id="editor" contenteditable="true">
+                    <p>Digite aqui o conteúdo da introdução...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para adicionar/renomear capítulo -->
+    <div class="modal" id="chapterModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">Novo Capítulo</h3>
+                <button class="close" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="form-group">
+                <label for="chapterName">Nome do Capítulo:</label>
+                <input type="text" id="chapterName" placeholder="Digite o nome do capítulo">
+            </div>
+            <div class="form-group">
+                <button class="btn" onclick="saveChapter()">Salvar</button>
+                <button class="btn" onclick="closeModal()" style="background: #95a5a6;">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Dados da aplicação
+        let currentChapter = 'intro';
+        let projectData = {
+            info: {
+                title: 'Nova Monografia',
+                author: '',
+                advisor: '',
+                course: '',
+                institution: '',
+                city: '',
+                year: '2025'
+            },
+            chapters: {
+                intro: {
+                    title: 'Introdução',
+                    content: '<p>Digite aqui o conteúdo da introdução...</p>'
+                },
+                conclusion: {
+                    title: 'Conclusão',
+                    content: '<p>Digite aqui o conteúdo da conclusão...</p>'
+                }
+            }
+        };
+
+        let chapterCounter = 1;
+        let isModalOpen = false;
+        let modalMode = 'add';
+        let editingChapterId = null;
+
+        // Inicialização
+        document.addEventListener('DOMContentLoaded', function() {
+            loadChapter(currentChapter);
+            setupEventListeners();
+        });
+
+        function setupEventListeners() {
+            // Salvar conteúdo ao digitar
+            document.getElementById('editor').addEventListener('input', function() {
+                saveCurrentChapterContent();
+            });
+
+            // Salvar informações do projeto
+            const projectInputs = ['projectTitle', 'projectAuthor', 'projectAdvisor', 'projectCourse', 'projectInstitution', 'projectCity', 'projectYear'];
+            projectInputs.forEach(inputId => {
+                document.getElementById(inputId).addEventListener('input', function() {
+                    const key = inputId.replace('project', '').toLowerCase();
+                    projectData.info[key] = this.value;
+                });
+            });
+
+            // Navegação por capítulos
+            document.addEventListener('click', function(e) {
+                if (e.target.closest('.chapter-item')) {
+                    const chapterId = e.target.closest('.chapter-item').dataset.id;
+                    if (chapterId) {
+                        selectChapter(chapterId);
+                    }
+                }
+            });
+        }
+
+        function selectChapter(chapterId) {
+            saveCurrentChapterContent();
+            currentChapter = chapterId;
+            loadChapter(chapterId);
+            
+            // Atualizar interface
+            document.querySelectorAll('.chapter-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            document.querySelector(`[data-id="${chapterId}"]`).classList.add('active');
+        }
+
+        function loadChapter(chapterId) {
+            const chapter = projectData.chapters[chapterId];
+            if (chapter) {
+                document.getElementById('chapterTitle').textContent = chapter.title;
+                document.getElementById('editor').innerHTML = chapter.content;
+            }
+        }
+
+        function saveCurrentChapterContent() {
+            const content = document.getElementById('editor').innerHTML;
+            if (projectData.chapters[currentChapter]) {
+                projectData.chapters[currentChapter].content = content;
+            }
+        }
+
+        function addChapter() {
+            modalMode = 'add';
+            document.getElementById('modalTitle').textContent = 'Novo Capítulo';
+            document.getElementById('chapterName').value = '';
+            document.getElementById('chapterModal').style.display = 'block';
+            isModalOpen = true;
+        }
+
+        function renameChapter(chapterId) {
+            modalMode = 'rename';
+            editingChapterId = chapterId;
+            document.getElementById('modalTitle').textContent = 'Renomear Capítulo';
+            document.getElementById('chapterName').value = projectData.chapters[chapterId].title;
+            document.getElementById('chapterModal').style.display = 'block';
+            isModalOpen = true;
+        }
+
+        function saveChapter() {
+            const chapterName = document.getElementById('chapterName').value.trim();
+            if (!chapterName) {
+                alert('Por favor, digite um nome para o capítulo.');
+                return;
+            }
+
+            if (modalMode === 'add') {
+                const chapterId = 'chapter_' + Date.now();
+                projectData.chapters[chapterId] = {
+                    title: chapterName,
+                    content: '<p>Digite aqui o conteúdo do capítulo...</p>'
+                };
+                
+                // Adicionar à lista (antes da conclusão)
+                const chaptersList = document.getElementById('chaptersList');
+                const conclusionItem = document.querySelector('[data-id="conclusion"]');
+                const newChapterElement = createChapterElement(chapterId, chapterName);
+                chaptersList.insertBefore(newChapterElement, conclusionItem);
+                
+                selectChapter(chapterId);
+            } else if (modalMode === 'rename') {
+                projectData.chapters[editingChapterId].title = chapterName;
+                document.querySelector(`[data-id="${editingChapterId}"] span`).textContent = chapterName;
+                if (currentChapter === editingChapterId) {
+                    document.getElementById('chapterTitle').textContent = chapterName;
+                }
+            }
+
+            closeModal();
+        }
+
+        function createChapterElement(chapterId, chapterName) {
+            const div = document.createElement('div');
+            div.className = 'chapter-item';
+            div.dataset.id = chapterId;
+            div.innerHTML = `
+                <span>${chapterName}</span>
+                <div class="chapter-controls">
+                    <button onclick="renameChapter('${chapterId}')" title="Renomear">✏️</button>
+                    <button onclick="deleteChapter('${chapterId}')" title="Excluir">🗑️</button>
+                </div>
+            `;
+            return div;
+        }
+
+        function deleteChapter(chapterId) {
+            if (chapterId === 'intro' || chapterId === 'conclusion') {
+                alert('Não é possível excluir a Introdução ou Conclusão.');
+                return;
+            }
+
+            if (confirm('Tem certeza que deseja excluir este capítulo?')) {
+                delete projectData.chapters[chapterId];
+                document.querySelector(`[data-id="${chapterId}"]`).remove();
+                
+                if (currentChapter === chapterId) {
+                    selectChapter('intro');
+                }
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('chapterModal').style.display = 'none';
+            isModalOpen = false;
+            editingChapterId = null;
+        }
+
+        function formatText(command, value = null) {
+            document.execCommand(command, false, value);
+            document.getElementById('editor').focus();
+        }
+
+        function exportJSON() {
+            saveCurrentChapterContent();
+            
+            const dataStr = JSON.stringify(projectData, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            const url = URL.createObjectURL(dataBlob);
+            
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = (projectData.info.title || 'monografia') + '.json';
+            link.click();
+            
+            URL.revokeObjectURL(url);
+            
+            showStatus('Arquivo JSON exportado com sucesso!', 'success');
+        }
+
+        function importJSON(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const importedData = JSON.parse(e.target.result);
+                    
+                    if (importedData.info && importedData.chapters) {
+                        projectData = importedData;
+                        
+                        // Atualizar campos de informação
+                        Object.keys(projectData.info).forEach(key => {
+                            const input = document.getElementById('project' + key.charAt(0).toUpperCase() + key.slice(1));
+                            if (input) {
+                                input.value = projectData.info[key] || '';
+                            }
+                        });
+                        
+                        // Reconstruir lista de capítulos
+                        rebuildChaptersList();
+                        
+                        // Carregar primeiro capítulo
+                        const firstChapter = Object.keys(projectData.chapters)[0];
+                        if (firstChapter) {
+                            selectChapter(firstChapter);
+                        }
+                        
+                        showStatus('Arquivo JSON importado com sucesso!', 'success');
+                    } else {
+                        throw new Error('Formato de arquivo inválido');
+                    }
+                } catch (error) {
+                    showStatus('Erro ao importar arquivo: ' + error.message, 'error');
+                }
+            };
+            
+            reader.readAsText(file);
+            event.target.value = ''; // Limpar input
+        }
+
+        function rebuildChaptersList() {
+            const chaptersList = document.getElementById('chaptersList');
+            chaptersList.innerHTML = '';
+            
+            Object.keys(projectData.chapters).forEach(chapterId => {
+                const chapter = projectData.chapters[chapterId];
+                const chapterElement = createChapterElement(chapterId, chapter.title);
+                
+                // Remover botão de excluir da introdução e conclusão
+                if (chapterId === 'intro' || chapterId === 'conclusion') {
+                    const deleteBtn = chapterElement.querySelector('button[onclick*="deleteChapter"]');
+                    if (deleteBtn) {
+                        deleteBtn.remove();
+                    }
+                }
+                
+                chaptersList.appendChild(chapterElement);
+            });
+        }
+
+        function generatePDF() {
+            saveCurrentChapterContent();
+            
+            try {
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF();
+                
+                // Configurações
+                let yPosition = 20;
+                const lineHeight = 7;
+                const pageWidth = pdf.internal.pageSize.width;
+                const margin = 20;
+                const maxWidth = pageWidth - (margin * 2);
+                
+                // Função para adicionar nova página se necessário
+                function checkNewPage(pdf, yPos, height = 10) {
+                    if (yPos + height > pdf.internal.pageSize.height - 20) {
+                        pdf.addPage();
+                        return 20;
+                    }
+                    return yPos;
+                }
+                
+                // Função para adicionar texto quebrado em linhas
+                function addWrappedText(pdf, text, x, y, maxWidth, fontSize = 12) {
+                    pdf.setFontSize(fontSize);
+                    const lines = pdf.splitTextToSize(text, maxWidth);
+                    let currentY = y;
+                    
+                    lines.forEach(line => {
+                        currentY = checkNewPage(pdf, currentY);
+                        pdf.text(line, x, currentY);
+                        currentY += lineHeight;
+                    });
+                    
+                    return currentY;
+                }
+                
+                // Título
+                pdf.setFontSize(16);
+                pdf.setFont(undefined, 'bold');
+                yPosition = addWrappedText(pdf, projectData.info.title || 'Monografia', margin, yPosition, maxWidth, 16);
+                yPosition += 10;
+                
+                // Informações do projeto
+                pdf.setFontSize(12);
+                pdf.setFont(undefined, 'normal');
+                if (projectData.info.author) {
+                    yPosition = addWrappedText(pdf, 'Autor: ' + projectData.info.author, margin, yPosition, maxWidth);
+                }
+                if (projectData.info.advisor) {
+                    yPosition = addWrappedText(pdf, 'Orientador: ' + projectData.info.advisor, margin, yPosition, maxWidth);
+                }
+                if (projectData.info.course) {
+                    yPosition = addWrappedText(pdf, 'Curso: ' + projectData.info.course, margin, yPosition, maxWidth);
+                }
+                if (projectData.info.institution) {
+                    yPosition = addWrappedText(pdf, 'Instituição: ' + projectData.info.institution, margin, yPosition, maxWidth);
+                }
+                yPosition += 15;
+                
+                // Capítulos
+                Object.keys(projectData.chapters).forEach(chapterId => {
+                    const chapter = projectData.chapters[chapterId];
+                    
+                    yPosition = checkNewPage(pdf, yPosition, 20);
+                    
+                    // Título do capítulo
+                    pdf.setFontSize(14);
+                    pdf.setFont(undefined, 'bold');
+                    yPosition = addWrappedText(pdf, chapter.title, margin, yPosition, maxWidth, 14);
+                    yPosition += 5;
+                    
+                    // Conteúdo do capítulo (removendo HTML)
+                    pdf.setFontSize(12);
+                    pdf.setFont(undefined, 'normal');
+                    const textContent = chapter.content.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim();
+                    if (textContent) {
+                        yPosition = addWrappedText(pdf, textContent, margin, yPosition, maxWidth);
+                    }
+                    yPosition += 10;
+                });
+                
+                // Salvar PDF
+                const filename = (projectData.info.title || 'monografia').replace(/[^\w\s-]/g, '') + '.pdf';
+                pdf.save(filename);
+                
+                showStatus('PDF gerado com sucesso!', 'success');
+                
+            } catch (error) {
+                showStatus('Erro ao gerar PDF: ' + error.message, 'error');
+            }
+        }
+
+        function showStatus(message, type) {
+            // Remove status anterior se existir
+            const existingStatus = document.querySelector('.status');
+            if (existingStatus) {
+                existingStatus.remove();
+            }
+            
+            // Cria novo status
+            const status = document.createElement('div');
+            status.className = `status ${type}`;
+            status.textContent = message;
+            
+            // Adiciona ao sidebar footer
+            const sidebarFooter = document.querySelector('.sidebar-footer');
+            sidebarFooter.appendChild(status);
+            
+            // Remove após 3 segundos
+            setTimeout(() => {
+                status.remove();
+            }, 3000);
+        }
+
+        // Atalhos de teclado
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey) {
+                switch(e.key) {
+                    case 'b':
+                        e.preventDefault();
+                        formatText('bold');
+                        break;
+                    case 'i':
+                        e.preventDefault();
+                        formatText('italic');
+                        break;
+                    case 'u':
+                        e.preventDefault();
+                        formatText('underline');
+                        break;
+                    case 's':
+                        e.preventDefault();
+                        exportJSON();
+                        break;
+                }
+            }
+            
+            // Fechar modal com ESC
+            if (e.key === 'Escape' && isModalOpen) {
+                closeModal();
+            }
+        });
+
+        // Salvar automaticamente a cada 30 segundos
+        setInterval(() => {
+            saveCurrentChapterContent();
+        }, 30000);
+    </script>
+</body>
+</html>

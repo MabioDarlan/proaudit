@@ -1,0 +1,1849 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mábio's Ishikawa — v1.0</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f5f5f5;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin: 0;
+      padding: 0 0 30px 0;
+      color: #263238;
+    }
+
+    h1 { margin: 10px 0 0 0; font-size: 35px; }
+
+    .subtitle { margin: 0 0 8px 0; color: #607D8B; font-size: 13px; font-weight: bold; text-align: center; }
+
+    .json-controls {
+      margin: 5px 0 8px 0;
+      padding: 10px;
+      background-color: white;
+      border: 2px solid #607D8B;
+      border-radius: 8px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .json-controls h3 { margin: 0; color: #607D8B; font-size: 14px; }
+    .json-controls button, .side-panel button, .diag-toolbar button {
+      padding: 8px 15px;
+      background-color: #607D8B;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+    .json-controls button:hover, .side-panel button:hover, .diag-toolbar button:hover { background-color: #455A64; }
+    .json-controls input[type="file"] { display: none; }
+    .tema-lbl { font-size: 12px; color: #455A64; font-weight: bold; }
+    .tema-lbl select { font-size: 12px; padding: 4px; border-radius: 4px; border: 1px solid #607D8B; }
+
+    button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible {
+      outline: 2px solid #00ACC1; outline-offset: 1px;
+    }
+
+    .status-message { margin: 5px 0; padding: 8px; border-radius: 4px; text-align: center; font-size: 12px; display: none; max-width: 90vw; }
+    .status-message.success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+    .status-message.warn    { background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
+    .status-message.error   { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+
+    .diag {
+      margin: 4px 0; padding: 5px 10px; border-radius: 4px; font-size: 11px; font-weight: bold;
+      background-color: #eceff1; color: #b00020; text-align: center; max-width: 90vw;
+    }
+    .diag.on { color: #37474F; }
+    .err-box {
+      display: none; margin: 4px 0; padding: 8px 12px; border-radius: 4px; font-size: 12px; font-weight: bold;
+      background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; max-width: 90vw;
+    }
+    .persist-note {
+      display: none; margin: 4px 0; padding: 8px 12px; border-radius: 4px; font-size: 12px;
+      background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba; max-width: 90vw; text-align: center;
+    }
+
+    /* Tooltips (camada metodológica) — pointer-events:none impede a interceptação de cliques */
+    .tooltip { position: relative; }
+    .tooltiptext {
+      visibility: hidden;
+      pointer-events: none;
+      width: 320px;
+      background-color: #333;
+      color: #fff;
+      text-align: left;
+      border-radius: 6px;
+      padding: 10px;
+      position: absolute;
+      z-index: 20;
+      top: 100%;
+      left: 0;
+      margin-top: 4px;
+      font-size: 12px;
+      font-weight: normal;
+      line-height: 1.4;
+      letter-spacing: 0;
+      text-transform: none;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    }
+    .tooltip:hover .tooltiptext { visibility: visible; }
+
+    .legend { display: flex; gap: 10px; margin: 4px 0 8px 0; flex-wrap: wrap; justify-content: center; }
+    .chip {
+      display: inline-block; padding: 5px 12px; border-radius: 14px; font-size: 12px; font-weight: bold;
+      background-color: #eceff1; color: #455A64; border: 1px solid #90A4AE; cursor: help;
+    }
+    .legend .chip .tooltiptext { width: 360px; }
+
+    /* Painéis laterais: IA e transferência por texto */
+    .side-panel {
+      width: 96vw; max-width: 1400px; box-sizing: border-box;
+      background: white; border: 2px solid #607D8B; border-radius: 8px; padding: 10px; margin: 4px 0 8px 0;
+    }
+    .panel-title { font-size: 13px; font-weight: bold; color: #455A64; margin-bottom: 8px; display: inline-block; }
+    .side-panel textarea {
+      width: 100%; box-sizing: border-box; min-height: 90px; font-family: Consolas, monospace; font-size: 12px;
+      border: 1px solid #90A4AE; border-radius: 4px; padding: 6px; resize: vertical;
+    }
+    .side-panel .row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
+    .ia-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+    .ia-step { display: flex; flex-direction: column; gap: 6px; }
+    .step-h { font-size: 12px; font-weight: bold; color: #006064; }
+    #inpProblema { font-family: Arial, sans-serif; }
+    #textoPanel { display: none; }
+    .texto-hint { font-size: 12px; color: #455A64; margin-bottom: 6px; }
+
+    /* Editor */
+    .editor { width: 96vw; max-width: 1400px; box-sizing: border-box; }
+    .topo { display: flex; flex-direction: column; align-items: center; gap: 6px; margin-bottom: 8px; }
+    .titulo-line { font-size: 12px; color: #607D8B; }
+    .titulo-txt { font-weight: bold; cursor: text; color: #37474F; font-size: 14px; }
+    .efeito-card {
+      display: inline-block; padding: 9px 16px; border-radius: 6px; background-color: #00838F; color: #fff;
+      font-weight: bold; font-size: 14px; max-width: 90%; border: 2px solid #4DD0E1;
+    }
+    .efeito-card .txt { cursor: text; }
+
+    .inbox-wrap {
+      display: none; margin: 6px 0; padding: 8px; border: 2px dashed #E6A700; border-radius: 8px; background: #fff8e1;
+    }
+    .inbox-title { font-size: 12px; color: #795548; font-weight: bold; margin-bottom: 4px; }
+    .inbox { min-height: 30px; background: #102A33; border-radius: 6px; padding: 4px; }
+
+    .cats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+    .cat-panel { background-color: #102A33; border: 2px solid #26C6DA; border-radius: 8px; padding: 8px; display: flex; flex-direction: column; min-width: 0; }
+    .cat-panel h2 { margin: 0 0 6px 0; font-size: 15px; color: #fff; cursor: help; display: flex; align-items: baseline; gap: 6px; }
+    .cat-panel h2 .cat-sub { font-size: 12px; color: #80DEEA; font-weight: normal; }
+    .cat-panel h2 .cat-cnt { margin-left: auto; font-size: 11px; color: #90A4AE; font-weight: normal; }
+    .cat-list { min-height: 40px; flex: 1; border-radius: 6px; padding: 2px; }
+    .empty-cat { font-size: 12px; color: #78909C; font-style: italic; padding: 8px 4px; }
+
+    .node { border-left: 3px solid #26C6DA; margin: 5px 0; padding: 3px 0 3px 7px; border-radius: 3px; }
+    .node.lvl2 { border-left-color: #B0BEC5; margin-left: 6px; }
+    .node.lvl3 { border-left-color: #607D8B; margin-left: 6px; }
+    .node-head { display: flex; align-items: flex-start; gap: 5px; cursor: grab; }
+    .node-head .txt { flex: 1; cursor: text; word-break: break-word; font-size: 13px; }
+    .lvl1 > .node-head .txt { color: #4DD0E1; font-weight: bold; }
+    .lvl2 > .node-head .txt { color: #ECEFF1; }
+    .lvl3 > .node-head .txt { color: #CFD8DC; font-size: 12px; }
+    .lvl-tag {
+      font-size: 9px; font-weight: bold; border-radius: 3px; padding: 1px 4px; margin-top: 2px;
+      background: #00363F; color: #80DEEA; border: 1px solid #26C6DA; cursor: help;
+    }
+    .head-right { display: flex; gap: 2px; align-items: center; flex-shrink: 0; }
+    .mini-btn, .delete-btn {
+      background: transparent; border: 1px solid #37474F; color: #B0BEC5; border-radius: 3px;
+      font-size: 10px; padding: 1px 4px; cursor: pointer; line-height: 1.3;
+    }
+    .mini-btn:hover { background: #00363F; color: #fff; }
+    .delete-btn:hover { background: #B71C1C; color: #fff; border-color: #B71C1C; }
+    .detail { font-size: 11.5px; color: #90A4AE; font-style: italic; margin: 1px 0 2px 22px; word-break: break-word; }
+    .detail .dtxt { cursor: text; }
+    .detail.empty { color: #546E7A; font-size: 10.5px; }
+    .add-inline { display: flex; gap: 4px; margin: 3px 0 2px 16px; }
+    .add-inline input, .add-task input {
+      flex: 1; min-width: 0; font-size: 12px; padding: 4px 6px; border-radius: 3px;
+      border: 1px solid #37474F; background: #0B1A22; color: #ECEFF1;
+    }
+    .add-inline button, .add-task button {
+      font-size: 11px; padding: 4px 8px; border: none; border-radius: 3px; background: #00838F; color: #fff; cursor: pointer;
+    }
+    .add-inline button:hover, .add-task button:hover { background: #006064; }
+    .add-task { display: flex; gap: 5px; margin-top: 6px; }
+    .add-inline input::placeholder, .add-task input::placeholder { color: #607D8B; }
+    .inline-edit { width: 95%; font-size: 13px; border: 1px solid #4DD0E1; border-radius: 3px; padding: 2px 4px; color: #102027; background: #fff; }
+    .dragover { outline: 2px dashed #FFD54F; outline-offset: 1px; background-color: rgba(255, 213, 79, 0.08); }
+
+    .resumo { margin: 8px 0; padding: 8px; border-radius: 4px; font-size: 12px; font-weight: bold; text-align: center; }
+    .resumo.ok    { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+    .resumo.gap   { background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
+    .resumo.info  { background-color: #eceff1; color: #37474F; border: 1px solid #90A4AE; }
+    .resumo.vazio { background-color: #eceff1; color: #455A64; border: 1px solid #90A4AE; font-weight: normal; }
+
+    /* Diagrama */
+    .diagram-wrap {
+      width: 96vw; max-width: 1400px; box-sizing: border-box; margin-top: 4px;
+      border: 2px solid #607D8B; border-radius: 8px; background: #0B1A22; overflow: auto;
+    }
+    .diag-toolbar { display: flex; gap: 8px; align-items: center; padding: 6px 8px; background: #eceff1; border-bottom: 1px solid #90A4AE; }
+    .diag-toolbar .hint { font-size: 11px; color: #546E7A; }
+    #diagram { width: 100%; height: auto; display: block; }
+    #diagram text { user-select: none; }
+
+    /* Confirmação na própria página (não depende do diálogo nativo do navegador, bloqueável em sandbox) */
+    .confirm-box {
+      display: none; position: fixed; inset: 0; z-index: 50; background: rgba(16, 32, 39, 0.55);
+      align-items: center; justify-content: center;
+    }
+    .confirm-card { background: #fff; border-radius: 8px; padding: 16px; max-width: 440px; width: 90vw; border: 2px solid #607D8B; }
+    .confirm-msg { font-size: 13px; margin-bottom: 12px; word-break: break-word; }
+    .confirm-actions { display: flex; gap: 8px; justify-content: flex-end; }
+    .confirm-actions button { padding: 7px 14px; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; background: #607D8B; color: #fff; }
+    .confirm-actions button.danger { background: #C62828; }
+
+    @media (max-width: 900px) {
+      .cats, .ia-steps { grid-template-columns: minmax(0, 1fr); }
+      .legend .chip .tooltiptext { width: 260px; }
+    }
+    @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+  </style>
+</head>
+<body>
+
+<h1>Mábio's Ishikawa</h1>
+<div class="subtitle">Versão 1.0 — Diagrama de Causa e Efeito (6Ms) · editor em árvore + espinha de peixe ao vivo</div>
+
+<div id="diag" class="diag">⛔ JavaScript não executou neste ambiente. Baixe o arquivo e abra no navegador (duplo clique).</div>
+<div id="errBox" class="err-box">…</div>
+
+<div class="json-controls">
+  <h3>Gerenciar dados:</h3>
+  <button id="btnExportJson">📤 Exportar JSON</button>
+  <button id="btnImportJson">📥 Importar JSON</button>
+  <input type="file" id="fileInput" accept=".json,application/json">
+  <label class="tema-lbl">Tema do diagrama:
+    <select id="selTema">
+      <option value="escuro">escuro</option>
+      <option value="claro">claro</option>
+    </select>
+  </label>
+  <button id="btnExportSvg">🖼️ Exportar SVG</button>
+  <button id="btnTexto">📋 Transferência por texto</button>
+  <button id="btnLimpar">🗑️ Limpar tudo</button>
+</div>
+
+<div id="statusMessage" class="status-message">…</div>
+<div id="persistNote" class="persist-note">…</div>
+
+<div id="textoPanel" class="side-panel">
+  <div class="panel-title">📋 Transferência por texto</div>
+  <div class="texto-hint">Rota que funciona mesmo quando download e upload estão bloqueados (pré-visualização, sandbox). Mostre o conteúdo, copie e guarde; para retomar, cole o JSON e carregue.</div>
+  <textarea id="txtTransfer" spellcheck="false" placeholder="JSON ou SVG aparece aqui — ou cole um JSON para carregar."></textarea>
+  <div class="row">
+    <button id="btnMostrarJson">Mostrar JSON atual</button>
+    <button id="btnMostrarSvg">Mostrar SVG atual</button>
+    <button id="btnCopiarTexto">Copiar</button>
+    <button id="btnCarregarTexto">Carregar JSON deste texto</button>
+  </div>
+</div>
+
+<div id="iaPanel" class="side-panel">
+  <div class="panel-title tooltip">🤖 Ponte com IA — a análise é gerada fora e revisada aqui
+    <span class="tooltiptext">
+      <strong>O que é:</strong> rota para produzir a análise com qualquer IA sem que a ferramenta dependa de internet. O prompt já exige a resposta no formato JSON desta ferramenta.<br><br>
+      <strong>Regra:</strong> a IA propõe, o analista decide. Revise, edite, reclassifique e exclua causas antes de usar o diagrama como papel de trabalho.<br><br>
+      <strong>Exemplo:</strong> "Aumento de 40% nos incidentes de acesso indevido ao ERP no 1º semestre de 2026, concentrados em contas de terceiros; auditoria anterior apontou revisão de acessos irregular."
+    </span>
+  </div>
+  <div class="ia-steps">
+    <div class="ia-step">
+      <div class="step-h">1. Descreva o problema e os detalhes</div>
+      <textarea id="inpProblema" placeholder="Problema, contexto, período, evidências já conhecidas…"></textarea>
+      <div class="row"><button id="btnGerarPrompt">Gerar prompt</button></div>
+    </div>
+    <div class="ia-step">
+      <div class="step-h">2. Copie o prompt e rode em qualquer IA</div>
+      <textarea id="outPrompt" readonly placeholder="O prompt aparece aqui."></textarea>
+      <div class="row"><button id="btnCopiarPrompt">Copiar prompt</button></div>
+    </div>
+    <div class="ia-step">
+      <div class="step-h">3. Cole a resposta e carregue</div>
+      <textarea id="inpResposta" spellcheck="false" placeholder="Cole aqui a resposta da IA (JSON)."></textarea>
+      <div class="row"><button id="btnCarregarResposta">Carregar resposta</button></div>
+    </div>
+  </div>
+</div>
+
+<div class="legend">
+  <span class="tooltip chip">🖱️ Como usar
+    <span class="tooltiptext">
+      <strong>Adicionar:</strong> campo na base de cada categoria (Enter funciona); subcausas no campo dentro de cada card.<br><br>
+      <strong>Editar:</strong> duplo clique em qualquer texto — título, efeito, causa e detalhe. Causa vazia mantém o texto anterior; detalhe vazio remove o detalhe.<br><br>
+      <strong>Reordenar:</strong> ▲▼. A ordem no editor é a ordem de leitura, de cima para baixo, no diagrama.<br><br>
+      <strong>Reclassificar:</strong> arraste uma causa para outra categoria (vira principal) ou para outro card (vira subcausa dele). Limite de 3 níveis, imposto pela estrutura.<br><br>
+      <strong>Excluir:</strong> 🗑 (com subcausas, pede confirmação na própria página).<br><br>
+      <strong>IA:</strong> descreva o problema → gere o prompt → rode em qualquer IA → cole o JSON.<br><br>
+      <strong>Diagrama:</strong> projeção automática, somente leitura. "Tamanho real" dá leitura com rolagem; "Exportar SVG" gera o artefato para relatório no tema escolhido.
+    </span>
+  </span>
+  <span class="tooltip chip">🎨 Cores
+    <span class="tooltiptext">
+      <strong>Um significado = uma cor, em toda a ferramenta:</strong><br><br>
+      Ciano: estrutura do diagrama e causa principal.<br>
+      Branco / cinza-claro: causa secundária e terciária.<br>
+      Cinza itálico: detalhe/descrição.<br>
+      Âmbar: aviso (itens a associar, armazenamento).<br>
+      Vermelho: erro e exclusão.
+    </span>
+  </span>
+  <span class="tooltip chip">📐 Níveis
+    <span class="tooltiptext">
+      <strong>O que é:</strong> principal (P) → secundária (S) → terciária (T). Cada nível responde "por que a causa acima ocorre?" (lógica dos 5 Porquês, limitada a 3 níveis).<br><br>
+      <strong>Regra:</strong> o limite de 3 níveis é imposto pela estrutura. As demais regras metodológicas são orientação, não bloqueio.<br><br>
+      <strong>Exemplo:</strong> P "Revisão de acessos irregular" → S "Sem responsável formal pelo processo" → T "Normativo interno não atribui a revisão a nenhuma área".
+    </span>
+  </span>
+</div>
+
+<div class="editor" id="editorWrap">
+  <div class="topo">
+    <div class="titulo-line" id="tituloLine">Título do problema (duplo clique edita): <span id="tituloTxt" class="titulo-txt">…</span></div>
+    <div id="efeitoCard" class="efeito-card tooltip">
+      <span class="ef-lbl">🎯 Efeito: </span><span id="efeitoTxt" class="txt">…</span>
+      <span class="tooltiptext">
+        <strong>O que é:</strong> o problema central analisado — a cabeça do peixe. 1 por diagrama, imposto pela estrutura (um arquivo JSON por problema).<br><br>
+        <strong>Regra:</strong> formule como efeito observável e específico, não como causa nem como solução.<br><br>
+        <strong>Exemplo:</strong> "Aumento de incidentes de acesso indevido ao ERP em 2026" (e não "Falta de MFA", que é causa).
+      </span>
+    </div>
+  </div>
+
+  <div id="inboxWrap" class="inbox-wrap">
+    <div class="inbox-title">📥 A associar — causas importadas de categorias fora dos 6Ms. Arraste cada uma para a categoria correta (não aparecem no diagrama enquanto estiverem aqui):</div>
+    <div id="inbox" class="inbox"></div>
+  </div>
+
+  <div id="catsGrid" class="cats"></div>
+
+  <div id="resumo" class="resumo vazio">…</div>
+</div>
+
+<div class="diagram-wrap" id="diagramWrap">
+  <div class="diag-toolbar">
+    <button id="btnZoom">🔍 Tamanho real</button>
+    <span class="hint">Diagrama somente leitura — edite no painel acima.</span>
+  </div>
+  <svg id="diagram" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 700" font-family="Arial, Helvetica, sans-serif"></svg>
+</div>
+
+<script>
+  // Diagnóstico visível: qualquer erro de execução aparece na página (sem precisar de F12)
+  window.onerror = function (msg, src, line) {
+    try {
+      var b = document.getElementById('errBox');
+      if (b) {
+        b.textContent = '⛔ Erro de execução: ' + msg + ' (linha ' + line + ')';
+        b.style.display = 'block';
+      }
+    } catch (e) {}
+    return false;
+  };
+
+(function () {
+  'use strict';
+
+  const APP_VERSION = '1.0';
+  const SCHEMA = 1;
+  const KEY = 'mabio.ishikawa.v1';
+  const NS = 'http://www.w3.org/2000/svg';
+
+  // ================= Categorias (6Ms) — ordem e posição fixas no diagrama =================
+  const CATS = [
+    { key: 'metodo', nome: 'Método', sub: 'Processos', pos: 'top', col: 0, icon: '📋',
+      oque: 'Procedimentos, políticas, fluxos de trabalho e regras que definem COMO a atividade é executada.',
+      regra: 'Pergunte "como isso é feito?". Registre falhas de processo, não de pessoa: lacunas de procedimento, etapas ausentes, aprovações informais.',
+      ex: 'Gestão de mudanças sem aprovação formal; Política de backup desatualizada; Revisão de acessos sem periodicidade definida.' },
+    { key: 'medida', nome: 'Medida', sub: 'Métricas', pos: 'top', col: 1, icon: '📏',
+      oque: 'Indicadores, métricas, monitoramento e critérios de aceite usados para acompanhar o processo.',
+      regra: 'Três padrões de falha: não medir, medir errado, medir e não agir. Inclua limiares mal calibrados e dados de monitoramento pouco confiáveis.',
+      ex: 'Sem indicador de tempo de aplicação de patches; Logs coletados sem regra de alerta; SLA que ignora incidentes de segurança.' },
+    { key: 'material', nome: 'Material', sub: 'Insumos', pos: 'top', col: 2, icon: '📦',
+      oque: 'Insumos que entram no processo: dados, documentação, requisitos, contratos, licenças, suprimentos.',
+      regra: 'Pergunte "o que entra no processo está correto, completo e disponível?". Qualidade do insumo, não da ferramenta que o processa.',
+      ex: 'Inventário de ativos (CMDB) incompleto; Requisitos de segurança ausentes no termo de referência; Documentação de arquitetura desatualizada.' },
+    { key: 'maoDeObra', nome: 'Mão de Obra', sub: 'Pessoas', pos: 'bottom', col: 0, icon: '👥',
+      oque: 'Competência, capacitação, dimensionamento, comunicação e atribuições das pessoas envolvidas.',
+      regra: 'Registre condições, não culpados: falta de treinamento, sobrecarga, papéis indefinidos. "Erro humano" isolado não é causa-raiz — pergunte por que o erro foi possível.',
+      ex: 'Equipe sem treinamento em resposta a incidentes; Acúmulo de funções incompatíveis (sem segregação); Rotatividade alta na infraestrutura.' },
+    { key: 'meioAmbiente', nome: 'Meio Ambiente', sub: 'Contexto', pos: 'bottom', col: 1, icon: '🌐',
+      oque: 'Contexto organizacional, regulatório, cultural e físico em que o processo ocorre.',
+      regra: 'Fatores externos ao processo que o condicionam. Muitos não são controláveis pela área — registre mesmo assim, pois orientam a resposta.',
+      ex: 'Cultura de "entregar primeiro, proteger depois"; Restrição orçamentária; Novas exigências regulatórias (LGPD); Trabalho remoto sem política específica.' },
+    { key: 'maquina', nome: 'Máquina', sub: 'Ferramentas', pos: 'bottom', col: 2, icon: '🖥️',
+      oque: 'Sistemas, hardware, software, infraestrutura e ferramentas usados no processo.',
+      regra: 'Falha, limitação ou obsolescência do próprio recurso técnico. Configuração errada por falta de procedimento pertence a Método.',
+      ex: 'Servidores fora do suporte do fabricante; SIEM sem integração com fontes críticas; Ferramenta de IAM sem suporte a MFA.' }
+  ];
+
+  // ================= Estado (fonte única de verdade) =================
+  function emptyCats() {
+    const o = {};
+    CATS.forEach(c => { o[c.key] = []; });
+    return o;
+  }
+
+  function defaultState() {
+    return {
+      title: 'ANÁLISE DE CAUSA E EFEITO',
+      effect: 'EFEITO (problema analisado)',
+      context: '',
+      categories: emptyCats(),   // { metodo: [ {id, text, detail, children:[...]} ], ... }
+      inbox: [],                 // causas importadas de categorias fora dos 6Ms
+      idCounter: 0
+    };
+  }
+
+  let state = defaultState();
+  let pendingFocus = null;
+  let dragId = null;
+  let tema = 'escuro';
+  let zoomReal = false;
+  let lastW = 1100;
+
+  // Armazenamento tolerante a sandbox: se o localStorage estiver bloqueado,
+  // a ferramenta segue 100% funcional em memória.
+  const store = (function () {
+    const api = { ok: true, onFail: null };
+    function fail() {
+      if (api.ok) {
+        api.ok = false;
+        if (api.onFail) api.onFail();
+      }
+    }
+    try {
+      const k = '__mabio_ishikawa_test__';
+      window.localStorage.setItem(k, '1');
+      window.localStorage.removeItem(k);
+    } catch (e) { api.ok = false; }
+    api.get = function (k) {
+      if (!api.ok) return null;
+      try { return window.localStorage.getItem(k); } catch (e) { fail(); return null; }
+    };
+    api.set = function (k, v) {
+      if (!api.ok) return;
+      try { window.localStorage.setItem(k, v); } catch (e) { fail(); }
+    };
+    api.del = function (k) {
+      if (!api.ok) return;
+      try { window.localStorage.removeItem(k); } catch (e) { fail(); }
+    };
+    return api;
+  })();
+
+  function emIframe() {
+    try { return window.self !== window.top; } catch (e) { return true; }
+  }
+
+  // Autodiagnóstico do ambiente (a faixa começa em ⛔ e é substituída quando o boot roda)
+  function atualizarDiag() {
+    const d = document.getElementById('diag');
+    if (!d) return;
+    d.textContent = '✓ Ishikawa v' + APP_VERSION + ' · JS ativo · armazenamento: ' +
+      (store.ok ? 'OK (persistência automática)' : 'bloqueado (modo memória — use Exportar JSON ou 📋 Transferência por texto)') +
+      ' · ambiente: ' + (emIframe() ? 'embutido/preview' : 'janela própria');
+    d.classList.add('on');
+  }
+
+  // ================= Utilidades =================
+  function novoId() { return 'n' + (state.idCounter++); }
+  function limpa(v) { return String(v === null || v === undefined ? '' : v).replace(/\s+/g, ' ').trim(); }
+
+  function locate(id) {
+    let found = null;
+    function walk(arr, level, cat, parent) {
+      for (let i = 0; i < arr.length && !found; i++) {
+        const n = arr[i];
+        if (n.id === id) { found = { arr: arr, index: i, node: n, level: level, cat: cat, parent: parent }; return; }
+        if (n.children && n.children.length) walk(n.children, level + 1, cat, n);
+      }
+    }
+    CATS.forEach(c => { if (!found) walk(state.categories[c.key], 1, c.key, null); });
+    if (!found) walk(state.inbox, 1, 'inbox', null);
+    return found;
+  }
+
+  function depthOf(n) {
+    let d = 0;
+    (n.children || []).forEach(c => { d = Math.max(d, depthOf(c)); });
+    return 1 + d;
+  }
+  function countDesc(n) { return (n.children || []).reduce((a, c) => a + 1 + countDesc(c), 0); }
+  function contains(n, id) { return (n.children || []).some(c => c.id === id || contains(c, id)); }
+
+  function wrapText(text, maxChars) {
+    const words = String(text).split(/\s+/).filter(Boolean);
+    const lines = [];
+    let cur = '';
+    words.forEach(w => {
+      const t = cur ? cur + ' ' + w : w;
+      if (t.length <= maxChars) {
+        cur = t;
+      } else {
+        if (cur) lines.push(cur);
+        while (w.length > maxChars) { lines.push(w.slice(0, maxChars)); w = w.slice(maxChars); }
+        cur = w;
+      }
+    });
+    if (cur) lines.push(cur);
+    return lines.length ? lines : [''];
+  }
+
+  // Edição inline por duplo clique (vazio mantém o texto anterior, salvo campos opcionais)
+  function inlineEdit(span, current, onCommit, allowEmpty) {
+    const dragParent = span.closest ? span.closest('[draggable="true"]') : null;
+    if (dragParent) dragParent.draggable = false;
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'inline-edit';
+    input.value = current;
+    span.replaceWith(input);
+    input.focus();
+    input.select();
+    let done = false;
+    const fin = (commit) => {
+      if (done) return;
+      done = true;
+      const v = limpa(input.value);
+      if (commit && (v || allowEmpty)) { onCommit(v); save(); }
+      renderAll();
+    };
+    input.onblur = () => fin(true);
+    input.onkeydown = (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); fin(true); }
+      else if (e.key === 'Escape') { e.preventDefault(); fin(false); }
+    };
+  }
+
+  function miniBtn(ch, title, fn, cls) {
+    const b = document.createElement('button');
+    b.className = cls || 'mini-btn';
+    b.textContent = ch;
+    b.title = title;
+    b.onclick = (e) => { e.stopPropagation(); fn(); };
+    return b;
+  }
+
+  // ================= Confirmação na própria página =================
+  function ensureConfirm() {
+    let box = document.getElementById('confirmBox');
+    if (box && document.getElementById('confirmMsg') && document.getElementById('confirmYes') && document.getElementById('confirmNo')) return box;
+    if (box) box.remove();
+    box = document.createElement('div');
+    box.id = 'confirmBox';
+    box.className = 'confirm-box';
+    const card = document.createElement('div');
+    card.className = 'confirm-card';
+    const msg = document.createElement('div');
+    msg.id = 'confirmMsg';
+    msg.className = 'confirm-msg';
+    msg.textContent = '…';
+    const acts = document.createElement('div');
+    acts.className = 'confirm-actions';
+    const no = document.createElement('button');
+    no.id = 'confirmNo';
+    no.textContent = 'Cancelar';
+    const yes = document.createElement('button');
+    yes.id = 'confirmYes';
+    yes.className = 'danger';
+    yes.textContent = 'Confirmar';
+    acts.appendChild(no);
+    acts.appendChild(yes);
+    card.appendChild(msg);
+    card.appendChild(acts);
+    box.appendChild(card);
+    document.body.appendChild(box);
+    return box;
+  }
+
+  function pedirConfirmacao(texto, onYes) {
+    const box = ensureConfirm();
+    const msg = document.getElementById('confirmMsg');
+    const yes = document.getElementById('confirmYes');
+    const no = document.getElementById('confirmNo');
+    msg.textContent = texto;
+    const fechar = () => { box.style.display = 'none'; box.onkeydown = null; };
+    yes.onclick = () => { fechar(); onYes(); };
+    no.onclick = fechar;
+    box.onclick = (e) => { if (e.target === box) fechar(); };
+    box.onkeydown = (e) => { if (e.key === 'Escape') { e.preventDefault(); fechar(); } };
+    box.style.display = 'flex';
+    no.focus();
+  }
+
+  // ================= Mutações =================
+  function addPrincipal(key) {
+    const i = document.getElementById('inp_' + key);
+    if (!i) return;
+    const t = limpa(i.value);
+    if (!t) return;
+    state.categories[key].push({ id: novoId(), text: t, detail: '', children: [] });
+    i.value = '';
+    save();
+    pendingFocus = 'inp_' + key;
+    renderAll();
+  }
+
+  function addSub(parentId, inp) {
+    const t = limpa(inp.value);
+    if (!t) return;
+    const loc = locate(parentId);
+    if (!loc || loc.level >= 3) return;
+    loc.node.children.push({ id: novoId(), text: t, detail: '', children: [] });
+    inp.value = '';
+    save();
+    pendingFocus = inp.id;
+    renderAll();
+  }
+
+  function removeNode(id) {
+    const loc = locate(id);
+    if (!loc) return;
+    const n = countDesc(loc.node);
+    const exec = () => {
+      const l = locate(id);
+      if (!l) return;
+      l.arr.splice(l.index, 1);
+      save();
+      renderAll();
+    };
+    if (n) pedirConfirmacao('Excluir "' + loc.node.text + '" e suas ' + n + ' subcausa(s)?', exec);
+    else exec();
+  }
+
+  function moveNodePos(id, delta) {
+    const loc = locate(id);
+    if (!loc) return;
+    const j = loc.index + delta;
+    if (j < 0 || j >= loc.arr.length) return;
+    const t = loc.arr[loc.index]; loc.arr[loc.index] = loc.arr[j]; loc.arr[j] = t;
+    save();
+    renderAll();
+  }
+
+  // Drag & drop com semântica declarada: reclassificar (categoria, causa-pai ou "a associar")
+  function moveNode(id, target) {
+    const src = locate(id);
+    if (!src) return;
+    if (target.type === 'node') {
+      if (target.id === id) return;
+      const dst = locate(target.id);
+      if (!dst) return;
+      if (contains(src.node, target.id)) {
+        mostrarMensagem('Movimento recusado: uma causa não pode ir para dentro de uma subcausa dela mesma.', 'warn');
+        return;
+      }
+      if (dst.level >= 3 || dst.level + depthOf(src.node) > 3) {
+        mostrarMensagem('Movimento recusado: excederia 3 níveis (principal › secundária › terciária).', 'warn');
+        return;
+      }
+      if (src.parent === dst.node) return;
+      src.arr.splice(src.index, 1);
+      dst.node.children.push(src.node);
+    } else if (target.type === 'cat') {
+      if (!state.categories[target.key]) return;
+      if (src.level === 1 && src.cat === target.key) return;
+      src.arr.splice(src.index, 1);
+      state.categories[target.key].push(src.node);
+    } else if (target.type === 'inbox') {
+      if (src.level === 1 && src.cat === 'inbox') return;
+      src.arr.splice(src.index, 1);
+      state.inbox.push(src.node);
+    } else {
+      return;
+    }
+    save();
+    renderAll();
+  }
+
+  function payloadId(ev) {
+    let id = null;
+    try {
+      const d = JSON.parse(ev.dataTransfer.getData('text/plain'));
+      id = d && d.ishikawa ? String(d.ishikawa) : null;
+    } catch (e) { /* payload externo ou inválido: usa o id em memória */ }
+    return id || dragId;
+  }
+
+  function makeDrop(elm, target) {
+    elm.ondragover = (ev) => { ev.preventDefault(); ev.stopPropagation(); elm.classList.add('dragover'); };
+    elm.ondragleave = (ev) => { ev.stopPropagation(); elm.classList.remove('dragover'); };
+    elm.ondrop = (ev) => {
+      ev.preventDefault();
+      ev.stopPropagation();
+      elm.classList.remove('dragover');
+      const id = payloadId(ev);
+      dragId = null;
+      if (id) moveNode(id, target);
+    };
+  }
+
+  // Card terciário: não aceita subcausas (estrutura) e não deixa o drop "vazar" para a categoria
+  function blockDrop(elm) {
+    elm.ondragover = (ev) => { ev.stopPropagation(); };
+    elm.ondrop = (ev) => {
+      ev.preventDefault();
+      ev.stopPropagation();
+      dragId = null;
+      mostrarMensagem('Causa terciária não recebe subcausas (limite de 3 níveis).', 'warn');
+    };
+  }
+
+  // ================= Renderização: painéis =================
+  function buildNode(n, level) {
+    const box = document.createElement('div');
+    box.className = 'node lvl' + level;
+    if (level < 3) makeDrop(box, { type: 'node', id: n.id });
+    else blockDrop(box);
+
+    const head = document.createElement('div');
+    head.className = 'node-head';
+    head.draggable = true;
+    head.title = 'Arraste para reclassificar: outra categoria ou outra causa-pai';
+    head.ondragstart = (ev) => {
+      ev.stopPropagation();
+      dragId = n.id;
+      try {
+        ev.dataTransfer.setData('text/plain', JSON.stringify({ ishikawa: n.id }));
+        ev.dataTransfer.effectAllowed = 'move';
+      } catch (e) { /* segue com dragId */ }
+    };
+    head.ondragend = () => {
+      dragId = null;
+      document.querySelectorAll('.dragover').forEach(x => x.classList.remove('dragover'));
+    };
+
+    const tag = document.createElement('span');
+    tag.className = 'lvl-tag';
+    tag.textContent = level === 1 ? 'P' : level === 2 ? 'S' : 'T';
+    tag.title = level === 1 ? 'Causa principal' : level === 2 ? 'Causa secundária' : 'Causa terciária';
+    head.appendChild(tag);
+
+    const sp = document.createElement('span');
+    sp.className = 'txt';
+    sp.textContent = n.text;
+    sp.ondblclick = () => inlineEdit(sp, n.text, v => { n.text = v; });
+    head.appendChild(sp);
+
+    const right = document.createElement('div');
+    right.className = 'head-right';
+    right.appendChild(miniBtn('▲', 'Mover para cima', () => moveNodePos(n.id, -1)));
+    right.appendChild(miniBtn('▼', 'Mover para baixo', () => moveNodePos(n.id, 1)));
+    right.appendChild(miniBtn('🗑', 'Excluir', () => removeNode(n.id), 'delete-btn'));
+    head.appendChild(right);
+    box.appendChild(head);
+
+    const dt = document.createElement('div');
+    dt.className = 'detail' + (n.detail ? '' : ' empty');
+    const ds = document.createElement('span');
+    ds.className = 'dtxt';
+    ds.textContent = n.detail || '＋ detalhe (duplo clique)';
+    ds.ondblclick = () => inlineEdit(ds, n.detail, v => { n.detail = v; }, true);
+    dt.appendChild(ds);
+    box.appendChild(dt);
+
+    if (level < 3) {
+      const kids = document.createElement('div');
+      kids.className = 'children';
+      n.children.forEach(c => kids.appendChild(buildNode(c, level + 1)));
+      box.appendChild(kids);
+
+      const row = document.createElement('div');
+      row.className = 'add-inline';
+      const inp = document.createElement('input');
+      inp.type = 'text';
+      inp.id = 'inpSub_' + n.id;
+      inp.className = 'draft';
+      inp.placeholder = level === 1 ? 'Nova causa secundária' : 'Nova causa terciária';
+      inp.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); addSub(n.id, inp); } };
+      const btn = document.createElement('button');
+      btn.textContent = 'Add +';
+      btn.onclick = () => addSub(n.id, inp);
+      row.appendChild(inp);
+      row.appendChild(btn);
+      box.appendChild(row);
+    }
+    return box;
+  }
+
+  // Painéis das categorias são criados por código no boot (robusto a remontadores de HTML)
+  function buildCatPanels() {
+    const grid = document.getElementById('catsGrid');
+    if (!grid) return;
+    CATS.forEach(c => {
+      if (document.getElementById('panel_' + c.key)) return;
+      const p = document.createElement('div');
+      p.className = 'cat-panel';
+      p.id = 'panel_' + c.key;
+
+      const h = document.createElement('h2');
+      h.className = 'tooltip';
+      const nm = document.createElement('span');
+      nm.textContent = c.icon + ' ' + c.nome;
+      const sb = document.createElement('span');
+      sb.className = 'cat-sub';
+      sb.textContent = '(' + c.sub + ')';
+      const cnt = document.createElement('span');
+      cnt.className = 'cat-cnt';
+      cnt.id = 'cnt_' + c.key;
+      cnt.textContent = '0';
+      const tip = document.createElement('span');
+      tip.className = 'tooltiptext';
+      [['O que é: ', c.oque], ['Regra: ', c.regra], ['Exemplo: ', c.ex]].forEach((par, i) => {
+        if (i) { tip.appendChild(document.createElement('br')); tip.appendChild(document.createElement('br')); }
+        const s = document.createElement('strong');
+        s.textContent = par[0];
+        tip.appendChild(s);
+        tip.appendChild(document.createTextNode(par[1]));
+      });
+      h.appendChild(nm);
+      h.appendChild(sb);
+      h.appendChild(cnt);
+      h.appendChild(tip);
+      p.appendChild(h);
+
+      const list = document.createElement('div');
+      list.className = 'cat-list';
+      list.id = 'list_' + c.key;
+      makeDrop(list, { type: 'cat', key: c.key });
+      p.appendChild(list);
+
+      const add = document.createElement('div');
+      add.className = 'add-task';
+      const inp = document.createElement('input');
+      inp.type = 'text';
+      inp.id = 'inp_' + c.key;
+      inp.className = 'draft';
+      inp.placeholder = 'Nova causa principal — ' + c.nome;
+      inp.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); addPrincipal(c.key); } };
+      const btn = document.createElement('button');
+      btn.id = 'btn_' + c.key;
+      btn.textContent = 'Add +';
+      btn.onclick = () => addPrincipal(c.key);
+      add.appendChild(inp);
+      add.appendChild(btn);
+      p.appendChild(add);
+
+      grid.appendChild(p);
+    });
+  }
+
+  function renderPanels() {
+    // Título e efeito reconstruídos a cada render: sobrevivem à edição inline e a remontadores
+    const tl = document.getElementById('tituloLine');
+    if (tl) {
+      tl.textContent = 'Título do problema (duplo clique edita): ';
+      const tit = document.createElement('span');
+      tit.id = 'tituloTxt';
+      tit.className = 'titulo-txt';
+      tit.textContent = state.title;
+      tit.ondblclick = () => inlineEdit(tit, state.title, v => { state.title = v; });
+      tl.appendChild(tit);
+    }
+
+    const ec = document.getElementById('efeitoCard');
+    if (ec) {
+      ec.querySelectorAll('input, #efeitoTxt').forEach(x => x.remove());
+      const ev = document.createElement('span');
+      ev.id = 'efeitoTxt';
+      ev.className = 'txt';
+      ev.textContent = state.effect;
+      ev.ondblclick = () => inlineEdit(ev, state.effect, v => { state.effect = v; });
+      const tip = ec.querySelector('.tooltiptext');
+      if (tip) ec.insertBefore(ev, tip); else ec.appendChild(ev);
+    }
+
+    const iw = document.getElementById('inboxWrap');
+    const il = document.getElementById('inbox');
+    if (iw && il) {
+      il.textContent = '';
+      iw.style.display = state.inbox.length ? 'block' : 'none';
+      state.inbox.forEach(n => il.appendChild(buildNode(n, 1)));
+      makeDrop(il, { type: 'inbox' });
+    }
+
+    CATS.forEach(c => {
+      const list = document.getElementById('list_' + c.key);
+      if (!list) return;
+      list.textContent = '';
+      const arr = state.categories[c.key];
+      if (!arr.length) {
+        const e = document.createElement('div');
+        e.className = 'empty-cat';
+        e.textContent = 'Sem causas — adicione abaixo ou arraste uma causa para cá.';
+        list.appendChild(e);
+      }
+      arr.forEach(n => list.appendChild(buildNode(n, 1)));
+      const cnt = document.getElementById('cnt_' + c.key);
+      if (cnt) {
+        const s = catStats(c.key);
+        cnt.textContent = s.p + ' P · ' + s.s + ' S · ' + s.t + ' T';
+      }
+    });
+  }
+
+  // ================= Indicadores =================
+  function catStats(key) {
+    const r = { p: 0, s: 0, t: 0 };
+    state.categories[key].forEach(p => {
+      r.p++;
+      p.children.forEach(s => { r.s++; r.t += s.children.length; });
+    });
+    return r;
+  }
+
+  function stats() {
+    const per = {};
+    let P = 0, S = 0, T = 0;
+    const vazias = [];
+    CATS.forEach(c => {
+      const r = catStats(c.key);
+      per[c.key] = r;
+      P += r.p; S += r.s; T += r.t;
+      if (!r.p) vazias.push(c.nome);
+    });
+    let inbox = 0;
+    state.inbox.forEach(n => { inbox += 1 + countDesc(n); });
+    return { per: per, P: P, S: S, T: T, total: P + S + T, vazias: vazias, inbox: inbox };
+  }
+
+  function renderResumo() {
+    const el0 = document.getElementById('resumo');
+    if (!el0) return;
+    const s = stats();
+    if (!s.total && !s.inbox) {
+      el0.className = 'resumo vazio';
+      el0.textContent = 'Análise vazia — adicione causas nas categorias ou use a 🤖 Ponte com IA acima.';
+      return;
+    }
+    let t = 'Causas: ' + s.total + ' — ' + s.P + ' principais · ' + s.S + ' secundárias · ' + s.T + ' terciárias';
+    t += s.vazias.length ? (' · sem causas: ' + s.vazias.join(', ') + ' (confirme se foram de fato investigadas)') : ' · todas as 6 categorias com causas ✅';
+    if (s.inbox) t += ' · ' + s.inbox + ' causa(s) a associar 📥';
+    el0.className = 'resumo ' + (s.inbox ? 'gap' : (s.vazias.length ? 'info' : 'ok'));
+    el0.textContent = t;
+  }
+
+  // ================= Renderização: diagrama SVG (projeção somente leitura) =================
+  const PAL = {
+    escuro: {
+      bg: '#0B1A22', frame: '#1F3B47', title: '#FFFFFF', subtitle: '#80DEEA',
+      spine: '#E0F7FA', bone: '#26C6DA', tail: '#26C6DA',
+      catFill: '#00363F', catStroke: '#4DD0E1', catText: '#FFFFFF', catSub: '#80DEEA',
+      cause: '#4DD0E1', sub: '#ECEFF1', tert: '#CFD8DC', detail: '#90A4AE', empty: '#607D8B',
+      headFill: '#00838F', headStroke: '#4DD0E1', headText: '#FFFFFF', legend: '#90A4AE', summary: '#B0BEC5'
+    },
+    claro: {
+      bg: '#FFFFFF', frame: '#B0BEC5', title: '#102027', subtitle: '#00838F',
+      spine: '#263238', bone: '#00838F', tail: '#00838F',
+      catFill: '#E0F7FA', catStroke: '#00838F', catText: '#004D55', catSub: '#00838F',
+      cause: '#00707A', sub: '#263238', tert: '#37474F', detail: '#78909C', empty: '#90A4AE',
+      headFill: '#00838F', headStroke: '#006064', headText: '#FFFFFF', legend: '#607D8B', summary: '#455A64'
+    }
+  };
+
+  // Geometria. Largura de texto estimada por contagem de caracteres (sem medir layout: testável em jsdom)
+  const G = {
+    slope: 0.45, pad: 14, gapCol: 34, labelH: 46, margin: 40, blockGap: 16,
+    gapTop: 24, gapBot: 26, headW: 236, headPt: 36, tailW: 44, tailH: 32,
+    minW: 1100, minBone: 150, minColSp: 230, spineToHead: 46
+  };
+  const TS = {
+    p:  { size: 13,   lh: 16, chars: 32, bold: true },
+    pd: { size: 11,   lh: 14, chars: 44 },
+    s:  { size: 12,   lh: 15, chars: 32 },
+    sd: { size: 10.5, lh: 13, chars: 46 },
+    t:  { size: 11,   lh: 14, chars: 36 },
+    td: { size: 10,   lh: 13, chars: 48 }
+  };
+
+  function tw(lines, st) {
+    let m = 0;
+    lines.forEach(l => { m = Math.max(m, l.length); });
+    return m * st.size * (st.bold ? 0.6 : 0.55);
+  }
+  function r1(n) { return Math.round(n * 10) / 10; }
+
+  function el(tag, attrs, parent) {
+    const e = document.createElementNS(NS, tag);
+    for (const a in attrs) {
+      if (attrs[a] === null || attrs[a] === undefined) continue;
+      e.setAttribute(a, typeof attrs[a] === 'number' ? r1(attrs[a]) : attrs[a]);
+    }
+    if (parent) parent.appendChild(e);
+    return e;
+  }
+
+  function mtext(parent, x, yTop, lines, st, attrs) {
+    const a = Object.assign({ x: x, y: yTop + st.size * 0.92, 'font-size': st.size }, attrs || {});
+    if (st.bold) a['font-weight'] = 'bold';
+    const t = el('text', a, parent);
+    lines.forEach((ln, i) => {
+      const s = document.createElementNS(NS, 'tspan');
+      s.setAttribute('x', r1(x));
+      if (i > 0) s.setAttribute('dy', st.lh);
+      s.textContent = ln;
+      t.appendChild(s);
+    });
+    return t;
+  }
+
+  // Bloco = causa principal com suas secundárias (ramo) e terciárias (texto indentado)
+  function layoutBlock(n) {
+    const rows = [];
+    const ticks = [];
+    const pl = wrapText(n.text, TS.p.chars);
+    rows.push({ k: 'p', lines: pl, x: 0, y: 0 });
+    let y = pl.length * TS.p.lh + 2;
+    const lineY = y;
+    y += 5;
+    if (n.detail) {
+      const l = wrapText(n.detail, TS.pd.chars);
+      rows.push({ k: 'pd', lines: l, x: 4, y: y });
+      y += l.length * TS.pd.lh + 2;
+    }
+    n.children.forEach(s => {
+      y += 6;
+      const sl = wrapText(s.text, TS.s.chars);
+      rows.push({ k: 's', lines: sl, x: 22, y: y });
+      y += sl.length * TS.s.lh + 1;
+      ticks.push({ y: y, x1: 22 + tw(sl, TS.s) + 6 });
+      y += 4;
+      if (s.detail) {
+        const l = wrapText(s.detail, TS.sd.chars);
+        rows.push({ k: 'sd', lines: l, x: 24, y: y });
+        y += l.length * TS.sd.lh + 2;
+      }
+      s.children.forEach(t => {
+        y += 2;
+        const tl = wrapText('› ' + t.text, TS.t.chars);
+        rows.push({ k: 't', lines: tl, x: 34, y: y });
+        y += tl.length * TS.t.lh + 1;
+        if (t.detail) {
+          const l = wrapText(t.detail, TS.td.chars);
+          rows.push({ k: 'td', lines: l, x: 46, y: y });
+          y += l.length * TS.td.lh + 2;
+        }
+      });
+    });
+    rows.forEach(r => { r.w = tw(r.lines, TS[r.k]); r.h = r.lines.length * TS[r.k].lh; });
+    return { n: n, rows: rows, ticks: ticks, lineY: lineY, H: y + 4 };
+  }
+
+  // Comprimento da linha da causa (do início do texto até a espinha), garantindo que nenhum
+  // texto cruze a própria espinha diagonal. O lado "inseguro" depende de topo/base.
+  function blockWidth(b, pos) {
+    let w = 120;
+    b.rows.forEach(r => {
+      const top = r.y - b.lineY;
+      const bot = r.y + r.h - b.lineY;
+      const unsafe = pos === 'top' ? Math.max(0, -top) : Math.max(0, bot);
+      w = Math.max(w, r.x + r.w + G.pad + unsafe * G.slope);
+    });
+    b.ticks.forEach(tk => {
+      const d = tk.y - b.lineY;
+      const unsafe = pos === 'top' ? 0 : Math.max(0, d);
+      w = Math.max(w, tk.x1 + G.pad + unsafe * G.slope);
+    });
+    return w;
+  }
+
+  function labelW(c) {
+    return Math.max(150, Math.max(c.nome.length * 14 * 0.66, (c.sub.length + 2) * 11 * 0.55) + 30);
+  }
+
+  function computeLayout() {
+    const cols = [0, 1, 2].map(() => ({ top: null, bot: null }));
+    CATS.forEach(c => {
+      const blocks = state.categories[c.key].map(n => {
+        const b = layoutBlock(n);
+        b.w = blockWidth(b, c.pos);
+        b.need = b.w + G.slope * (c.pos === 'top' ? (b.H - b.lineY) : b.lineY) + G.gapCol;
+        return b;
+      });
+      const stack = blocks.reduce((a, b) => a + b.H, 0) + Math.max(0, blocks.length - 1) * G.blockGap;
+      const e = { c: c, blocks: blocks, stack: stack, lw: labelW(c) };
+      if (c.pos === 'top') cols[c.col].top = e; else cols[c.col].bot = e;
+    });
+
+    let Ltop = G.minBone, Lbot = G.minBone;
+    cols.forEach(col => {
+      Ltop = Math.max(Ltop, col.top.stack + G.gapTop + 12);
+      Lbot = Math.max(Lbot, col.bot.stack + G.gapBot + 12);
+    });
+
+    // Espaçamento entre juntas: cada coluna precisa caber entre a espinha anterior e a sua
+    const sp = cols.map((col, i) => {
+      let need = G.minColSp;
+      [col.top, col.bot].forEach(e => {
+        e.blocks.forEach(b => { need = Math.max(need, b.need); });
+        if (!e.blocks.length) need = Math.max(need, 190);
+      });
+      if (i > 0) {
+        need = Math.max(need, (col.top.lw + cols[i - 1].top.lw) / 2 + 20, (col.bot.lw + cols[i - 1].bot.lw) / 2 + 20);
+      }
+      return need;
+    });
+
+    const j = [0, 0, 0];
+    j[2] = 0;
+    j[1] = j[2] - sp[2];
+    j[0] = j[1] - sp[1];
+    const spineStart = j[0] - sp[0];
+
+    // Posição horizontal relativa dos blocos (h = distância vertical da linha até a espinha central)
+    let minX = spineStart - G.tailW;
+    cols.forEach((col, ci) => {
+      [['top', col.top, Ltop], ['bot', col.bot, Lbot]].forEach(t => {
+        const pos = t[0], e = t[1], L = t[2];
+        let cum = 0;
+        e.blocks.forEach(b => {
+          const h = pos === 'top' ? (L - 10 - cum - b.lineY) : (G.gapBot + cum + b.lineY);
+          b.relTop = cum;
+          b.xb = j[ci] - h * G.slope;
+          b.xStart = b.xb - b.w;
+          minX = Math.min(minX, b.xStart);
+          cum += b.H + G.blockGap;
+        });
+        e.lx = j[ci] - L * G.slope;
+        minX = Math.min(minX, e.lx - e.lw / 2);
+        if (!e.blocks.length) minX = Math.min(minX, j[ci] - (L / 2) * G.slope - 170);
+      });
+    });
+    const maxX = j[2] + G.spineToHead + G.headW;
+    return { cols: cols, Ltop: Ltop, Lbot: Lbot, j: j, spineStart: spineStart, minX: minX, maxX: maxX };
+  }
+
+  function renderDiagram() {
+    const svg = document.getElementById('diagram');
+    if (!svg) return;
+    const pal = PAL[tema] || PAL.escuro;
+    const L = computeLayout();
+
+    const contentW = (L.maxX - L.minX) + 2 * G.margin;
+    const W = Math.max(G.minW, contentW);
+    const ox = G.margin - L.minX + (W - contentW) / 2;
+    const X = (x) => x + ox;
+
+    const titleSt = { size: 22, lh: 27, bold: true };
+    const titleLines = wrapText(state.title, Math.max(20, Math.floor((W - 120) / (22 * 0.6))));
+    const titleTop = 26;
+    const subY = titleTop + titleLines.length * titleSt.lh + 4;
+    const contentTop = subY + 30;
+
+    const effSt = { size: 14, lh: 18, bold: true };
+    const effLines = wrapText(state.effect, 21);
+    const headH = Math.max(96, effLines.length * effSt.lh + 44);
+
+    const spineY = contentTop + Math.max(G.labelH + 6 + L.Ltop, headH / 2 + 8);
+    const contentBottom = spineY + Math.max(L.Lbot + 6 + G.labelH, headH / 2 + 8);
+
+    const s = stats();
+    const legSt = { size: 10.5, lh: 14 };
+    const legChars = Math.max(60, Math.floor((W - 80) / (10.5 * 0.55)));
+    const leg1 = wrapText('Leitura: CATEGORIA (caixa) › causa principal (ciano, sobre a espinha) › causa secundária (ramo) › causa terciária (texto indentado ›) · detalhes em cinza itálico · ordem de cima para baixo = ordem do editor.', legChars);
+    let resumo = 'Resumo: ' + s.total + ' causa(s) — ' + s.P + ' principais · ' + s.S + ' secundárias · ' + s.T + ' terciárias · por categoria: ' +
+      CATS.map(c => c.nome + ' ' + (s.per[c.key].p + s.per[c.key].s + s.per[c.key].t)).join(' · ');
+    if (s.vazias.length) resumo += ' · sem causas: ' + s.vazias.join(', ');
+    if (s.inbox) resumo += ' · ' + s.inbox + ' causa(s) a associar, fora do diagrama';
+    const leg2 = wrapText(resumo, legChars);
+    const legTop = contentBottom + 22;
+    const H = legTop + (leg1.length + leg2.length) * legSt.lh + 34;
+
+    lastW = W;
+    while (svg.firstChild) svg.removeChild(svg.firstChild);
+    svg.setAttribute('viewBox', '0 0 ' + r1(W) + ' ' + r1(H));
+    svg.setAttribute('font-family', 'Arial, Helvetica, sans-serif');
+    svg.style.width = zoomReal ? (r1(W) + 'px') : '100%';
+
+    // fundo + moldura (saem no export)
+    el('rect', { x: 0, y: 0, width: W, height: H, fill: pal.bg }, svg);
+    el('rect', { x: 10, y: 10, width: W - 20, height: H - 20, fill: 'none', stroke: pal.frame, 'stroke-width': 1.5, rx: 4 }, svg);
+
+    mtext(svg, W / 2, titleTop, titleLines, titleSt, { 'text-anchor': 'middle', fill: pal.title, class: 'dg-title' });
+    const st = el('text', { x: W / 2, y: subY + 12, 'text-anchor': 'middle', 'font-size': 11, fill: pal.subtitle, 'letter-spacing': 1.5 }, svg);
+    st.textContent = 'Diagrama de Ishikawa · Causa e Efeito (6Ms)';
+
+    // cauda + espinha central
+    const sx = X(L.spineStart);
+    const hx = X(L.j[2] + G.spineToHead);
+    el('polygon', {
+      points: r1(sx - G.tailW) + ',' + r1(spineY - G.tailH) + ' ' + r1(sx) + ',' + r1(spineY) + ' ' + r1(sx - G.tailW) + ',' + r1(spineY + G.tailH),
+      fill: pal.tail, 'fill-opacity': 0.25, stroke: pal.tail, 'stroke-width': 2, 'stroke-linejoin': 'round', class: 'dg-tail'
+    }, svg);
+    el('line', { x1: sx, y1: spineY, x2: hx, y2: spineY, stroke: pal.spine, 'stroke-width': 4, 'stroke-linecap': 'round', class: 'dg-spine' }, svg);
+
+    // espinhas principais + blocos
+    L.cols.forEach((col, ci) => {
+      const jx = X(L.j[ci]);
+      [['top', col.top, L.Ltop], ['bot', col.bot, L.Lbot]].forEach(t => {
+        const pos = t[0], e = t[1], Lb = t[2];
+        const endY = pos === 'top' ? spineY - Lb : spineY + Lb;
+        const endX = jx - Lb * G.slope;
+        el('line', { x1: jx, y1: spineY, x2: endX, y2: endY, stroke: pal.bone, 'stroke-width': 2.6, 'stroke-linecap': 'round', class: 'dg-bone' }, svg);
+
+        if (!e.blocks.length) {
+          const hm = Lb / 2;
+          const ey = pos === 'top' ? spineY - hm : spineY + hm;
+          const et = el('text', { x: jx - hm * G.slope - 12, y: ey + 4, 'text-anchor': 'end', 'font-size': 11, 'font-style': 'italic', fill: pal.empty, class: 'dg-empty' }, svg);
+          et.textContent = 'sem causas registradas';
+        }
+
+        const g = el('g', { class: 'dg-cat-' + e.c.key }, svg);
+        e.blocks.forEach(b => {
+          const blockTop = pos === 'top' ? (spineY - Lb + 10 + b.relTop) : (spineY + G.gapBot + b.relTop);
+          drawBlock(g, b, X(b.xStart), blockTop, pal);
+        });
+
+        // rótulo da categoria na ponta da espinha
+        const lx = X(e.lx);
+        const ly = pos === 'top' ? (endY - 4 - G.labelH) : (endY + 4);
+        el('rect', { x: lx - e.lw / 2, y: ly, width: e.lw, height: G.labelH, rx: 6, fill: pal.catFill, stroke: pal.catStroke, 'stroke-width': 1.8, class: 'dg-cat' }, svg);
+        const t1 = el('text', { x: lx, y: ly + 21, 'text-anchor': 'middle', 'font-size': 14, 'font-weight': 'bold', fill: pal.catText, 'letter-spacing': 0.5, class: 'dg-cat-name' }, svg);
+        t1.textContent = e.c.nome.toUpperCase();
+        const t2 = el('text', { x: lx, y: ly + 37, 'text-anchor': 'middle', 'font-size': 11, fill: pal.catSub, class: 'dg-cat-sub' }, svg);
+        t2.textContent = '(' + e.c.sub + ')';
+      });
+    });
+
+    // cabeça do peixe (efeito), por cima da ponta da espinha
+    const hTop = spineY - headH / 2, hBot = spineY + headH / 2;
+    el('polygon', {
+      points: r1(hx) + ',' + r1(hTop) + ' ' + r1(hx + G.headW - G.headPt) + ',' + r1(hTop) + ' ' + r1(hx + G.headW) + ',' + r1(spineY) + ' ' +
+              r1(hx + G.headW - G.headPt) + ',' + r1(hBot) + ' ' + r1(hx) + ',' + r1(hBot),
+      fill: pal.headFill, stroke: pal.headStroke, 'stroke-width': 2, 'stroke-linejoin': 'round', class: 'dg-head'
+    }, svg);
+    const hcx = hx + (G.headW - G.headPt) / 2 + 4;
+    const cap = el('text', { x: hcx, y: hTop + 18, 'text-anchor': 'middle', 'font-size': 10, 'font-weight': 'bold', fill: pal.headText, 'fill-opacity': 0.8, 'letter-spacing': 2 }, svg);
+    cap.textContent = 'EFEITO';
+    mtext(svg, hcx, spineY - (effLines.length * effSt.lh) / 2 + 6, effLines, effSt, { 'text-anchor': 'middle', fill: pal.headText, class: 'dg-effect' });
+
+    // legenda + resumo analítico (parte do artefato exportado)
+    mtext(svg, W / 2, legTop, leg1, legSt, { 'text-anchor': 'middle', fill: pal.legend, class: 'dg-legend' });
+    mtext(svg, W / 2, legTop + leg1.length * legSt.lh + 6, leg2, legSt, { 'text-anchor': 'middle', fill: pal.summary, 'font-weight': 'bold', class: 'dg-summary' });
+
+    const wrap = document.getElementById('diagramWrap');
+    if (wrap) wrap.style.backgroundColor = pal.bg;
+  }
+
+  const FILL = {
+    p: pal => pal.cause, pd: pal => pal.detail, s: pal => pal.sub,
+    sd: pal => pal.detail, t: pal => pal.tert, td: pal => pal.detail
+  };
+
+  function drawBlock(g, b, xStart, blockTop, pal) {
+    const lineAbs = blockTop + b.lineY;
+    const xb = xStart + b.w;
+    el('line', { x1: xStart, y1: lineAbs, x2: xb, y2: lineAbs, stroke: pal.cause, 'stroke-width': 1.8, class: 'dg-branch' }, g);
+    el('circle', { cx: xb, cy: lineAbs, r: 3.2, fill: pal.cause }, g);
+    if (b.ticks.length) {
+      const lastY = blockTop + b.ticks[b.ticks.length - 1].y;
+      el('line', { x1: xStart + 10, y1: lineAbs, x2: xStart + 10, y2: lastY, stroke: pal.sub, 'stroke-width': 1, 'stroke-opacity': 0.7 }, g);
+      b.ticks.forEach(tk => {
+        el('line', { x1: xStart + 10, y1: blockTop + tk.y, x2: xStart + tk.x1, y2: blockTop + tk.y, stroke: pal.sub, 'stroke-width': 1.1, class: 'dg-tick' }, g);
+      });
+    }
+    b.rows.forEach(r => {
+      const attrs = { fill: FILL[r.k](pal), class: 'dg-' + r.k };
+      if (r.k === 'pd' || r.k === 'sd' || r.k === 'td') attrs['font-style'] = 'italic';
+      mtext(g, xStart + r.x + 2, blockTop + r.y, r.lines, TS[r.k], attrs);
+    });
+  }
+
+  // ================= Render geral (preserva rascunhos digitados nos campos) =================
+  function renderAll() {
+    const drafts = {};
+    document.querySelectorAll('input.draft').forEach(i => { if (i.id && i.value) drafts[i.id] = i.value; });
+    renderPanels();
+    renderResumo();
+    renderDiagram();
+    Object.keys(drafts).forEach(id => { const i = document.getElementById(id); if (i && !i.value) i.value = drafts[id]; });
+    if (pendingFocus) {
+      const f = document.getElementById(pendingFocus);
+      if (f) { f.value = ''; f.focus(); }
+      pendingFocus = null;
+    }
+  }
+
+  // ================= Normalização (import, IA e storage) =================
+  const TEXT_KEYS = ['text', 'texto', 'causa', 'cause', 'nome', 'name', 'titulo', 'title', 'label'];
+  const DETAIL_KEYS = ['detail', 'detalhe', 'detalhes', 'details', 'descricao', 'descrição', 'description', 'desc', 'explicacao', 'explicação', 'justificativa'];
+  const CHILD_KEYS = ['children', 'filhos', 'subcausas', 'subCausas', 'sub_causas', 'subcauses', 'causas', 'causes',
+                      'secundarias', 'secundárias', 'terciarias', 'terciárias', 'items', 'itens'];
+  const CAT_CONTAINER_KEYS = ['categories', 'categorias', 'cats', '6ms', '6Ms', 'analise', 'análise'];
+  const NAME_KEYS = ['categoria', 'category', 'nome', 'name', 'm', 'tipo'];
+
+  function semAcento(v) {
+    return String(v).normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  }
+
+  function catKeyFor(name) {
+    const n = semAcento(String(name).replace(/\(.*?\)/g, '')).toLowerCase().replace(/[^a-z0-9]/g, '');
+    const map = {
+      metodo: 'metodo', metodos: 'metodo', method: 'metodo', methods: 'metodo', processo: 'metodo', processos: 'metodo',
+      medida: 'medida', medidas: 'medida', medicao: 'medida', medicoes: 'medida', measurement: 'medida', measurements: 'medida',
+      metrica: 'medida', metricas: 'medida',
+      material: 'material', materiais: 'material', materials: 'material', insumo: 'material', insumos: 'material',
+      maodeobra: 'maoDeObra', maosdeobra: 'maoDeObra', pessoas: 'maoDeObra', people: 'maoDeObra', manpower: 'maoDeObra',
+      meioambiente: 'meioAmbiente', ambiente: 'meioAmbiente', environment: 'meioAmbiente', contexto: 'meioAmbiente',
+      maquina: 'maquina', maquinas: 'maquina', machine: 'maquina', machines: 'maquina', ferramenta: 'maquina', ferramentas: 'maquina',
+      equipamento: 'maquina', equipamentos: 'maquina'
+    };
+    return map[n] || null;
+  }
+
+  function pickStr(o, keys) {
+    for (let i = 0; i < keys.length; i++) {
+      const v = o[keys[i]];
+      if (typeof v === 'string' || typeof v === 'number') return String(v);
+    }
+    return '';
+  }
+  function pickArr(o, keys) {
+    for (let i = 0; i < keys.length; i++) {
+      const v = o[keys[i]];
+      if (Array.isArray(v)) return v;
+    }
+    return [];
+  }
+
+  function flattenKids(o, out) {
+    const kids = (o && typeof o === 'object') ? pickArr(o, CHILD_KEYS) : [];
+    kids.forEach(k => { out.push(k); flattenKids(k, out); });
+    return out;
+  }
+
+  // Normaliza uma lista de causas: ids novos (evita colisão com JSON externo), texto limpo,
+  // até 3 níveis. Nada é descartado: níveis além do 3º sobem para o nível terciário.
+  function normList(arr, level, s, ctx) {
+    if (!Array.isArray(arr)) arr = (arr && typeof arr === 'object') || typeof arr === 'string' ? [arr] : [];
+    const out = [];
+    arr.forEach(o => {
+      let text, detail, kids;
+      if (typeof o === 'string' || typeof o === 'number') { text = limpa(o); detail = ''; kids = []; }
+      else if (o && typeof o === 'object') { text = limpa(pickStr(o, TEXT_KEYS)); detail = limpa(pickStr(o, DETAIL_KEYS)); kids = pickArr(o, CHILD_KEYS); }
+      else return;
+      if (!text && detail) { text = detail; detail = ''; }
+      if (!text) {
+        normList(kids, level, s, ctx).forEach(x => out.push(x));
+        return;
+      }
+      const node = { id: 'n' + (s.idCounter++), text: text, detail: detail, children: [] };
+      out.push(node);
+      if (level < 3) {
+        node.children = normList(kids, level + 1, s, ctx);
+      } else if (kids.length) {
+        const extra = [];
+        kids.forEach(k => { extra.push(k); flattenKids(k, extra); });
+        extra.forEach(k => {
+          const flat = (k && typeof k === 'object') ? { text: pickStr(k, TEXT_KEYS), detail: pickStr(k, DETAIL_KEYS) } : k;
+          normList([flat], 3, s, ctx).forEach(x => { out.push(x); ctx.lifted++; });
+        });
+      }
+    });
+    return out;
+  }
+
+  function temCategorias(o) {
+    if (!o || typeof o !== 'object' || Array.isArray(o)) return false;
+    if (CAT_CONTAINER_KEYS.some(k => o[k] && typeof o[k] === 'object')) return true;
+    return Object.keys(o).some(k => catKeyFor(k) && Array.isArray(o[k]));
+  }
+
+  function normalizeData(d, ctx) {
+    const s = defaultState();
+    s.title = limpa(pickStr(d, ['title', 'titulo', 'título', 'tituloProblema', 'titulo_problema'])) || s.title;
+    s.effect = limpa(pickStr(d, ['effect', 'efeito', 'problema', 'problem', 'problemaCentral'])) || s.effect;
+    s.context = String(pickStr(d, ['context', 'contexto']) || '').trim();
+
+    let cats = null;
+    for (let i = 0; i < CAT_CONTAINER_KEYS.length && !cats; i++) {
+      const v = d[CAT_CONTAINER_KEYS[i]];
+      if (v && typeof v === 'object') cats = v;
+    }
+    if (!cats) cats = d;
+
+    const entries = [];
+    if (Array.isArray(cats)) {
+      cats.forEach(c => {
+        if (!c || typeof c !== 'object') return;
+        entries.push([pickStr(c, NAME_KEYS), pickArr(c, ['causas', 'causes', 'items', 'itens', 'children', 'lista'])]);
+      });
+    } else {
+      Object.keys(cats).forEach(k => {
+        if (CAT_CONTAINER_KEYS.indexOf(k) >= 0) return;
+        if (Array.isArray(cats[k])) entries.push([k, cats[k]]);
+      });
+    }
+
+    entries.forEach(en => {
+      if (en[0] === 'inbox') return;                    // tratado abaixo
+      const key = catKeyFor(en[0]);
+      const list = normList(en[1], 1, s, ctx);
+      if (key) {
+        list.forEach(n => s.categories[key].push(n));
+        ctx.found++;
+        return;
+      }
+      if (!list.length) return;
+      // categoria fora dos 6Ms: nada é descartado — vai para "A associar" com a origem no texto
+      const nome = limpa(en[0]) || 'sem nome';
+      list.forEach(n => { n.text = '[' + nome + '] ' + n.text; s.inbox.push(n); });
+      ctx.unknown.push(nome);
+    });
+
+    if (Array.isArray(d.inbox)) normList(d.inbox, 1, s, ctx).forEach(n => s.inbox.push(n));
+    return s;
+  }
+
+  // Cadeia de migração de schema (vazia na v1; padrão para versões futuras)
+  const MIGRATIONS = { /* 1: function (d) { return d; }  // 1 → 2 */ };
+  function migrate(env) {
+    let v = Number(env.schemaVersion) || 1;
+    let d = env.data;
+    while (MIGRATIONS[v]) { d = MIGRATIONS[v](d); v++; }
+    return d;
+  }
+
+  // Entrada aceita: envelope nativo, objeto de dados puro, resposta de IA com texto/cercas ao redor
+  function parseEntrada(txt) {
+    let t = String(txt || '').replace(/^\uFEFF/, '').trim();
+    if (!t) throw new Error('Texto vazio.');
+    t = t.replace(/```(?:json)?/gi, '');
+    const a = t.indexOf('{'), b = t.lastIndexOf('}');
+    if (a < 0) throw new Error('Nenhum objeto JSON encontrado no texto.');
+    if (b <= a) throw new Error('JSON malformado: objeto aberto com "{" sem fechamento "}" (resposta cortada?).');
+    try { return JSON.parse(t.slice(a, b + 1)); }
+    catch (e) { throw new Error('JSON malformado: ' + e.message); }
+  }
+
+  function importar(data, ctx) {
+    if (!data || typeof data !== 'object' || Array.isArray(data)) throw new Error('O conteúdo não é um objeto JSON.');
+    if (data.bowtiePathways || data.bowtieDiagram || data.bowtieBoard) throw new Error('Este JSON é do Bow Tie, não do Ishikawa.');
+    if (data.tool && data.tool !== 'ishikawa') throw new Error('Este JSON é de outra ferramenta (tool = "' + limpa(data.tool) + '").');
+    let d;
+    if (data.tool === 'ishikawa' && data.data && typeof data.data === 'object') {
+      if ((Number(data.schemaVersion) || 1) > SCHEMA) ctx.warns.push('Arquivo de schema mais novo (v' + data.schemaVersion + '); campos desconhecidos foram ignorados.');
+      d = migrate(data);
+    } else if (data.data && typeof data.data === 'object' && temCategorias(data.data)) {
+      d = data.data;
+    } else if (data.ishikawa && typeof data.ishikawa === 'object') {
+      d = data.ishikawa;
+    } else if (temCategorias(data)) {
+      d = data;
+    } else {
+      throw new Error('Nenhuma categoria dos 6Ms reconhecida no JSON.');
+    }
+    const s = normalizeData(d, ctx);
+    if (data.tool !== 'ishikawa' && !ctx.found && !s.inbox.length) throw new Error('Nenhuma categoria dos 6Ms reconhecida no JSON.');
+    return s;
+  }
+
+  function temConteudo() {
+    const d = defaultState();
+    return stats().total > 0 || state.inbox.length > 0 || state.title !== d.title || state.effect !== d.effect;
+  }
+
+  function aplicarImport(data, origem) {
+    const ctx = { lifted: 0, unknown: [], warns: [], found: 0 };
+    let s;
+    try {
+      s = importar(data, ctx);
+    } catch (e) {
+      mostrarMensagem('Erro ao importar (' + origem + '): ' + e.message, 'error');
+      return;
+    }
+    if (!s.context) {
+      const p = document.getElementById('inpProblema');
+      if (p && p.value.trim()) s.context = p.value.trim();
+    }
+    const exec = () => {
+      state = s;
+      save();
+      syncContext();
+      renderAll();
+      const av = ctx.warns.slice();
+      if (ctx.lifted) av.push(ctx.lifted + ' causa(s) de nível além do 3º foram elevadas ao nível terciário.');
+      if (ctx.unknown.length) av.push('Categorias fora dos 6Ms (' + ctx.unknown.join(', ') + ') foram para o bloco "A associar".');
+      mostrarMensagem('Análise importada (' + origem + '): ' + stats().total + ' causa(s).' + (av.length ? ' Atenção: ' + av.join(' ') : ''), av.length ? 'warn' : 'success');
+    };
+    if (temConteudo()) pedirConfirmacao('Substituir a análise atual pelo conteúdo importado? Exporte antes se quiser guardar a versão atual.', exec);
+    else exec();
+  }
+
+  // ================= Persistência =================
+  function save() {
+    store.set(KEY, JSON.stringify({ schemaVersion: SCHEMA, appVersion: APP_VERSION, state: state }));
+  }
+
+  function load() {
+    try {
+      const raw = store.get(KEY);
+      if (!raw) return;
+      const d = JSON.parse(raw);
+      if (d && d.state) {
+        const ctx = { lifted: 0, unknown: [], warns: [], found: 0 };
+        state = normalizeData(d.state, ctx);
+      }
+    } catch (e) { /* estado corrompido: começa vazio */ }
+  }
+
+  function syncContext() {
+    const p = document.getElementById('inpProblema');
+    if (p) p.value = state.context || '';
+  }
+
+  // ================= Export =================
+  function semIds(list) {
+    return list.map(n => ({ text: n.text, detail: n.detail, children: semIds(n.children || []) }));
+  }
+
+  function montarExport() {
+    const cats = {};
+    CATS.forEach(c => { cats[c.key] = semIds(state.categories[c.key]); });
+    return {
+      tool: 'ishikawa',
+      schemaVersion: SCHEMA,
+      appVersion: APP_VERSION,
+      exportDate: new Date().toISOString(),
+      data: { title: state.title, effect: state.effect, context: state.context, categories: cats, inbox: semIds(state.inbox) }
+    };
+  }
+
+  function slug() {
+    return semAcento(state.title).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40) || 'analise';
+  }
+
+  function baixar(nome, conteudo, mime) {
+    const blob = new Blob([conteudo], { type: mime });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = nome;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => { try { URL.revokeObjectURL(url); } catch (e) {} }, 1000);
+  }
+
+  function avisoDownload(txt) {
+    if (emIframe()) mostrarMensagem(txt + ' Se o download não iniciar (ambiente embutido), use 📋 Transferência por texto.', 'warn');
+    else mostrarMensagem(txt, 'success');
+  }
+
+  function exportarJSON() {
+    try {
+      baixar('ishikawa_' + slug() + '_' + new Date().toISOString().split('T')[0] + '.json', JSON.stringify(montarExport(), null, 2), 'application/json');
+      avisoDownload('JSON exportado.');
+    } catch (e) {
+      mostrarMensagem('Erro ao exportar JSON: ' + e.message + ' — use 📋 Transferência por texto.', 'error');
+    }
+  }
+
+  function svgString() {
+    const svg = document.getElementById('diagram');
+    if (!svg) throw new Error('diagrama ausente');
+    const clone = svg.cloneNode(true);
+    clone.querySelectorAll('.ui-only').forEach(n => n.remove());
+    clone.removeAttribute('style');
+    clone.setAttribute('xmlns', NS);
+    clone.setAttribute('font-family', 'Arial, Helvetica, sans-serif');
+    const vb = (clone.getAttribute('viewBox') || '0 0 1100 700').split(/\s+/);
+    clone.setAttribute('width', vb[2]);
+    clone.setAttribute('height', vb[3]);
+    return '<?xml version="1.0" encoding="UTF-8"?>\n' + new XMLSerializer().serializeToString(clone);
+  }
+
+  function exportarSVG() {
+    try {
+      baixar('ishikawa_' + slug() + '_' + tema + '_' + new Date().toISOString().split('T')[0] + '.svg', svgString(), 'image/svg+xml');
+      avisoDownload('SVG exportado (tema ' + tema + ').');
+    } catch (e) {
+      mostrarMensagem('Erro ao exportar SVG: ' + e.message + ' — use 📋 Transferência por texto.', 'error');
+    }
+  }
+
+  function importarArquivo(event) {
+    const file = event.target.files && event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function (e) {
+      try {
+        aplicarImport(parseEntrada(e.target.result), 'arquivo');
+      } catch (err) {
+        mostrarMensagem('Erro ao importar (arquivo): ' + err.message, 'error');
+      }
+    };
+    reader.onerror = function () { mostrarMensagem('Erro ao ler o arquivo — tente 📋 Transferência por texto.', 'error'); };
+    reader.readAsText(file);
+    event.target.value = '';
+  }
+
+  // ================= Transferência por texto e cópia =================
+  function copiar(ta) {
+    if (!ta || !ta.value) { mostrarMensagem('Nada para copiar.', 'warn'); return; }
+    const fallback = () => {
+      ta.focus();
+      ta.select();
+      let ok = false;
+      try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+      mostrarMensagem(ok ? 'Copiado.' : 'Texto selecionado — use Ctrl+C para copiar.', ok ? 'success' : 'warn');
+    };
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(ta.value).then(() => mostrarMensagem('Copiado.', 'success'), fallback);
+        return;
+      }
+    } catch (e) { /* segue para o fallback */ }
+    fallback();
+  }
+
+  function toggleTexto() {
+    const p = document.getElementById('textoPanel');
+    if (!p) return;
+    p.style.display = (p.style.display === 'block') ? 'none' : 'block';
+  }
+
+  function mostrarJsonTexto() {
+    const ta = document.getElementById('txtTransfer');
+    if (!ta) return;
+    ta.value = JSON.stringify(montarExport(), null, 2);
+    ta.focus();
+    ta.select();
+    mostrarMensagem('JSON atual no campo — copie e guarde.', 'success');
+  }
+
+  function mostrarSvgTexto() {
+    const ta = document.getElementById('txtTransfer');
+    if (!ta) return;
+    try {
+      ta.value = svgString();
+      ta.focus();
+      ta.select();
+      mostrarMensagem('SVG atual no campo — copie e salve como arquivo .svg.', 'success');
+    } catch (e) {
+      mostrarMensagem('Erro ao gerar SVG: ' + e.message, 'error');
+    }
+  }
+
+  function carregarDoTexto(id, origem) {
+    const ta = document.getElementById(id);
+    if (!ta) return;
+    let data;
+    try { data = parseEntrada(ta.value); }
+    catch (e) { mostrarMensagem('Erro ao importar (' + origem + '): ' + e.message, 'error'); return; }
+    aplicarImport(data, origem);
+  }
+
+  // ================= Ponte com IA =================
+  function montarPrompt(problema) {
+    const exemplo = {
+      tool: 'ishikawa',
+      schemaVersion: SCHEMA,
+      data: {
+        title: 'Título curto do problema',
+        effect: 'Efeito observável e específico',
+        categories: {
+          metodo: [
+            { text: 'Causa principal', detail: 'Mecanismo, evidência ou exemplo que explica a causa', children: [
+              { text: 'Causa secundária', detail: 'Por que a causa principal ocorre', children: [
+                { text: 'Causa terciária', detail: 'Por que a causa secundária ocorre' }
+              ] }
+            ] }
+          ],
+          medida: [], material: [], maoDeObra: [], meioAmbiente: [], maquina: []
+        }
+      }
+    };
+    return [
+      'Aja como um analista especializado em resolução de problemas utilizando a metodologia de Ishikawa (Diagrama de Causa e Efeito). Seu objetivo é identificar e detalhar as causas principais e suas possíveis ramificações secundárias ou terciárias para o problema abaixo.',
+      '',
+      'PROBLEMA E DETALHES:',
+      '"""',
+      problema,
+      '"""',
+      '',
+      'REQUISITOS DA ANÁLISE:',
+      '1. Título do problema: curto e identificável (campo "title").',
+      '2. Efeito: o problema central, formulado como efeito observável e específico, não como causa nem como solução (campo "effect").',
+      '3. Para cada categoria dos 6Ms — Método (Processos), Medida (Métricas), Material (Insumos), Mão de Obra (Pessoas), Meio Ambiente (Contexto), Máquina (Ferramentas) — liste as causas principais identificadas.',
+      '4. Para causas mais complexas ou críticas, detalhe causas secundárias ou terciárias que se ramificam das principais (máximo de 3 níveis). Cada nível responde "por que a causa acima ocorre?".',
+      '5. Seja exaustivo e detalhado: não se limite a um número predefinido de causas por categoria e assegure uma análise completa e abrangente, que reflita compreensão profunda do método Ishikawa.',
+      '6. Toda causa tem "text" (enunciado curto, idealmente até 90 caracteres) e "detail" (descrição do mecanismo, evidência ou exemplo).',
+      '7. Se uma categoria genuinamente não se aplicar ao problema, deixe a lista vazia em vez de inventar causas.',
+      '',
+      'FORMATO DE SAÍDA (obrigatório):',
+      'Responda APENAS com um objeto JSON válido — sem texto antes ou depois e sem cercas de código — exatamente neste schema:',
+      JSON.stringify(exemplo, null, 2),
+      '',
+      'Regras do JSON: use exatamente as chaves de categoria do exemplo (metodo, medida, material, maoDeObra, meioAmbiente, maquina); "children" só até o 3º nível (a causa terciária não tem "children"); cada string em uma única linha.'
+    ].join('\n');
+  }
+
+  function gerarPrompt() {
+    const p = document.getElementById('inpProblema');
+    const out = document.getElementById('outPrompt');
+    if (!p || !out) return;
+    const t = p.value.trim();
+    if (!t) { mostrarMensagem('Descreva o problema no passo 1 antes de gerar o prompt.', 'warn'); p.focus(); return; }
+    state.context = t;
+    save();
+    out.value = montarPrompt(t);
+    mostrarMensagem('Prompt gerado — copie e rode em qualquer IA; depois cole a resposta no passo 3.', 'success');
+  }
+
+  // ================= Limpar / zoom / tema =================
+  function limparTudo() {
+    pedirConfirmacao('Limpar toda a análise? Esta ação não pode ser desfeita — exporte antes se precisar.', () => {
+      state = defaultState();
+      store.del(KEY);
+      syncContext();
+      const out = document.getElementById('outPrompt');
+      if (out) out.value = '';
+      renderAll();
+      mostrarMensagem('Análise limpa.', 'success');
+    });
+  }
+
+  function toggleZoom() {
+    zoomReal = !zoomReal;
+    const b = document.getElementById('btnZoom');
+    if (b) b.textContent = zoomReal ? '🔍 Ajustar à largura' : '🔍 Tamanho real';
+    const svg = document.getElementById('diagram');
+    if (svg) svg.style.width = zoomReal ? (r1(lastW) + 'px') : '100%';
+  }
+
+  function trocarTema() {
+    const sel = document.getElementById('selTema');
+    tema = (sel && PAL[sel.value]) ? sel.value : 'escuro';
+    renderDiagram();
+  }
+
+  // ================= Mensagens =================
+  let msgTimer = null;
+  function mostrarMensagem(texto, tipo) {
+    const m = document.getElementById('statusMessage');
+    if (!m) return;
+    m.textContent = texto;
+    m.className = 'status-message ' + tipo;
+    m.style.display = 'block';
+    if (msgTimer) clearTimeout(msgTimer);
+    msgTimer = setTimeout(() => { m.style.display = 'none'; }, tipo === 'success' ? 3500 : 8000);
+  }
+
+  // Ligações de interface por código, todas guardadas (sem atributos inline)
+  function bind(id, evento, fn) {
+    const e = document.getElementById(id);
+    if (e) e['on' + evento] = fn;
+  }
+
+  function initUI() {
+    bind('btnExportJson', 'click', exportarJSON);
+    bind('btnImportJson', 'click', () => { const f = document.getElementById('fileInput'); if (f) f.click(); });
+    bind('fileInput', 'change', importarArquivo);
+    bind('btnExportSvg', 'click', exportarSVG);
+    bind('btnTexto', 'click', toggleTexto);
+    bind('btnLimpar', 'click', limparTudo);
+    bind('selTema', 'change', trocarTema);
+    bind('btnMostrarJson', 'click', mostrarJsonTexto);
+    bind('btnMostrarSvg', 'click', mostrarSvgTexto);
+    bind('btnCopiarTexto', 'click', () => copiar(document.getElementById('txtTransfer')));
+    bind('btnCarregarTexto', 'click', () => carregarDoTexto('txtTransfer', 'texto'));
+    bind('btnGerarPrompt', 'click', gerarPrompt);
+    bind('btnCopiarPrompt', 'click', () => copiar(document.getElementById('outPrompt')));
+    bind('btnCarregarResposta', 'click', () => carregarDoTexto('inpResposta', 'resposta da IA'));
+    bind('btnZoom', 'click', toggleZoom);
+    bind('inpProblema', 'input', () => {
+      const p = document.getElementById('inpProblema');
+      if (p) { state.context = p.value.trim(); save(); }
+    });
+  }
+
+  // Recria em tempo de execução qualquer elemento essencial que o ambiente tenha descartado do HTML
+  function ensure(id, tag, parentId, className, beforeSel) {
+    let e = document.getElementById(id);
+    if (e) return e;
+    const p = document.getElementById(parentId);
+    if (!p) return null;
+    e = (tag === 'svg') ? document.createElementNS(NS, 'svg') : document.createElement(tag);
+    e.id = id;
+    if (className) e.setAttribute('class', className);
+    const before = beforeSel ? p.querySelector(beforeSel) : null;
+    if (before) p.insertBefore(e, before); else p.appendChild(e);
+    return e;
+  }
+
+  // Partida única com o DOM pronto — nenhum trabalho de DOM acontece fora daqui
+  function boot() {
+    atualizarDiag();
+
+    ensure('tituloTxt', 'span', 'tituloLine', 'titulo-txt');
+    ensure('efeitoTxt', 'span', 'efeitoCard', 'txt', '.tooltiptext');
+    ensure('inbox', 'div', 'inboxWrap', 'inbox');
+    ensure('catsGrid', 'div', 'editorWrap', 'cats', '#resumo');
+    ensure('resumo', 'div', 'editorWrap', 'resumo vazio');
+    ensure('txtTransfer', 'textarea', 'textoPanel', null, '.row');
+    const svgEl = ensure('diagram', 'svg', 'diagramWrap');
+    if (svgEl && !svgEl.getAttribute('viewBox')) {
+      svgEl.setAttribute('viewBox', '0 0 1100 700');
+      svgEl.setAttribute('font-family', 'Arial, Helvetica, sans-serif');
+    }
+    ensureConfirm();
+    buildCatPanels();
+
+    const essenciais = ['catsGrid', 'diagram', 'confirmBox'];
+    CATS.forEach(c => { essenciais.push('list_' + c.key, 'inp_' + c.key, 'btn_' + c.key); });
+    const faltando = essenciais.filter(id => !document.getElementById(id));
+    if (faltando.length) {
+      const b = document.getElementById('errBox');
+      if (b) {
+        b.textContent = '⛔ Este ambiente não montou parte da página e o autorreparo não conseguiu recriar: ' +
+          faltando.join(', ') + '. Baixe o arquivo e abra no navegador.';
+        b.style.display = 'block';
+      }
+      return;
+    }
+
+    initUI();
+
+    const note = document.getElementById('persistNote');
+    const showNote = () => {
+      if (!note) return;
+      note.textContent = '⚠ Armazenamento local indisponível neste ambiente (ex.: pré-visualização/sandbox). A ferramenta funciona normalmente, mas os dados não sobrevivem ao recarregar a página — use 📤 Exportar JSON ou 📋 Transferência por texto para salvar e retomar.';
+      note.style.display = 'block';
+    };
+    store.onFail = showNote;
+    if (!store.ok) showNote();
+
+    load();
+    syncContext();
+    renderAll();
+
+    window.ISHIKAWA_DEBUG = { version: APP_VERSION, getState: () => JSON.parse(JSON.stringify(state)) };
+  }
+
+  if (document.readyState !== 'loading') {
+    boot();
+  } else {
+    document.addEventListener('DOMContentLoaded', boot);
+  }
+})();
+</script>
+
+</body>
+</html>

@@ -1,298 +1,993 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <title>Mábio's Kanban</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #f5f5f5;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      margin: 0;
-      padding: 0;
-    }
-
-    h1 {
-      margin: 20px 0;
-    }
-
-    .board {
-      display: flex;
-      justify-content: space-between;
-      width: 90%;
-      margin: 20px;
-    }
-
-    .column {
-      background-color: #e0e0e0;
-      border-radius: 8px;
-      padding: 10px;
-      width: 22%;
-      min-height: 300px;
-    }
-
-    .column h2 {
-      text-align: center;
-    }
-
-    .task {
-      border-radius: 4px;
-      padding: 8px;
-      margin: 8px 0;
-      cursor: grab;
-      color: white;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .task input {
-      width: 100%;
-      border: none;
-      background: transparent;
-      color: white;
-      font-size: 14px;
-    }
-
-    .task.red { background-color: crimson; }
-    .task.orange { background-color: orange; }
-    .task.olive { background-color: olive; }
-    .task.lime { background-color: limegreen; }
-
-    .delete-btn {
-      background: transparent;
-      border: none;
-      color: white;
-      cursor: pointer;
-      font-weight: bold;
-    }
-
-    .add-task {
-      margin-top: 10px;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .add-task input {
-      margin-bottom: 5px;
-    }
-	
-	
-	.tooltip {
-  position: relative;
-}
-
-.tooltiptext {
-  visibility: hidden;
-  width: 240px;
-  background-color: #333;
-  color: #fff;
-  text-align: left;
-  padding: 10px;
-  border-radius: 6px;
-  position: absolute;
-  top: 0;
-  left: 105%;
-  z-index: 1;
-  font-size: 12px;
-  line-height: 1.4;
-}
-
-.tooltip:hover .tooltiptext {
-  visibility: visible;
-}
-  </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Portal — Índice de Aplicações</title>
+<style>
+  :root{
+    --bg: #f6f7fb;
+    --card: #ffffff;
+    --text: #0f172a;
+    --muted:#637287;
+    --radius:18px;
+    --shadow: 0 8px 24px rgba(10, 14, 29, .08);
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial;
+    color:var(--text);
+    background:
+      radial-gradient(1200px 600px at 10% -10%, #e8f0ff 0%, transparent 60%),
+      radial-gradient(1200px 600px at 110% 10%, #e6fff4 0%, transparent 60%),
+      var(--bg);
+  }
+  .wrap{max-width:1100px; margin:0 auto; padding:32px 20px 56px}
+  header{display:flex; gap:16px; align-items:center; justify-content:space-between; margin-bottom:18px}
+  .brand h1{margin:0; font-size:clamp(20px, 3vw, 28px)}
+  .brand small{display:block; color:var(--muted)}
+  .search{
+    width:min(420px, 100%);
+    display:flex; align-items:center; gap:8px;
+    background:var(--card); padding:10px 12px; border-radius:14px;
+    box-shadow: var(--shadow);
+    border:1px solid #eef0f4
+  }
+  .search input{
+    border:none; outline:none; background:transparent; width:100%;
+    font-size:15px; color:var(--text)
+  }
+  .search svg{width:20px; height:20px; color:var(--muted)}
+  .grid{display:grid; gap:16px; grid-template-columns: repeat(6, minmax(0,1fr));}
+  @media (max-width:1100px){ .grid{grid-template-columns: repeat(4, minmax(0,1fr));} }
+  @media (max-width:820px){ .grid{grid-template-columns: repeat(3, minmax(0,1fr));} }
+  @media (max-width:520px){ .grid{grid-template-columns: repeat(2, minmax(0,1fr));} }
+  .card{
+    position:relative;
+    display:flex; flex-direction:column; gap:10px;
+    padding:14px;
+    background:var(--card);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    border:1px solid #eef0f4;
+    min-height:120px;
+    transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+  }
+  .card:focus-within,
+  .card:hover{
+    transform: translateY(-2px);
+    box-shadow: 0 12px 32px rgba(10,14,29,.12);
+    border-color:#dfe5f2;
+  }
+  .card a.stretched{
+    position:absolute; inset:0; border-radius:inherit;
+  }
+  .icon{
+    width:48px; height:48px; border-radius:14px; display:grid; place-items:center;
+    background: linear-gradient(135deg, var(--icon-from, #3b82f6), var(--icon-to, #1d4ed8));
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  }
+  .icon svg{width:26px; height:26px; color:white}
+  .title{font-weight:700; line-height:1.2; font-size:15px}
+  .desc{color:var(--muted); font-size:13px; line-height:1.4}
+  .badge{
+    position:absolute; top:10px; right:10px;
+    font-size:11px; padding:4px 8px; border-radius:999px; 
+    color:#0b2b19; background:#d7fde9; border:1px solid #b9f6d7;
+    font-weight:600;
+  }
+  .kbd{
+    position:absolute; bottom:10px; right:10px; 
+    font: 500 11px/1.2 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; 
+    padding:4px 6px; border-radius:6px; background:#f1f5f9; color:#475569; border:1px solid #e2e8f0;
+  }
+  footer{margin-top:22px; color:var(--muted); font-size:13px}
+</style>
 </head>
 <body>
-
-<h1>Mábio's Kanban 2025</h1>
-<button onclick="location.href='v8.html'">Calcular Prioridades</button>
-<div class="board">
-  
-<div class="column tooltip" id="todo" ondrop="drop(event)" ondragover="allowDrop(event)">
-  <h2>To Do</h2>
-  <div class="tooltiptext">
-    <strong>O que é:</strong> Lista de tarefas ainda não iniciadas, mas já identificadas e priorizadas.<br><br>
-    <strong>Exemplo:</strong> Auditoria de conformidade do setor financeiro, Análise de risco de fraude em compras.".<br><br>
-    <strong>Regra:</strong> Só deve entrar aqui o que está pronto para ser trabalhado (Demandas de auditoria aprovadas, Escopo definido, requisitos claros).
+  <div class="wrap">
+    <header>
+      <div class="brand">
+        <h1>I'Mábio TRAININGS</h1>
+        <small>Página principal de acesso às aplicações</small>
+      </div>
+      <label class="search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"/>
+          <path d="m21 21-4.35-4.35"/>
+        </svg>
+        <input id="q" type="search" placeholder="Buscar…" autocomplete="off" />
+      </label>
+    </header>
+    <main>
+      <div id="grid" class="grid"></div>
+      <footer>Dica: digite para filtrar; Enter abre o 1º resultado. Números 1—5 clicam nos nove primeiros cards.</footer>
+    </main>
   </div>
-  <div class="add-task">
-    <input type="text" id="newTaskTodo" placeholder="Let's Go Task">
-    <button onclick="addTask('todo', 'newTaskTodo')">Add +</button>
-  </div>
-</div>
-
-
-  
-  <div class="column tooltip" id="buffer" ondrop="drop(event)" ondragover="allowDrop(event)">
-  <h2>Doing-Buffer</h2>
-  <div class="tooltiptext">
-    <strong>O que é:</strong> Uma fase intermediária entre "To Do" e "Working", Auditorias com pré-planejamento concluído (ex.: checklists prontos, equipe designada)..<br><br>
-    <strong>Função:</strong> Fila organizada de tarefas pré-selecionadas para começar em breve.(limita quantos itens podem entrar em "Working"), Tarefas aguardando disponibilidade de auditor ou recurso.<br><br>
-    <strong>Exemplo:</strong> Se há 3 Auditores, o Buffer pode ter até 3 tarefas.
-  </div>
-  <div class="add-task">
-    <input type="text" id="newTaskBuffer" placeholder="Let's Go Task">
-    <button onclick="addTask('buffer', 'newTaskBuffer')">Add +</button>
-  </div>
-</div>
-
-    
-
-    
- <div class="column tooltip" id="working" ondrop="drop(event)" ondragover="allowDrop(event)">
-  <h2>Doing-Working</h2>
-  <div class="tooltiptext">
-    <strong>O que é:</strong> Tarefas que estão sendo executadas ativamente pela equipe.<br><br>
-    <strong>Regra:</strong> Limite de WIP (Work in Progress): 1 auditoria por auditor (evita multitarefa). Número máximo de itens que podem estar aqui (ex.: 2 por pessoa).<br><br>
-    <strong>Exemplo:</strong> Auditorias em execução (ex.: "Testes de controles operacionais").Reuniões de alinhamento com áreas auditadas.".
-  </div>
-  <div class="add-task">
-    <input type="text" id="newTaskWorking" placeholder="Let's Go Task">
-    <button onclick="addTask('working', 'newTaskWorking')">Add +</button>
-  </div>
-</div>
- 
-  
-  
- 
-
-
-
-<div class="column tooltip" id="done" ondrop="drop(event)" ondragover="allowDrop(event)">
-  <h2>Done</h2>
-  <div class="tooltiptext">
-    <strong>O que é:</strong> Tarefas finalizadas e validadas, atendendo a todos os critérios de aceite.<br><br>
-    <strong>Importante:</strong> Relatórios de auditoria assinados e entregues. Deve ter uma definição clara de "Done" (ex.: "Testes aprovados", "Documentação atualizada").<br><br>
-    <strong>Final:</strong> Todos os passos do processo concluídos (coleta de evidências, revisão, aprovação).
-  </div>
-  <div class="add-task">
-    <input type="text" id="newTaskDone" placeholder="Let's Go Task">
-    <button onclick="addTask('done', 'newTaskDone')">Add +</button>
-  </div>
-</div>
-
-
-
-
-
 
 <script>
-  let taskId = Number(localStorage.getItem("taskIdCounter")) || 0;
+const APPS = [
+  { 
+    title: "Calcular Prioridades", 
+    desc: "Versão Básica Prioridades ", 
+    url: "01_V8.html", 
+	badge:"#01",	
+    icon: "user-check",
+    gradient: ["#10b981", "#059669"]
+  },
+  { 
+    title: "KANBAN", 
+    desc: "Kanban SGD V4F", 
+    url: "02_kanban_improved4Final.html",
+	badge:"#02",
+    icon: "target",
+    gradient: ["#3b82f6", "#1d4ed8"]
+  },
+  { 
+    title: "Classificador", 
+    desc: "Projetos X Áreas x Tarefas", 
+    url: "03_classificador_ios_style.html",
+	badge:"#03",
+    icon: "dollar-sign",
+    gradient: ["#f59e0b", "#d97706"]
+  },
+  { 
+    title: "KANBAN 3 BOXES", 
+    desc: "3 Caixas", 
+    url: "04_Mabios_Kanban_3_Caixas.html",
+	badge:"#04",
+    icon: "file-text",
+    gradient: ["#8b5cf6", "#7c3aed"]
+  },
+  { 
+    title: "Estimativa Estudos", 
+    desc: "Cálculo de HBC", 
+    url: "05_31_08 Estimativa_estudos.html",
+	badge:"#05",
+    icon: "award",
+    gradient: ["#ef4444", "#dc2626"]
+  },
+  { 
+    title: "Matriz Auditoria", 
+    desc: "Ciclo Auditoria", 
+    url: "06_matrizes-auditoria v1.2.html",
+	badge:"#06",
+    icon: "clipboard-check",
+    gradient: ["#06b6d4", "#0891b2"]
+  },
+  { 
+    title: "Gerenciador de Estudos", 
+    desc: "Controle Fayad ", 
+    url: "07_controle-de-estudos.html",
+	badge:"#07",
+    icon: "building",
+    gradient: ["#84cc16", "#65a30d"]
+  },
+  { 
+    title: "BowTie A", 
+    desc: "Bowtie A", 
+    url: "08_bowtie_opcao_A.html",
+	badge:"#08",
+    icon: "calendar",
+    gradient: ["#f97316", "#ea580c"]
+  },
+  { 
+    title: "BowTie B", 
+    desc: "Bowtie B", 
+    url: "09_bowtie_opcao_B.html",
+	badge:"#09",
+    icon: "shield-check",
+    gradient: ["#6366f1", "#4f46e5"]
+  },
+  { 
+    title: "BowTie VF", 
+    desc: "Bowtie vf", 
+    url: "10_bowtie_final.html",
+	badge:"#10",
+    icon: "file-check",
+    gradient: ["#64748b", "#475569"]
+  },
+  { 
+    title: "BowTie A+B+C", 
+    desc: "Bowtie A+B+C", 
+    url: "11_bowtie_final a+b+c.html",
+	badge:"#11",
+    icon: "database",
+    gradient: ["#14b8a6", "#0f766e"]
+  },
+  { 
+    title: "IshiKawa", 
+    desc: "Ishikawa v1", 
+    url: "12_ishikawa_v1.0.html",
+	badge:"#12",
+    icon: "megaphone",
+    gradient: ["#ec4899", "#db2777"]
+  },
+  { 
+    title: "Esquemas Jeffrey", 
+    desc: "Terapias", 
+    url: "13_master_young_port_corrigido.html", 
+    badge:"#13",
+    icon: "bar-chart",
+    gradient: ["#8b5cf6", "#7c3aed"]
+  },
+  { 
+    title: "MonograFandus", 
+    desc:"Editor de Textos", 
+    url: "14_academic_text_editor.html",
+	badge:"#14",
+    icon: "activity",
+    gradient: ["#06b6d4", "#0891b2"]
+  },
+  { 
+    title: "Gestão de Riscos", 
+    desc: "Mapas, planos e controles", 
+    url: "gestao-riscos.html",
+	badge:"#15",
+    icon: "alert-triangle",
+    gradient: ["#f59e0b", "#d97706"]
+  },
+  { 
+    title: "Transparência", 
+    desc: "Prestação de contas", 
+    url: "transparencia.html",
+	badge:"#16",
+    icon: "eye",
+    gradient: ["#10b981", "#059669"]
+  },
+  { 
+    title: "Notícias", 
+    desc: "Atualizações do portal", 
+    url: "noticias.html",
+	badge:"#17",
+    icon: "newspaper",
+    gradient: ["#3b82f6", "#1d4ed8"]
+  },
+  { 
+    title: "Integridade", 
+    desc: "Programa de Integridade", 
+    url: "integridade.html",
+	badge:"#18",
+    icon: "lock",
+    gradient: ["#ef4444", "#dc2626"]
+  },
+  
+//Comentários: #1 Repete as Caixinhas. Usa a mesma grade e ícones
+  
+    { 
+    title: "I'Mabio", 
+    desc: "Questionário young", 
+    url: "young 1.html", 
+	badge:"#19",
+    icon: "user-check",
+    gradient: ["#10b981", "#059669"]
+  },
+  { 
+    title: "PD", 
+    desc: "Plano de Desenvolvimento", 
+    url: "pdi/index.html",
+	badge:"#20",
+    icon: "target",
+    gradient: ["#3b82f6", "#1d4ed8"]
+  },
+  { 
+    title: "Orçamento", 
+    desc: "Execução e painéis", 
+    url: "orcamento.html",
+	badge:"#21",
+    icon: "dollar-sign",
+    gradient: ["#f59e0b", "#d97706"]
+  },
+  { 
+    title: "Relatório de Gestão", 
+    desc: "Prestação anual", 
+    url: "relatorio-gestao.html",
+	badge:"#22",
+    icon: "file-text",
+    gradient: ["#8b5cf6", "#7c3aed"]
+  },
+  { 
+    title: "ENA", 
+    desc: "Avaliação  cursos", 
+    url: "enade.html",
+	badge:"#23",
+    icon: "award",
+    gradient: ["#ef4444", "#dc2626"]
+  },
+  { 
+    title: "CP", 
+    desc: "Comissão Própria de Avaliação", 
+    url: "cpa.html",
+	badge:"#24",
+    icon: "clipboard-check",
+    gradient: ["#06b6d4", "#0891b2"]
+  },
+  { 
+    title: "PD", 
+    desc: "Desenvolvimento", 
+    url: "pdu.html",
+	badge:"#25",
+    icon: "building",
+    gradient: ["#84cc16", "#65a30d"]
+  },
+  { 
+    title: "Planejamento", 
+    desc: "Planos e metas", 
+    url: "planejamento.html",
+	badge:"#26",
+    icon: "calendar",
+    gradient: ["#f97316", "#ea580c"]
+  },
+  { 
+    title: "Governança", 
+    desc: "Processos e diretrizes", 
+    url: "governanca.html",
+	badge:"#27",
+    icon: "shield-check",
+    gradient: ["#6366f1", "#4f46e5"]
+  },
+  { 
+    title: "Portarias & Contratos", 
+    desc: "Atos e normativos", 
+    url: "portarias.html",
+	badge:"#28",
+    icon: "file-check",
+    gradient: ["#64748b", "#475569"]
+  },
+  { 
+    title: "Dados Abertos", 
+    desc: "Catálogo de dados", 
+    url: "dados-abertos.html",
+	badge:"#29",
+    icon: "database",
+    gradient: ["#14b8a6", "#0f766e"]
+  },
+  { 
+    title: "Editais", 
+    desc: "Chamadas e seleções", 
+    url: "editais.html",
+	badge:"#30",
+    icon: "megaphone",
+    gradient: ["#ec4899", "#db2777"]
+  },
+  { 
+    title: "Meus Números", 
+    desc: "Business Intelligence", 
+    url: "bi.html", 
+    badge:"#31",
+    icon: "bar-chart",
+    gradient: ["#8b5cf6", "#7c3aed"]
+  },
+  { 
+    title: "Relatório de Atividades", 
+    desc:"Projetos e entregas", 
+    url: "relatorio-atividades.html",
+	badge:"#32",
+    icon: "activity",
+    gradient: ["#06b6d4", "#0891b2"]
+  },
+  { 
+    title: "Gestão de Riscos", 
+    desc: "Mapas, planos e controles", 
+    url: "gestao-riscos.html",
+	badge:"#33",
+    icon: "alert-triangle",
+    gradient: ["#f59e0b", "#d97706"]
+  },
+  { 
+    title: "Transparência", 
+    desc: "Prestação de contas", 
+    url: "transparencia.html",
+	badge:"#34",
+    icon: "eye",
+    gradient: ["#10b981", "#059669"]
+  },
+  { 
+    title: "Notícias", 
+    desc: "Atualizações do portal", 
+    url: "noticias.html",
+	badge:"#35",
+    icon: "newspaper",
+    gradient: ["#3b82f6", "#1d4ed8"]
+  },
+  { 
+    title: "Integridade", 
+    desc: "Programa de Integridade", 
+    url: "integridade.html",
+	badge:"#36",
+    icon: "lock",
+    gradient: ["#ef4444", "#dc2626"]
+  },
+  
+//Comentários: #2 Repete as Caixinhas. Usa a mesma grade e ícones
+ 
+    { 
+    title: "I'Mabio", 
+    desc: "Questionário young", 
+    url: "young 1.html", 
+	badge:"#37",
+    icon: "user-check",
+    gradient: ["#10b981", "#059669"]
+  },
+  { 
+    title: "PD", 
+    desc: "Plano de Desenvolvimento", 
+    url: "pdi/index.html",
+	badge:"#38",
+    icon: "target",
+    gradient: ["#3b82f6", "#1d4ed8"]
+  },
+  { 
+    title: "Orçamento", 
+    desc: "Execução e painéis", 
+    url: "orcamento.html",
+	badge:"#39",
+    icon: "dollar-sign",
+    gradient: ["#f59e0b", "#d97706"]
+  },
+  { 
+    title: "Relatório de Gestão", 
+    desc: "Prestação anual", 
+    url: "relatorio-gestao.html",
+	badge:"#40",
+    icon: "file-text",
+    gradient: ["#8b5cf6", "#7c3aed"]
+  },
+  { 
+    title: "ENA", 
+    desc: "Avaliação  cursos", 
+    url: "enade.html",
+	badge:"#41",
+    icon: "award",
+    gradient: ["#ef4444", "#dc2626"]
+  },
+  { 
+    title: "CP", 
+    desc: "Comissão Própria de Avaliação", 
+    url: "cpa.html",
+	badge:"#42",
+    icon: "clipboard-check",
+    gradient: ["#06b6d4", "#0891b2"]
+  },
+  { 
+    title: "PD", 
+    desc: "Desenvolvimento", 
+    url: "pdu.html",
+	badge:"#43",
+    icon: "building",
+    gradient: ["#84cc16", "#65a30d"]
+  },
+  { 
+    title: "Planejamento", 
+    desc: "Planos e metas", 
+    url: "planejamento.html",
+	badge:"#44",
+    icon: "calendar",
+    gradient: ["#f97316", "#ea580c"]
+  },
+  { 
+    title: "Governança", 
+    desc: "Processos e diretrizes", 
+    url: "governanca.html",
+	badge:"#45",
+    icon: "shield-check",
+    gradient: ["#6366f1", "#4f46e5"]
+  },
+  { 
+    title: "Portarias & Contratos", 
+    desc: "Atos e normativos", 
+    url: "portarias.html",
+	badge:"#46",
+    icon: "file-check",
+    gradient: ["#64748b", "#475569"]
+  },
+  { 
+    title: "Dados Abertos", 
+    desc: "Catálogo de dados", 
+    url: "dados-abertos.html",
+	badge:"#47",
+    icon: "database",
+    gradient: ["#14b8a6", "#0f766e"]
+  },
+  { 
+    title: "Editais", 
+    desc: "Chamadas e seleções", 
+    url: "editais.html",
+	badge:"#48",
+    icon: "megaphone",
+    gradient: ["#ec4899", "#db2777"]
+  },
+  { 
+    title: "Meus Números", 
+    desc: "Business Intelligence", 
+    url: "bi.html", 
+    badge:"#49",
+    icon: "bar-chart",
+    gradient: ["#8b5cf6", "#7c3aed"]
+  },
+  { 
+    title: "Relatório de Atividades", 
+    desc:"Projetos e entregas", 
+    url: "relatorio-atividades.html",
+	badge:"#50",
+    icon: "activity",
+    gradient: ["#06b6d4", "#0891b2"]
+  },
+  { 
+    title: "Gestão de Riscos", 
+    desc: "Mapas, planos e controles", 
+    url: "gestao-riscos.html",
+	badge:"#51",
+    icon: "alert-triangle",
+    gradient: ["#f59e0b", "#d97706"]
+  },
+  { 
+    title: "Transparência", 
+    desc: "Prestação de contas", 
+    url: "transparencia.html",
+	badge:"#52",
+    icon: "eye",
+    gradient: ["#10b981", "#059669"]
+  },
+  { 
+    title: "Notícias", 
+    desc: "Atualizações do portal", 
+    url: "noticias.html",
+	badge:"#53",
+    icon: "newspaper",
+    gradient: ["#3b82f6", "#1d4ed8"]
+  },
+  { 
+    title: "Integridade", 
+    desc: "Programa de Integridade", 
+    url: "integridade.html",
+	badge:"#54",
+    icon: "lock",
+    gradient: ["#ef4444", "#dc2626"]
+  },
+  
+ //Comentários: #3 Repete as Caixinhas. Usa a mesma grade e ícones
+ 
+    { 
+    title: "I'Mabio", 
+    desc: "Questionário young", 
+    url: "young 1.html", 
+	badge:"#55",
+    icon: "user-check",
+    gradient: ["#10b981", "#059669"]
+  },
+  { 
+    title: "PD", 
+    desc: "Plano de Desenvolvimento", 
+    url: "pdi/index.html",
+	badge:"#56",
+    icon: "target",
+    gradient: ["#3b82f6", "#1d4ed8"]
+  },
+  { 
+    title: "Orçamento", 
+    desc: "Execução e painéis", 
+    url: "orcamento.html",
+	badge:"#57",
+    icon: "dollar-sign",
+    gradient: ["#f59e0b", "#d97706"]
+  },
+  { 
+    title: "Relatório de Gestão", 
+    desc: "Prestação anual", 
+    url: "relatorio-gestao.html",
+	badge:"#58",
+    icon: "file-text",
+    gradient: ["#8b5cf6", "#7c3aed"]
+  },
+  { 
+    title: "ENA", 
+    desc: "Avaliação  cursos", 
+    url: "enade.html",
+	badge:"#59",
+    icon: "award",
+    gradient: ["#ef4444", "#dc2626"]
+  },
+  { 
+    title: "CP", 
+    desc: "Comissão Própria de Avaliação", 
+    url: "cpa.html",
+	badge:"#60",
+    icon: "clipboard-check",
+    gradient: ["#06b6d4", "#0891b2"]
+  },
+  { 
+    title: "PD", 
+    desc: "Desenvolvimento", 
+    url: "pdu.html",
+	badge:"#61",
+    icon: "building",
+    gradient: ["#84cc16", "#65a30d"]
+  },
+  { 
+    title: "Planejamento", 
+    desc: "Planos e metas", 
+    url: "planejamento.html",
+	badge:"#62",
+    icon: "calendar",
+    gradient: ["#f97316", "#ea580c"]
+  },
+  { 
+    title: "Governança", 
+    desc: "Processos e diretrizes", 
+    url: "governanca.html",
+	badge:"#63",
+    icon: "shield-check",
+    gradient: ["#6366f1", "#4f46e5"]
+  },
+  { 
+    title: "Portarias & Contratos", 
+    desc: "Atos e normativos", 
+    url: "portarias.html",
+	badge:"#64",
+    icon: "file-check",
+    gradient: ["#64748b", "#475569"]
+  },
+  { 
+    title: "Dados Abertos", 
+    desc: "Catálogo de dados", 
+    url: "dados-abertos.html",
+	badge:"#65",
+    icon: "database",
+    gradient: ["#14b8a6", "#0f766e"]
+  },
+  { 
+    title: "Editais", 
+    desc: "Chamadas e seleções", 
+    url: "editais.html",
+	badge:"#66",
+    icon: "megaphone",
+    gradient: ["#ec4899", "#db2777"]
+  },
+  { 
+    title: "Meus Números", 
+    desc: "Business Intelligence", 
+    url: "bi.html", 
+    badge:"#67",
+    icon: "bar-chart",
+    gradient: ["#8b5cf6", "#7c3aed"]
+  },
+  { 
+    title: "Relatório de Atividades", 
+    desc:"Projetos e entregas", 
+    url: "relatorio-atividades.html",
+	badge:"#68",
+    icon: "activity",
+    gradient: ["#06b6d4", "#0891b2"]
+  },
+  { 
+    title: "Gestão de Riscos", 
+    desc: "Mapas, planos e controles", 
+    url: "gestao-riscos.html",
+	badge:"#69",
+    icon: "alert-triangle",
+    gradient: ["#f59e0b", "#d97706"]
+  },
+  { 
+    title: "Transparência", 
+    desc: "Prestação de contas", 
+    url: "transparencia.html",
+	badge:"#70",
+    icon: "eye",
+    gradient: ["#10b981", "#059669"]
+  },
+  { 
+    title: "Notícias", 
+    desc: "Atualizações do portal", 
+    url: "noticias.html",
+	badge:"#71",
+    icon: "newspaper",
+    gradient: ["#3b82f6", "#1d4ed8"]
+  },
+  { 
+    title: "Integridade", 
+    desc: "Programa de Integridade", 
+    url: "integridade.html",
+	badge:"#72",
+    icon: "lock",
+    gradient: ["#ef4444", "#dc2626"]
+  }, 
+  
+  //Comentários: #4 Repete as Caixinhas. Usa a mesma grade e ícones
+ 
+    { 
+    title: "I'Mabio", 
+    desc: "Questionário young", 
+    url: "young 1.html", 
+	badge:"#73",
+    icon: "user-check",
+    gradient: ["#10b981", "#059669"]
+  },
+  { 
+    title: "PD", 
+    desc: "Plano de Desenvolvimento", 
+    url: "pdi/index.html",
+	badge:"#74",
+    icon: "target",
+    gradient: ["#3b82f6", "#1d4ed8"]
+  },
+  { 
+    title: "Orçamento", 
+    desc: "Execução e painéis", 
+    url: "orcamento.html",
+	badge:"#75",
+    icon: "dollar-sign",
+    gradient: ["#f59e0b", "#d97706"]
+  },
+  { 
+    title: "Relatório de Gestão", 
+    desc: "Prestação anual", 
+    url: "relatorio-gestao.html",
+	badge:"#76",
+    icon: "file-text",
+    gradient: ["#8b5cf6", "#7c3aed"]
+  },
+  { 
+    title: "ENA", 
+    desc: "Avaliação  cursos", 
+    url: "enade.html",
+	badge:"#77",
+    icon: "award",
+    gradient: ["#ef4444", "#dc2626"]
+  },
+  { 
+    title: "CP", 
+    desc: "Comissão Própria de Avaliação", 
+    url: "cpa.html",
+	badge:"#78",
+    icon: "clipboard-check",
+    gradient: ["#06b6d4", "#0891b2"]
+  },
+  { 
+    title: "PD", 
+    desc: "Desenvolvimento", 
+    url: "pdu.html",
+	badge:"#79",
+    icon: "building",
+    gradient: ["#84cc16", "#65a30d"]
+  },
+  { 
+    title: "Planejamento", 
+    desc: "Planos e metas", 
+    url: "planejamento.html",
+	badge:"#80",
+    icon: "calendar",
+    gradient: ["#f97316", "#ea580c"]
+  },
+  { 
+    title: "Governança", 
+    desc: "Processos e diretrizes", 
+    url: "governanca.html",
+	badge:"#81",
+    icon: "shield-check",
+    gradient: ["#6366f1", "#4f46e5"]
+  },
+  { 
+    title: "Portarias & Contratos", 
+    desc: "Atos e normativos", 
+    url: "portarias.html",
+	badge:"#82",
+    icon: "file-check",
+    gradient: ["#64748b", "#475569"]
+  },
+  { 
+    title: "Dados Abertos", 
+    desc: "Catálogo de dados", 
+    url: "dados-abertos.html",
+	badge:"#83",
+    icon: "database",
+    gradient: ["#14b8a6", "#0f766e"]
+  },
+  { 
+    title: "Editais", 
+    desc: "Chamadas e seleções", 
+    url: "editais.html",
+	badge:"#84",
+    icon: "megaphone",
+    gradient: ["#ec4899", "#db2777"]
+  },
+  { 
+    title: "Meus Números", 
+    desc: "Business Intelligence", 
+    url: "bi.html", 
+    badge:"#85",
+    icon: "bar-chart",
+    gradient: ["#8b5cf6", "#7c3aed"]
+  },
+  { 
+    title: "Relatório de Atividades", 
+    desc:"Projetos e entregas", 
+    url: "relatorio-atividades.html",
+	badge:"#86",
+    icon: "activity",
+    gradient: ["#06b6d4", "#0891b2"]
+  },
+  { 
+    title: "Gestão de Riscos", 
+    desc: "Mapas, planos e controles", 
+    url: "gestao-riscos.html",
+	badge:"#87",
+    icon: "alert-triangle",
+    gradient: ["#f59e0b", "#d97706"]
+  },
+  { 
+    title: "Transparência", 
+    desc: "Prestação de contas", 
+    url: "transparencia.html",
+	badge:"#88",
+    icon: "eye",
+    gradient: ["#10b981", "#059669"]
+  },
+  { 
+    title: "Notícias", 
+    desc: "Atualizações do portal", 
+    url: "noticias.html",
+	badge:"#89",
+    icon: "newspaper",
+    gradient: ["#3b82f6", "#1d4ed8"]
+  },
+  { 
+    title: "Integridade", 
+    desc: "Programa de Integridade", 
+    url: "integridade.html",
+	badge:"#90",
+    icon: "lock",
+    gradient: ["#ef4444", "#dc2626"]
+  },
+  
+];
 
-  function allowDrop(ev) {
-    ev.preventDefault();
+const ICONS = {
+  "user-check": `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+    <circle cx="9" cy="7" r="4"/>
+    <polyline points="16,11 18,13 22,9"/>
+  </svg>`,
+  "target": `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <circle cx="12" cy="12" r="10"/>
+    <circle cx="12" cy="12" r="6"/>
+    <circle cx="12" cy="12" r="2"/>
+  </svg>`,
+  "dollar-sign": `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <line x1="12" y1="1" x2="12" y2="23"/>
+    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+  </svg>`,
+  "file-text": `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+    <polyline points="14,2 14,8 20,8"/>
+    <line x1="16" y1="13" x2="8" y2="13"/>
+    <line x1="16" y1="17" x2="8" y2="17"/>
+    <polyline points="10,9 9,9 8,9"/>
+  </svg>`,
+  "award": `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <circle cx="12" cy="8" r="7"/>
+    <polyline points="8.21,13.89 7,23 12,20 17,23 15.79,13.88"/>
+  </svg>`,
+  "clipboard-check": `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
+    <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+    <polyline points="9,14 11,16 15,12"/>
+  </svg>`,
+  "building": `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/>
+    <path d="M6 12H4a2 2 0 0 0-2 2v8h20v-8a2 2 0 0 0-2-2h-2"/>
+    <path d="M10 6h0"/>
+    <path d="M14 6h0"/>
+    <path d="M10 10h0"/>
+    <path d="M14 10h0"/>
+    <path d="M10 14h0"/>
+    <path d="M14 14h0"/>
+    <path d="M10 18h0"/>
+    <path d="M14 18h0"/>
+  </svg>`,
+  "calendar": `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+    <line x1="16" y1="2" x2="16" y2="6"/>
+    <line x1="8" y1="2" x2="8" y2="6"/>
+    <line x1="3" y1="10" x2="21" y2="10"/>
+  </svg>`,
+  "shield-check": `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+    <polyline points="9,12 11,14 15,10"/>
+  </svg>`,
+  "file-check": `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+    <polyline points="14,2 14,8 20,8"/>
+    <polyline points="9,15 11,17 15,13"/>
+  </svg>`,
+  "database": `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <ellipse cx="12" cy="5" rx="9" ry="3"/>
+    <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
+    <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+  </svg>`,
+  "megaphone": `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <path d="M3 11v3a1 1 0 0 0 1 1h2l4.5 4.5A1 1 0 0 0 12 19V5a1 1 0 0 0-1.5-.87L6 8H4a1 1 0 0 0-1 1v2z"/>
+    <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+    <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
+  </svg>`,
+  "bar-chart": `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <line x1="12" y1="20" x2="12" y2="10"/>
+    <line x1="18" y1="20" x2="18" y2="4"/>
+    <line x1="6" y1="20" x2="6" y2="16"/>
+  </svg>`,
+  "activity": `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <polyline points="22,12 18,12 15,21 9,3 6,12 2,12"/>
+  </svg>`,
+  "alert-triangle": `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+    <line x1="12" y1="9" x2="12" y2="13"/>
+    <line x1="12" y1="17" x2="12.01" y2="17"/>
+  </svg>`,
+  "eye": `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+    <circle cx="12" cy="12" r="3"/>
+  </svg>`,
+  "newspaper": `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/>
+    <path d="M18 14h-8"/>
+    <path d="M15 18h-5"/>
+    <path d="M10 6h8v4h-8V6Z"/>
+  </svg>`,
+  "lock": `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+    <circle cx="12" cy="16" r="1"/>
+    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+  </svg>`
+};
+
+const grid = document.getElementById("grid");
+
+function cardTemplate(app, idx){
+  const kbd = idx < 5 ? `<span class="kbd">${idx+1}</span>` : "";
+  const badge = app.badge ? `<span class="badge">${app.badge}</span>` : "";
+  const [from, to] = app.gradient || ["#3b82f6", "#1d4ed8"];
+  
+  return `
+  <article class="card">
+    ${badge}
+    <div class="icon" style="--icon-from: ${from}; --icon-to: ${to}">
+      ${ICONS[app.icon] || ICONS["file-text"]}
+    </div>
+    <div class="title">${app.title}</div>
+    <div class="desc">${app.desc ?? ""}</div>
+    <a class="stretched" href="${app.url}" target="_blank" rel="noopener noreferrer"></a>
+    ${kbd}
+  </article>`;
+}
+
+function render(list){ 
+  grid.innerHTML = list.map(cardTemplate).join(""); 
+}
+
+render(APPS);
+
+const input = document.getElementById("q");
+input.addEventListener("input", () => {
+  const term = input.value.trim().toLowerCase();
+  const filtered = APPS.filter(a =>
+    [a.title, a.desc, a.badge].filter(Boolean).join(" ").toLowerCase().includes(term)
+  );
+  render(filtered);
+});
+
+window.addEventListener("keydown", (e)=>{
+  const cards = [...grid.querySelectorAll(".card")];
+  if(e.key === "Enter"){
+    const first = cards[0]?.querySelector("a.stretched");
+    if(first){ first.click(); }
   }
-
-  function drag(ev) {
-    ev.dataTransfer.setData("text", ev.target.id);
+  const n = Number(e.key);
+  if(n>=1 && n<=9){
+    const link = cards[n-1]?.querySelector("a.stretched");
+    if(link){ link.click(); }
   }
-
-  function drop(ev) {
-    ev.preventDefault();
-    const data = ev.dataTransfer.getData("text");
-    const task = document.getElementById(data);
-    const newColumn = ev.target.closest('.column');
-    if (newColumn && task) {
-      newColumn.appendChild(task);
-      updateTaskColor(task, newColumn.id);
-      saveBoardState();
-    }
-  }
-
-  function addTask(columnId, inputId) {
-    const input = document.getElementById(inputId);
-    const taskText = input.value.trim();
-    if (!taskText) return;
-
-    const task = createTaskElement(taskText, columnId);
-    document.getElementById(columnId).appendChild(task);
-    input.value = "";
-    saveBoardState();
-  }
-
-  function createTaskElement(text, columnId) {
-    const task = document.createElement("div");
-    task.className = "task";
-    task.draggable = true;
-    task.id = "task" + taskId++;
-    task.ondragstart = drag;
-
-    const span = document.createElement("span");
-    span.textContent = text;
-    span.ondblclick = () => editTask(span);
-
-    const del = document.createElement("button");
-    del.className = "delete-btn";
-    del.innerHTML = "🗑";
-    del.onclick = () => {
-      task.remove();
-      saveBoardState();
-    };
-
-    task.appendChild(span);
-    task.appendChild(del);
-    updateTaskColor(task, columnId);
-
-    localStorage.setItem("taskIdCounter", taskId);
-    return task;
-  }
-
-  function editTask(span) {
-    const oldText = span.textContent;
-    const input = document.createElement("input");
-    input.value = oldText;
-    span.replaceWith(input);
-    input.focus();
-
-    input.onblur = () => {
-      const newSpan = document.createElement("span");
-      newSpan.textContent = input.value.trim() || oldText;
-      newSpan.ondblclick = () => editTask(newSpan);
-      input.parentElement.replaceChild(newSpan, input);
-      saveBoardState();
-    };
-  }
-
-  function updateTaskColor(task, columnId) {
-    task.classList.remove("red", "orange", "olive", "lime");
-    if (columnId === "todo") task.classList.add("red");
-    else if (columnId === "buffer") task.classList.add("orange");
-    else if (columnId === "working") task.classList.add("olive");
-    else if (columnId === "done") task.classList.add("lime");
-  }
-
-  function saveBoardState() {
-    const boardData = {};
-    ["todo", "buffer", "working", "done"].forEach(columnId => {
-      const column = document.getElementById(columnId);
-      const tasks = [...column.querySelectorAll(".task")].map(task => ({
-        id: task.id,
-        text: task.querySelector("span").textContent
-      }));
-      boardData[columnId] = tasks;
-    });
-    localStorage.setItem("kanbanBoard", JSON.stringify(boardData));
-  }
-
-  function loadBoardState() {
-    const data = JSON.parse(localStorage.getItem("kanbanBoard"));
-    if (!data) return;
-
-    Object.keys(data).forEach(columnId => {
-      const column = document.getElementById(columnId);
-      data[columnId].forEach(taskData => {
-        const task = createTaskElement(taskData.text, columnId);
-        task.id = taskData.id;
-        column.appendChild(task);
-      });
-    });
-  }
-
-  window.onload = loadBoardState;
+});
 </script>
-
 </body>
 </html>

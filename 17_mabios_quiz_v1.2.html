@@ -1,0 +1,1317 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mábio's Quiz v1.2 — banco de questões, SRS e simulados</title>
+<style>
+  :root{
+    --page:#2B323B; --card:#333B45; --raise:#3C4552; --line:#4A5462;
+    --ink:#F8F8FF; --muted:#A9B3BF;
+    --yellow:#ffcc00; --navy:#08233e; --blue:#0080FF; --sky:#87CEEB;
+    --right:#FFF200; --wrong:#FF5A5A; --exp:#FFFFE0; --good:#9CCC65;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--page);color:var(--ink);font:15px/1.6 Verdana,Geneva,sans-serif}
+  button,input,select,textarea{font:inherit;color:inherit}
+  :focus-visible{outline:2px solid var(--yellow);outline-offset:2px}
+  [hidden]{display:none!important}
+
+  /* ---------- topo ---------- */
+  .top{display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px 28px;padding:16px 24px 0;background:var(--card);border-bottom:1px solid var(--line)}
+  .brand h1{margin:0;font:700 24px/1.1 Helvetica,Arial,sans-serif;letter-spacing:.2px}
+  .brand p{margin:2px 0 10px;color:var(--muted);font:13px Helvetica,Arial,sans-serif}
+  .tabs{display:flex;flex-wrap:wrap;gap:4px;margin-right:auto}
+  .tab{background:none;border:0;border-bottom:3px solid transparent;padding:8px 14px 10px;cursor:pointer;color:var(--muted);font:600 14px Helvetica,Arial,sans-serif}
+  .tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--yellow)}
+  .badge{display:inline-block;min-width:20px;margin-left:6px;padding:0 6px;border-radius:9px;background:var(--yellow);color:var(--navy);font:700 11px/18px Helvetica,Arial,sans-serif;text-align:center}
+  .data{display:flex;flex-wrap:wrap;gap:6px;padding-bottom:10px}
+
+  .btn{border:1px solid var(--line);background:var(--raise);padding:7px 13px;border-radius:6px;cursor:pointer;font:13px Helvetica,Arial,sans-serif}
+  .btn:hover{border-color:var(--muted)}
+  .btn.primary{background:var(--yellow);color:var(--navy);border-color:var(--yellow);border-radius:10px;font-weight:700}
+  .btn.primary:hover{background:#ffd633}
+  .btn.danger{background:transparent;color:var(--wrong);border-color:var(--wrong)}
+  .btn.ghost{background:transparent}
+  .btn.small{padding:4px 10px;font-size:12px}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+
+  .status{position:fixed;right:16px;bottom:16px;z-index:50;padding:10px 14px;border-radius:6px;font:600 13px Helvetica,Arial,sans-serif;max-width:380px;display:none}
+  .status.success{display:block;background:#d4edda;color:#155724}
+  .status.error{display:block;background:#f8d7da;color:#721c24}
+  .warn{margin:0;padding:8px 24px;background:#5a4a12;color:#ffe9a6;font:13px Helvetica,Arial,sans-serif}
+
+  main{max-width:980px;margin:0 auto;padding:22px 20px 60px}
+  h2.sec{font:700 18px Helvetica,Arial,sans-serif;margin:0 0 14px}
+  h3.sub{font:700 15px Helvetica,Arial,sans-serif;margin:26px 0 10px}
+  .note{font:13px Helvetica,Arial,sans-serif;color:var(--muted);margin:0 0 14px}
+
+  /* ---------- banco ---------- */
+  .toolbar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+  .toolbar input[type=search]{flex:1 1 260px}
+  input[type=text],input[type=search],input[type=number],select,textarea{background:#262C34;border:1px solid var(--line);border-radius:6px;padding:7px 10px;width:100%}
+  .toolbar select{width:auto;max-width:240px}
+  .countbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;margin:4px 0 14px}
+  .count{color:var(--muted);font-size:13px;margin:0}
+  .row{border-top:1px solid var(--line);padding:14px 2px}
+  .row:last-child{border-bottom:1px solid var(--line)}
+  .row-meta{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;font:12px Helvetica,Arial,sans-serif;color:var(--muted);margin-bottom:6px}
+  .mini-pill{background:var(--yellow);color:var(--navy);border-radius:10px;padding:1px 9px;font-weight:700;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .row-q{margin:0 0 8px}
+  .row-foot{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px}
+  .perf{font:12px Helvetica,Arial,sans-serif;color:var(--muted)}
+  .perf b{color:var(--ink)}
+  .perf .due{color:var(--yellow)}
+  .row-actions{display:flex;flex-wrap:wrap;gap:6px}
+  .empty{padding:40px 10px;text-align:center;color:var(--muted)}
+  .empty p{margin:0 0 14px}
+
+  /* ---------- cadastro ---------- */
+  fieldset{border:0;border-top:1px solid var(--line);margin:0 0 18px;padding:14px 0 0}
+  legend{font:700 14px Helvetica,Arial,sans-serif;color:var(--yellow);padding-right:10px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px 16px}
+  label{display:block;font:13px Helvetica,Arial,sans-serif;color:var(--muted);margin-bottom:4px}
+  label b{color:var(--ink);font-weight:700}
+  label.chk{display:flex;gap:8px;align-items:center;cursor:pointer;margin:0 0 10px}
+  label.chk input{width:auto}
+  textarea{resize:vertical;min-height:64px;line-height:1.5}
+  .pair{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:12px 16px;padding:10px;border-left:3px solid var(--wrong);background:rgba(255,90,90,.04)}
+  .pair.right{border-left-color:var(--right);background:rgba(255,242,0,.04)}
+  .form-actions{display:flex;flex-wrap:wrap;gap:8px;position:sticky;bottom:0;background:var(--page);padding:12px 0;border-top:1px solid var(--line)}
+  .hint{font-size:12px;color:var(--muted);margin:0 0 16px}
+
+  /* ---------- cartão (fiel ao modelo Anki) ---------- */
+  .card{background:var(--card);border-radius:8px;padding:18px 20px 22px;line-height:1.85}
+  .code-pill{display:inline-block;background:var(--yellow);color:var(--navy);border-radius:10px;padding:6px 10px;font:11px/1.3 Futura,'Century Gothic',AppleGothic,sans-serif;box-shadow:inset 0 1px 0 rgba(255,255,255,.5);border-bottom:1px solid #9f9f9f;margin-bottom:16px}
+  .banca-bar{border-top:5px double var(--sky);border-bottom:5px double var(--sky);background:var(--blue);color:#fff;text-align:center;font:15px Helvetica,Arial,sans-serif;padding:6px;margin-bottom:12px}
+  .q-domain{margin:0 0 12px}
+  .q-text{margin:0 0 18px}
+  .opts{display:flex;flex-direction:column;gap:2px}
+  .opt{display:flex;gap:.7em;padding:4px 10px 4px 8px;border-left:4px solid transparent;border-radius:3px;cursor:pointer}
+  .opt:hover{background:var(--raise)}
+  .opt-l{flex:none;width:1.4em}
+  .opt.is-picked{border-left-color:var(--blue);background:rgba(0,128,255,.16)}
+  .opt.is-right{border-left-color:var(--right);color:var(--right);font-weight:700}
+  .opt.is-wrong{border-left-color:var(--wrong);color:var(--wrong)}
+  .opt[aria-disabled="true"]{cursor:default}
+  .opt[aria-disabled="true"]:hover{background:none}
+  .back hr{border:0;border-top:1px solid #b9c0c8;margin:20px 0 12px}
+  .verdict{margin:0 0 6px;font:700 14px Helvetica,Arial,sans-serif}
+  .verdict.hit{color:var(--right)} .verdict.miss{color:var(--wrong)} .verdict.skip{color:var(--muted)}
+  .ans{color:var(--right);font-weight:700;margin:0}
+  .answer-text{margin:0 0 4px}
+  .src{margin:0 0 16px}
+  .erro{color:var(--wrong);margin:0 0 14px;padding:4px 0 4px 2.1em;text-indent:-2.1em}
+  .erro .lt{display:inline-block;width:2.1em;text-indent:0}
+  .erro.is-mine{outline:1px dashed var(--wrong);background:rgba(255,90,90,.08);border-radius:4px;padding-top:8px;padding-bottom:8px}
+  .mine-tag{display:inline-block;text-indent:0;font:700 11px Helvetica,Arial,sans-serif;background:var(--wrong);color:#fff;border-radius:8px;padding:0 7px;margin-right:8px}
+  .exp{color:var(--exp);font-size:17px;line-height:1.5;margin:6px 0 10px}
+  .tag{color:#8a929c;font-size:12px;margin:12px 0 0}
+  .card img{max-width:100%}
+
+  /* ---------- simulado / SRS ---------- */
+  .srs-panel{border:1px solid var(--line);border-left:4px solid var(--yellow);border-radius:8px;padding:16px 18px;margin-bottom:28px;background:var(--card)}
+  .srs-panel h2{margin:0 0 6px}
+  .srs-nums{display:flex;flex-wrap:wrap;gap:6px 26px;margin:10px 0 14px;font:14px Helvetica,Arial,sans-serif;color:var(--muted)}
+  .srs-nums b{font-size:26px;color:var(--ink);margin-right:6px}
+  .srs-row{display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px}
+  .srs-row > div{width:150px}
+  .cfg{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px 16px;margin-bottom:18px}
+  .avail{font:13px Helvetica,Arial,sans-serif;color:var(--muted);margin:0 0 16px}
+  .avail b{color:var(--yellow)}
+  .runbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 18px;font:13px Helvetica,Arial,sans-serif;color:var(--muted);margin-bottom:12px}
+  .runbar .pos{color:var(--ink);font-weight:700;font-size:15px}
+  .runbar .sp{margin-left:auto}
+  .timer{font-variant-numeric:tabular-nums}
+  .progress{height:4px;background:var(--line);border-radius:2px;margin-bottom:14px;overflow:hidden}
+  .progress i{display:block;height:100%;background:var(--yellow)}
+  .dots{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:14px}
+  .dot{min-width:30px;height:28px;border:1px solid var(--line);background:transparent;border-radius:5px;cursor:pointer;font:12px Helvetica,Arial,sans-serif;color:var(--muted)}
+  .dot.done{background:var(--raise);color:var(--ink)}
+  .dot.cur{border-color:var(--yellow);color:var(--yellow)}
+  .runnav{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:14px}
+  .runnav .sp{margin-left:auto}
+  .grade{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:14px;padding:12px 14px;border:1px solid var(--line);border-radius:8px}
+  .grade p{margin:0 auto 0 0;font:13px Helvetica,Arial,sans-serif;color:var(--muted)}
+  .grade .btn small{display:block;font-size:11px;opacity:.75}
+  .keys{font:12px Helvetica,Arial,sans-serif;color:var(--muted);margin-top:10px}
+
+  .score{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 22px;margin:0 0 18px}
+  .score .big{font:700 46px/1 Helvetica,Arial,sans-serif;color:var(--yellow)}
+  .score span{font:14px Helvetica,Arial,sans-serif;color:var(--muted)}
+  table{width:100%;border-collapse:collapse;font:13px Helvetica,Arial,sans-serif;margin-bottom:20px}
+  th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{color:var(--muted);font-weight:400}
+  td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .up{color:var(--good)} .down{color:var(--wrong)}
+  .tablewrap{overflow-x:auto}
+  .res-item{border-top:1px solid var(--line)}
+  .res-item summary{cursor:pointer;padding:10px 4px;display:flex;gap:10px;align-items:baseline;list-style:none}
+  .res-item summary::-webkit-details-marker{display:none}
+  .mark{flex:none;font:700 13px Helvetica,Arial,sans-serif;width:92px}
+  .mark.hit{color:var(--right)} .mark.miss{color:var(--wrong)} .mark.skip{color:var(--muted)}
+  .res-item .card{margin:0 0 14px}
+
+  /* ---------- evolução ---------- */
+  .kpis{display:flex;flex-wrap:wrap;gap:10px 34px;margin:0 0 20px;font:13px Helvetica,Arial,sans-serif;color:var(--muted)}
+  .kpis b{display:block;font:700 28px/1.2 Helvetica,Arial,sans-serif;color:var(--ink)}
+  .evo-ctrl{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:10px}
+  .evo-ctrl select{width:auto}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+  .chip{display:flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:14px;padding:2px 10px 2px 8px;font:12px Helvetica,Arial,sans-serif;cursor:pointer;color:var(--muted)}
+  .chip input{width:auto;margin:0}
+  .chip i{width:10px;height:10px;border-radius:50%;display:inline-block}
+  .chip.on{color:var(--ink);border-color:var(--muted)}
+  .chart{background:var(--card);border-radius:8px;padding:10px 6px 4px}
+  .chart svg{display:block;width:100%;height:auto}
+
+  dialog{background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:20px;max-width:min(820px,94vw);width:100%}
+  dialog::backdrop{background:rgba(10,14,20,.7)}
+  dialog h3{margin:0 0 8px;font:700 17px Helvetica,Arial,sans-serif}
+  dialog p{margin:0 0 14px;color:var(--muted);font-size:14px}
+  .dlg-actions{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end;align-items:center}
+  .dlg-actions .sp{margin-right:auto}
+  .maptable{max-height:52vh;overflow:auto;margin-bottom:12px;border:1px solid var(--line);border-radius:6px}
+  .maptable table{margin:0}
+  .maptable td.ex{color:var(--muted);max-width:360px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .maptable select{min-width:190px}
+
+  @media (max-width:720px){
+    .top{padding:12px 14px 0}
+    main{padding:16px 12px 60px}
+    .grid,.pair{grid-template-columns:1fr}
+    .card{padding:14px 12px 18px}
+  }
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="brand">
+    <h1>Mábio's Quiz</h1>
+    <p>Banco de questões, revisão espaçada e simulados</p>
+  </div>
+  <nav class="tabs" role="tablist" aria-label="Seções">
+    <button class="tab" role="tab" data-view="banco" aria-selected="true">Banco</button>
+    <button class="tab" role="tab" data-view="cadastro" aria-selected="false">Cadastro</button>
+    <button class="tab" role="tab" data-view="simulado" aria-selected="false">Estudar<span class="badge" id="dueBadge" hidden></span></button>
+    <button class="tab" role="tab" data-view="evolucao" aria-selected="false">Evolução</button>
+  </nav>
+  <div class="data">
+    <button class="btn" id="btnExport">📤 Exportar JSON</button>
+    <button class="btn" id="btnImport">📥 Importar</button>
+    <button class="btn danger" id="btnClear">🗑️ Limpar tudo</button>
+    <input type="file" id="fileInput" accept=".json,.txt,.tsv,.csv" hidden>
+  </div>
+</header>
+<p class="warn" id="storageWarn" hidden>O navegador bloqueou o armazenamento local. Os dados valem só para esta sessão — exporte o JSON antes de fechar.</p>
+<div id="status" class="status" role="status" aria-live="polite"></div>
+
+<main>
+  <!-- BANCO -->
+  <section id="v-banco">
+    <div class="toolbar">
+      <input type="search" id="fSearch" placeholder="Buscar em enunciado, código, tema, tags…" aria-label="Buscar">
+      <select id="fBanca" aria-label="Filtrar por banca"></select>
+      <select id="fDomain" aria-label="Filtrar por tema"></select>
+      <button class="btn primary" id="btnNew">+ Nova questão</button>
+      <button class="btn" id="btnSimFiltered">Simular estas</button>
+    </div>
+    <div class="countbar">
+      <p class="count" id="bancoCount"></p>
+      <button class="btn small ghost" id="btnSwap" title="Inverte o conteúdo dos campos Código e Domain nas questões listadas">Trocar Código ↔ Domain nas listadas</button>
+    </div>
+    <div id="bancoList"></div>
+  </section>
+
+  <!-- CADASTRO -->
+  <section id="v-cadastro" hidden>
+    <h2 class="sec" id="formTitle">Nova questão</h2>
+    <p class="hint">Campos aceitam texto puro ou HTML (como no Anki). Cada Erro fica ao lado do distrator que ele explica (Erro1→Distractor2, Erro2→Distractor3, Erro3→Distractor4, Erro4→Distractor5) — o simulado usa esse vínculo para destacar a justificativa da alternativa que você marcou.</p>
+    <form id="qForm" autocomplete="off">
+      <fieldset>
+        <legend>Identificação</legend>
+        <div class="grid">
+          <div><label for="f_codigo"><b>Código</b></label><input type="text" id="f_codigo" placeholder="D1GAIT"></div>
+          <div><label for="f_banca"><b>Banca / Órgão</b></label><input type="text" id="f_banca" list="dlBanca" placeholder="CRMA, CISA, CGU…"></div>
+          <div><label for="f_domain"><b>Domain / Tema</b></label><input type="text" id="f_domain" list="dlDomain" placeholder="Domain I - Organizational governance…"></div>
+          <div><label for="f_tags"><b>Tags</b> (opcional, separadas por espaço)</label><input type="text" id="f_tags" placeholder="Dom1::D1GAIT-R"></div>
+        </div>
+        <datalist id="dlBanca"></datalist><datalist id="dlDomain"></datalist>
+      </fieldset>
+      <fieldset>
+        <legend>Enunciado</legend>
+        <div><label for="f_question"><b>Question</b> (enunciado) *</label><textarea id="f_question" rows="5" required></textarea></div>
+      </fieldset>
+      <fieldset>
+        <legend>Resposta correta</legend>
+        <div class="grid">
+          <div class="pair right">
+            <div><label for="f_answer1"><b>Answer1</b> (alternativa correta) *</label><textarea id="f_answer1" rows="3" required></textarea></div>
+            <div><label for="f_source"><b>Source</b> (fonte / justificativa)</label><textarea id="f_source" rows="3"></textarea></div>
+          </div>
+        </div>
+      </fieldset>
+      <fieldset>
+        <legend>Distratores e justificativas (ao menos um distrator)</legend>
+        <div class="grid">
+          <div class="pair">
+            <div><label for="f_distractor2"><b>Distractor2</b> (distrator)</label><textarea id="f_distractor2" rows="3"></textarea></div>
+            <div><label for="f_erro1"><b>Erro1</b> (por que o Distractor2 está errado)</label><textarea id="f_erro1" rows="3"></textarea></div>
+          </div>
+          <div class="pair">
+            <div><label for="f_distractor3"><b>Distractor3</b> (distrator)</label><textarea id="f_distractor3" rows="3"></textarea></div>
+            <div><label for="f_erro2"><b>Erro2</b> (por que o Distractor3 está errado)</label><textarea id="f_erro2" rows="3"></textarea></div>
+          </div>
+          <div class="pair">
+            <div><label for="f_distractor4"><b>Distractor4</b> (distrator)</label><textarea id="f_distractor4" rows="3"></textarea></div>
+            <div><label for="f_erro3"><b>Erro3</b> (por que o Distractor4 está errado)</label><textarea id="f_erro3" rows="3"></textarea></div>
+          </div>
+          <div class="pair">
+            <div><label for="f_distractor5"><b>Distractor5</b> (distrator — só em questões de 5 alternativas)</label><textarea id="f_distractor5" rows="3"></textarea></div>
+            <div><label for="f_erro4"><b>Erro4</b> (por que o Distractor5 está errado)</label><textarea id="f_erro4" rows="3"></textarea></div>
+          </div>
+        </div>
+      </fieldset>
+      <fieldset>
+        <legend>Tradução</legend>
+        <div><label for="f_portuguese"><b>Portuguese</b> (tradução / comentário em português)</label><textarea id="f_portuguese" rows="4"></textarea></div>
+      </fieldset>
+      <div class="form-actions">
+        <button type="submit" class="btn primary">Salvar</button>
+        <button type="button" class="btn" id="btnSaveNew">Salvar e cadastrar outra</button>
+        <button type="button" class="btn" id="btnPreview">Pré-visualizar cartão</button>
+        <button type="button" class="btn ghost" id="btnCancel">Cancelar</button>
+      </div>
+    </form>
+  </section>
+
+  <!-- ESTUDAR (SRS + simulado) -->
+  <section id="v-simulado" hidden>
+    <div id="simBody"></div>
+  </section>
+
+  <!-- EVOLUÇÃO -->
+  <section id="v-evolucao" hidden>
+    <div id="evoBody"></div>
+  </section>
+</main>
+
+<dialog id="dlg"><div id="dlgBody"></div></dialog>
+
+<script>
+'use strict';
+/* =========================================================
+   Mábio's Quiz v1.1 — single-file, vanilla JS
+   v1.1: SRS (SM-2) + fila do dia · mapeador de colunas e troca
+         Código↔Domain · painel de evolução por domínio
+   Persistência: localStorage (fallback em memória) + JSON
+   ========================================================= */
+const APP = "Mábio's Quiz", VERSION = '1.2', STORE_KEY = 'mabiosQuiz_v1';
+const KEYS = ['codigo','banca','domain','question','answer1','distractor2','distractor3','distractor4','source','erro1','erro2','erro3','portuguese','distractor5','erro4'];
+/* v1.2: distractor5/erro4 entram NO FIM da ordem de colunas → arquivos de 13 campos (v1.1) continuam válidos */
+const LEGACY_KEYS = KEYS.slice(0, 13);
+const TARGETS = [...KEYS, 'tags'];
+const LABEL = { codigo:'Código', banca:'Banca / Órgão', domain:'Domain / Tema', question:'Question', answer1:'Answer1', distractor2:'Distractor2', distractor3:'Distractor3', distractor4:'Distractor4', source:'Source', erro1:'Erro1', erro2:'Erro2', erro3:'Erro3', portuguese:'Portuguese', distractor5:'Distractor5', erro4:'Erro4', tags:'Tags', ignore:'— ignorar —' };
+const CHOICE_KEYS = ['answer1','distractor2','distractor3','distractor4','distractor5'];
+const DISTRACTORS = CHOICE_KEYS.slice(1);
+const ERRO_OF = {distractor2:'erro1', distractor3:'erro2', distractor4:'erro3', distractor5:'erro4'};
+const LETTERS = ['a','b','c','d','e'];
+const ALIASES = {
+  codigo:['codigo','código','code','cod'], banca:['banca','orgao','órgão','banca/orgao','banca/órgão','banca / órgão','board'],
+  domain:['domain','tema','domain/tema','domain / tema','dominio','domínio'], question:['question','pergunta','enunciado'],
+  answer1:['answer1','answer','resposta','correta'], distractor2:['distractor2'], distractor3:['distractor3'], distractor4:['distractor4'], distractor5:['distractor5'], erro4:['erro4','error4'],
+  source:['source','fonte'], erro1:['erro1','error1'], erro2:['erro2','error2'], erro3:['erro3','error3'],
+  portuguese:['portuguese','portugues','português','traducao','tradução'], tags:['tags','tag']
+};
+const HISTORY_CAP = 15000, SESSIONS_CAP = 500, MATURE_DAYS = 21;
+
+/* ---------- armazenamento ---------- */
+const store = (() => {
+  let ok = true, mem = null;
+  try { localStorage.setItem('__mq', '1'); localStorage.removeItem('__mq'); } catch (e) { ok = false; }
+  return {
+    load(){ if (!ok) return mem; try { return JSON.parse(localStorage.getItem(STORE_KEY) || 'null'); } catch (e) { return mem; } },
+    save(d){ mem = d; if (!ok) return false; try { localStorage.setItem(STORE_KEY, JSON.stringify(d)); return true; } catch (e) { ok = false; return false; } }
+  };
+})();
+
+function normalizeDB(raw){
+  raw = raw || {};
+  const meta = raw.meta || {};
+  return {
+    questions: (Array.isArray(raw.questions) ? raw.questions : []).map(normalize),
+    history: Array.isArray(raw.history) ? raw.history.filter(h => h && h.t && h.id) : [],
+    sessions: Array.isArray(raw.sessions) ? raw.sessions.filter(s => s && s.t) : [],
+    meta: {
+      newPerDay: Math.max(0, parseInt(meta.newPerDay, 10) >= 0 ? parseInt(meta.newPerDay, 10) : 20),
+      srsDay: meta.srsDay && meta.srsDay.date ? meta.srsDay : { date: today(), newCount: 0 },
+      importMaps: meta.importMaps || {}
+    }
+  };
+}
+let db;
+
+function persist(){
+  if (db.history.length > HISTORY_CAP) db.history = db.history.slice(-HISTORY_CAP);
+  if (db.sessions.length > SESSIONS_CAP) db.sessions = db.sessions.slice(-SESSIONS_CAP);
+  const ok = store.save(db);
+  document.getElementById('storageWarn').hidden = ok;
+  updateBadge();
+}
+
+/* ---------- utilidades ---------- */
+const $ = id => document.getElementById(id);
+const uid = () => 'q' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+const nowISO = () => new Date().toISOString();
+function ymd(d){ return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
+function today(){ return ymd(new Date()); }
+function addDays(s, n){ const [y, m, d] = s.split('-').map(Number); return ymd(new Date(y, m - 1, d + n)); }
+function fmtDay(s){ if (!s) return ''; const [y, m, d] = s.split('-'); return `${d}/${m}/${y.slice(2)}`; }
+function esc(s){ return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function shuffle(a){ a = a.slice(); for (let i = a.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+function fmtTime(ms){ const s = Math.max(0, Math.floor(ms / 1000)); const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), ss = s % 60; return (h ? h + ':' : '') + String(m).padStart(2,'0') + ':' + String(ss).padStart(2,'0'); }
+function msg(text, type = 'success'){ const el = $('status'); el.textContent = text; el.className = 'status ' + type; clearTimeout(msg.t); msg.t = setTimeout(() => el.className = 'status', 3800); }
+const blank = s => !String(s ?? '').trim();
+const pct = (c, n) => n ? Math.round(c / n * 100) : null;
+
+/* Sanitização: aceita HTML vindo do Anki, remove scripts/eventos */
+const ALLOWED = new Set(['B','I','U','S','STRONG','EM','BR','P','DIV','SPAN','UL','OL','LI','SUB','SUP','IMG','A','TABLE','THEAD','TBODY','TR','TD','TH','CODE','PRE','BLOCKQUOTE','HR','FONT','SMALL','MARK','H3','H4']);
+const DROP = new Set(['SCRIPT','STYLE','IFRAME','OBJECT','EMBED','LINK','META','FORM','INPUT','BUTTON','TEXTAREA','SELECT','SVG']);
+function sanitize(html){
+  const doc = new DOMParser().parseFromString('<div>' + html + '</div>', 'text/html');
+  const root = doc.body.firstElementChild;
+  (function walk(node){
+    [...node.childNodes].forEach(ch => {
+      if (ch.nodeType === 8){ ch.remove(); return; }
+      if (ch.nodeType !== 1) return;
+      if (DROP.has(ch.tagName)){ ch.remove(); return; }
+      walk(ch);
+      if (!ALLOWED.has(ch.tagName)){ ch.replaceWith(...ch.childNodes); return; }
+      [...ch.attributes].forEach(a => {
+        const n = a.name.toLowerCase();
+        const keep = (n === 'href' && ch.tagName === 'A') || ((n === 'src' || n === 'alt') && ch.tagName === 'IMG');
+        if (!keep || /^\s*(javascript|vbscript):/i.test(a.value)) ch.removeAttribute(a.name);
+      });
+      if (ch.tagName === 'A'){ ch.setAttribute('target','_blank'); ch.setAttribute('rel','noopener'); }
+    });
+  })(root);
+  return root.innerHTML;
+}
+function rich(s){
+  s = String(s ?? '').split('[[').join('<').split(']]').join('>');
+  if (!/<\/?[a-z][\s\S]*?>/i.test(s)) return esc(s).replace(/\r?\n/g, '<br>');
+  return sanitize(s);
+}
+function plain(s){
+  s = String(s ?? '');
+  if (!/[<&]/.test(s)) return s;
+  return new DOMParser().parseFromString(s.replace(/<br\s*\/?>/gi, ' '), 'text/html').body.textContent || '';
+}
+
+/* ---------- modelo ---------- */
+function normStats(s){ s = s || {}; return { seen: +s.seen || 0, correct: +s.correct || 0, wrong: +s.wrong || 0, lastResult: s.lastResult || null, lastSeen: s.lastSeen || null }; }
+function normSrs(s){ s = s || {}; return { reps: +s.reps || 0, ef: Math.max(1.3, +s.ef || 2.5), interval: +s.interval || 0, due: s.due || null, lapses: +s.lapses || 0 }; }
+function normalize(o){
+  o = o || {};
+  const low = {};
+  Object.keys(o).forEach(k => low[k.toLowerCase().trim()] = o[k]);
+  const q = {};
+  TARGETS.forEach(k => {
+    const hit = ALIASES[k].find(a => low[a] != null);
+    let v = hit ? low[hit] : '';
+    if (Array.isArray(v)) v = v.join(' ');
+    q[k] = String(v ?? '');
+  });
+  q.id = o.id ? String(o.id) : uid();
+  q.stats = normStats(o.stats);
+  q.srs = normSrs(o.srs);
+  q.createdAt = o.createdAt || nowISO();
+  q.updatedAt = o.updatedAt || q.createdAt;
+  return q;
+}
+const isPlayable = q => !blank(q.question) && !blank(q.answer1) && DISTRACTORS.some(k => !blank(q[k]));
+const getQ = id => db.questions.find(q => q.id === id);
+const dom = q => plain(q.domain).trim() || '(sem tema)';
+const uniq = key => [...new Set(db.questions.map(q => plain(q[key]).trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+
+/* =========================================================
+   SRS — SM-2 clássico (+ bônus ×1,3 no Fácil)
+   notas: 1 errei · 3 difícil · 4 bom · 5 fácil
+   ========================================================= */
+const isNew = q => q.srs.reps === 0 && q.srs.lapses === 0 && !q.srs.due;
+const isDue = q => !isNew(q) && q.srs.due && q.srs.due <= today();
+function srsNext(s, g){
+  s = { ...s };
+  s.ef = Math.max(1.3, s.ef + (0.1 - (5 - g) * (0.08 + (5 - g) * 0.02)));
+  if (g < 3){ s.reps = 0; s.interval = 1; s.lapses++; }
+  else {
+    s.reps++;
+    s.interval = s.reps === 1 ? 1 : s.reps === 2 ? 6 : Math.round(s.interval * s.ef);
+    if (g === 5) s.interval = Math.max(s.interval + 1, Math.round(s.interval * 1.3));
+  }
+  s.due = addDays(today(), s.interval);
+  return s;
+}
+function srsApply(q, g){
+  if (isNew(q)) bumpNewCount();
+  q.srs = srsNext(q.srs, g);
+}
+function rollDay(){ if (db.meta.srsDay.date !== today()) db.meta.srsDay = { date: today(), newCount: 0 }; }
+function bumpNewCount(){ rollDay(); db.meta.srsDay.newCount++; }
+function newLeftToday(){ rollDay(); return Math.max(0, db.meta.newPerDay - db.meta.srsDay.newCount); }
+function srsQueue(f){
+  let p = db.questions.filter(isPlayable);
+  if (f && f.banca) p = p.filter(q => plain(q.banca).trim() === f.banca);
+  if (f && f.domain) p = p.filter(q => plain(q.domain).trim() === f.domain);
+  const due = shuffle(p.filter(isDue)).sort((a, b) => a.srs.due.localeCompare(b.srs.due));
+  const news = p.filter(isNew).slice(0, newLeftToday());
+  return { due, news, newsTotal: p.filter(isNew).length };
+}
+function updateBadge(){
+  const b = $('dueBadge'); if (!b || !db) return;
+  const q = srsQueue(null), n = q.due.length + q.news.length;
+  b.textContent = n; b.hidden = !n;
+}
+const fmtIv = d => d < 31 ? d + 'd' : d < 365 ? (d / 30).toFixed(1).replace('.0','') + 'm' : (d / 365).toFixed(1).replace('.0','') + 'a';
+
+/* ---------- navegação ---------- */
+let currentView = 'banco';
+function show(view){
+  currentView = view;
+  document.querySelectorAll('.tab').forEach(t => t.setAttribute('aria-selected', String(t.dataset.view === view)));
+  ['banco','cadastro','simulado','evolucao'].forEach(v => $('v-' + v).hidden = v !== view);
+  if (view === 'banco') renderBanco();
+  if (view === 'simulado') renderSim();
+  if (view === 'evolucao') renderEvo();
+  window.scrollTo(0, 0);
+}
+document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => {
+  if (t.dataset.view === 'cadastro' && !editingId) openForm(null);
+  else show(t.dataset.view);
+}));
+
+/* =========================================================
+   BANCO
+   ========================================================= */
+function fillSelect(sel, values, allLabel, keep){
+  const cur = keep ? sel.value : '';
+  sel.innerHTML = `<option value="">${esc(allLabel)}</option>` + values.map(v => `<option value="${esc(v)}">${esc(v.length > 60 ? v.slice(0, 57) + '…' : v)}</option>`).join('');
+  if (values.includes(cur)) sel.value = cur;
+}
+function filtered(){
+  const term = $('fSearch').value.trim().toLowerCase();
+  const b = $('fBanca').value, d = $('fDomain').value;
+  return db.questions.filter(q => {
+    if (b && plain(q.banca).trim() !== b) return false;
+    if (d && plain(q.domain).trim() !== d) return false;
+    if (!term) return true;
+    return [q.question, q.codigo, q.domain, q.banca, q.tags, q.answer1].some(f => plain(f).toLowerCase().includes(term));
+  });
+}
+function srsLabel(q){
+  if (isNew(q)) return 'SRS: nova';
+  const s = q.srs;
+  if (s.due <= today()) return `<span class="due">SRS: revisão vencida (${fmtDay(s.due)})</span>`;
+  return `SRS: próxima em ${fmtDay(s.due)} · intervalo ${fmtIv(s.interval)}`;
+}
+function renderBanco(){
+  fillSelect($('fBanca'), uniq('banca'), 'Todas as bancas', true);
+  fillSelect($('fDomain'), uniq('domain'), 'Todos os temas', true);
+  const list = filtered();
+  const total = db.questions.length;
+  $('bancoCount').textContent = total ? `${list.length} de ${total} questões` : '';
+  $('btnSimFiltered').disabled = !list.some(isPlayable);
+  $('btnSwap').hidden = !list.length;
+  if (!total){
+    $('bancoList').innerHTML = `<div class="empty"><p>O banco está vazio. Cadastre a primeira questão, importe um JSON/TXT do Anki ou carregue um exemplo para testar.</p>
+      <button class="btn primary" data-act="new">+ Nova questão</button> <button class="btn" data-act="seed">Carregar exemplo</button></div>`;
+    return;
+  }
+  if (!list.length){ $('bancoList').innerHTML = `<div class="empty"><p>Nenhuma questão corresponde aos filtros.</p></div>`; return; }
+  $('bancoList').innerHTML = list.map(q => {
+    const s = q.stats;
+    const perf = (s.seen ? `<b>${s.correct}</b> acertos em <b>${s.seen}</b> respostas` + (s.lastResult ? ` — última: ${s.lastResult === 'right' ? 'acerto' : 'erro'}` : '') : 'ainda não respondida') + ' · ' + srsLabel(q);
+    const snippet = plain(q.question).trim();
+    return `<article class="row" data-id="${esc(q.id)}">
+      <div class="row-meta">${!blank(q.codigo) ? `<span class="mini-pill" title="${esc(plain(q.codigo))}">${esc(plain(q.codigo))}</span>` : ''}
+        ${!blank(q.banca) ? `<span>${esc(plain(q.banca))}</span>` : ''}${!blank(q.domain) ? `<span>${esc(plain(q.domain))}</span>` : ''}
+        ${isPlayable(q) ? `<span>${nAlts(q)} alternativas</span>` : '<span style="color:var(--wrong)">incompleta: faltam alternativas</span>'}</div>
+      <p class="row-q">${esc(snippet.length > 240 ? snippet.slice(0, 237) + '…' : snippet)}</p>
+      <div class="row-foot"><span class="perf">${perf}</span>
+        <span class="row-actions"><button class="btn" data-act="view">Ver cartão</button><button class="btn" data-act="edit">Editar</button><button class="btn" data-act="dup">Duplicar</button>${isNew(q) ? '' : '<button class="btn" data-act="reset" title="Volta a questão para o estado de nova no SRS">Reiniciar SRS</button>'}<button class="btn danger" data-act="del">Excluir</button></span></div>
+    </article>`;
+  }).join('');
+}
+['fSearch','fBanca','fDomain'].forEach(id => $(id).addEventListener('input', renderBanco));
+$('btnNew').addEventListener('click', () => openForm(null));
+$('btnSimFiltered').addEventListener('click', () => startSession(shuffle(filtered().filter(isPlayable).map(q => q.id)), 'estudo', 'simulado'));
+$('btnSwap').addEventListener('click', () => {
+  const list = filtered();
+  if (!list.length) return;
+  if (!confirm(`Trocar o conteúdo de Código e Domain em ${list.length} questão(ões)?\n\nExemplo: Código "${plain(list[0].codigo).slice(0, 40)}" ↔ Domain "${plain(list[0].domain).slice(0, 40)}".\nRode de novo para desfazer.`)) return;
+  list.forEach(q => { [q.codigo, q.domain] = [q.domain, q.codigo]; q.updatedAt = nowISO(); });
+  $('fDomain').value = '';
+  persist(); renderBanco(); msg(`Código ↔ Domain trocados em ${list.length} questão(ões).`);
+});
+$('bancoList').addEventListener('click', e => {
+  const btn = e.target.closest('[data-act]'); if (!btn) return;
+  const act = btn.dataset.act;
+  if (act === 'new') return openForm(null);
+  if (act === 'seed') return loadSeed();
+  const id = btn.closest('.row')?.dataset.id, q = getQ(id); if (!q) return;
+  if (act === 'edit') openForm(q);
+  if (act === 'view') previewCard(q);
+  if (act === 'dup'){
+    const c = normalize({ ...q, id: null, stats: null, srs: null, createdAt: null, updatedAt: null });
+    db.questions.splice(db.questions.indexOf(q) + 1, 0, c); persist(); renderBanco(); msg('Questão duplicada.');
+  }
+  if (act === 'reset' && confirm('Reiniciar o agendamento SRS desta questão? O histórico de acertos é mantido.')){
+    q.srs = normSrs(null); persist(); renderBanco(); msg('Agendamento SRS reiniciado.');
+  }
+  if (act === 'del' && confirm('Excluir esta questão? A ação não pode ser desfeita (a menos que você tenha um JSON exportado).')){
+    db.questions = db.questions.filter(x => x !== q); persist(); renderBanco(); msg('Questão excluída.');
+  }
+});
+
+/* =========================================================
+   CADASTRO
+   ========================================================= */
+let editingId = null;
+function openForm(q){
+  editingId = q ? q.id : null;
+  $('formTitle').textContent = q ? 'Editar questão' : 'Nova questão';
+  TARGETS.forEach(k => $('f_' + k).value = q ? q[k] : '');
+  $('dlBanca').innerHTML = uniq('banca').map(v => `<option value="${esc(v)}">`).join('');
+  $('dlDomain').innerHTML = uniq('domain').map(v => `<option value="${esc(v)}">`).join('');
+  show('cadastro');
+  $('f_codigo').focus();
+}
+function readForm(){ const o = {}; TARGETS.forEach(k => o[k] = $('f_' + k).value); return o; }
+function saveForm(andNew){
+  const o = readForm();
+  if (blank(o.question) || blank(o.answer1)){ msg('Preencha Question e Answer1.', 'error'); return; }
+  if (DISTRACTORS.every(k => blank(o[k]))){ msg('Cadastre ao menos um distrator.', 'error'); return; }
+  const wasEditing = !!editingId;
+  if (editingId){ const q = getQ(editingId); if (q){ Object.assign(q, o); q.updatedAt = nowISO(); } }
+  else db.questions.push(normalize(o));
+  persist();
+  msg(wasEditing ? 'Questão atualizada.' : 'Questão salva.');
+  if (andNew){
+    const keep = { codigo: o.codigo, banca: o.banca, domain: o.domain, tags: o.tags };
+    openForm(null);
+    Object.keys(keep).forEach(k => $('f_' + k).value = keep[k]);
+    $('f_question').focus();
+  } else { editingId = null; show('banco'); }
+}
+$('qForm').addEventListener('submit', e => { e.preventDefault(); saveForm(false); });
+$('btnSaveNew').addEventListener('click', () => saveForm(true));
+$('btnCancel').addEventListener('click', () => { editingId = null; show('banco'); });
+$('btnPreview').addEventListener('click', () => {
+  const q = normalize(readForm());
+  if (blank(q.question)){ msg('Escreva o enunciado para pré-visualizar.', 'error'); return; }
+  previewCard(q);
+});
+
+/* =========================================================
+   CARTÃO (reproduz frente + verso do modelo Anki)
+   ========================================================= */
+function cardHTML(q, item, reveal){
+  const opts = item.order.map((k, i) => {
+    let c = 'opt';
+    if (reveal){ if (k === 'answer1') c += ' is-right'; else if (item.chosen === i) c += ' is-wrong'; }
+    else if (item.chosen === i) c += ' is-picked';
+    return `<div class="${c}" role="button" tabindex="${reveal ? -1 : 0}" data-opt="${i}"${reveal ? ' aria-disabled="true"' : ''}><span class="opt-l">${LETTERS[i]}.</span><span class="opt-t">${rich(q[k])}</span></div>`;
+  }).join('');
+  let back = '';
+  if (reveal){
+    const ci = item.order.indexOf('answer1');
+    const chosenKey = item.chosen != null ? item.order[item.chosen] : null;
+    let verdict = '';
+    if (!item.preview){
+      verdict = chosenKey == null ? '<p class="verdict skip">Não respondida</p>'
+        : chosenKey === 'answer1' ? '<p class="verdict hit">Você acertou</p>'
+        : `<p class="verdict miss">Você marcou ${LETTERS[item.chosen]} — resposta errada</p>`;
+    }
+    const erros = item.order.map((k, i) => {
+      if (k === 'answer1') return '';
+      const e = q[ERRO_OF[k]];
+      if (blank(e)) return '';
+      const mine = k === chosenKey;
+      return `<div class="erro${mine ? ' is-mine' : ''}"><span class="lt">${LETTERS[i]}.</span>${mine ? '<span class="mine-tag">sua escolha</span>' : ''}${rich(e)}</div>`;
+    }).join('');
+    back = `<div class="back"><hr>${verdict}
+      <p class="ans">Correct: ${LETTERS[ci]}</p>
+      <div class="answer-text">${rich(q.answer1)}</div>
+      ${!blank(q.source) ? `<div class="ans src">Source solutions..: ${rich(q.source)}</div>` : ''}
+      ${erros}
+      ${!blank(q.portuguese) ? `<div class="exp">${rich(q.portuguese)}</div>` : ''}
+      ${!blank(q.tags) ? `<p class="tag">Tags: ${esc(q.tags)}</p>` : ''}</div>`;
+  }
+  return `${!blank(q.codigo) ? `<div class="code-pill">${esc(plain(q.codigo))}</div>` : ''}
+    ${!blank(q.banca) ? `<div class="banca-bar">${rich(q.banca)}</div>` : ''}
+    ${!blank(q.domain) ? `<p class="q-domain">${rich(q.domain)}</p>` : ''}
+    <div class="q-text">${rich(q.question)}</div>
+    <div class="opts">${opts}</div>${back}`;
+}
+function previewCard(q){
+  const order = CHOICE_KEYS.filter(k => !blank(q[k]));
+  openDialog(`<div class="card">${cardHTML(q, { order, chosen: null, preview: true }, true)}</div>
+    <div class="dlg-actions" style="margin-top:14px"><button class="btn" data-close>Fechar</button></div>`);
+}
+
+/* =========================================================
+   ESTUDAR — SRS + simulado livre
+   ========================================================= */
+let session = null, timerId = null;
+const cfg = { count: 20, banca: '', domain: '', mode: 'aleatorio', feedback: 'estudo', alts: '' };
+const nAlts = q => CHOICE_KEYS.filter(k => !blank(q[k])).length;
+
+function buildPool(c){
+  let p = db.questions.filter(isPlayable);
+  if (c.banca) p = p.filter(q => plain(q.banca).trim() === c.banca);
+  if (c.domain) p = p.filter(q => plain(q.domain).trim() === c.domain);
+  if (c.alts) p = p.filter(q => String(nAlts(q)) === c.alts);
+  if (c.mode === 'nunca') p = p.filter(q => !q.stats.seen);
+  if (c.mode === 'erradas') p = p.filter(q => q.stats.lastResult === 'wrong');
+  return p;
+}
+function pick(pool, n, mode){
+  if (mode === 'fracas'){
+    return pool.map(q => {
+      const s = q.stats, w = (s.wrong + 1) / (s.correct + 1) * (s.seen ? 1 : 1.5);
+      return { q, k: Math.pow(Math.random(), 1 / w) };
+    }).sort((a, b) => b.k - a.k).slice(0, n).map(x => x.q);
+  }
+  return shuffle(pool).slice(0, n);
+}
+function makeItem(id, extra){ return { id, order: shuffle(CHOICE_KEYS.filter(k => !blank(getQ(id)[k]))), chosen: null, recorded: false, graded: false, ...extra }; }
+function startSession(ids, feedback, kind){
+  ids = ids.filter(id => getQ(id));
+  if (!ids.length){ msg('Nenhuma questão disponível com esses critérios.', 'error'); return; }
+  session = { kind, feedback, idx: 0, started: Date.now(), ended: null, items: ids.map(id => makeItem(id)) };
+  stopTimer();
+  show('simulado');
+}
+function isRight(it){ return it.chosen != null && it.order[it.chosen] === 'answer1'; }
+function record(item){
+  if (item.recorded || item.chosen == null) return;
+  const q = getQ(item.id); if (!q) return;
+  const right = isRight(item);
+  q.stats.seen++; right ? q.stats.correct++ : q.stats.wrong++;
+  q.stats.lastResult = right ? 'right' : 'wrong'; q.stats.lastSeen = nowISO();
+  db.history.push({ t: nowISO(), id: q.id, d: dom(q), r: right ? 1 : 0, m: session.kind });
+  item.recorded = true;
+  if (session.kind === 'srs'){
+    if (!item.relearn && !right){
+      srsApply(q, 1); item.graded = true;
+      session.items.push(makeItem(q.id, { relearn: true }));
+    }
+    if (item.relearn) item.graded = true;
+  } else if (!right){
+    /* erro em simulado livre conta como lapso no SRS (volta amanhã); acerto não altera agenda */
+    srsApply(q, 1);
+  }
+  persist();
+}
+function grade(g){
+  if (!session || session.kind !== 'srs') return;
+  const it = session.items[session.idx];
+  if (it.graded || it.chosen == null) return;
+  const q = getQ(it.id); if (!q) return;
+  srsApply(q, g); it.graded = true; it.g = g; persist();
+  go(1);
+}
+function finishSession(){
+  if (!session) return;
+  if (session.feedback === 'prova'){
+    const pend = session.items.filter(i => i.chosen == null).length;
+    if (pend && !confirm(`${pend} questão(ões) sem resposta. Finalizar mesmo assim?`)) return;
+  }
+  if (session.kind === 'srs'){
+    /* acertos sem nota viram "Bom" para não perder o agendamento */
+    session.items.forEach(it => { if (it.chosen != null && !it.graded && isRight(it)){ const q = getQ(it.id); if (q){ srsApply(q, 4); it.graded = true; } } });
+  }
+  session.items.forEach(record);
+  session.ended = Date.now();
+  const answered = session.items.filter(i => i.chosen != null);
+  if (answered.length) db.sessions.push({ t: nowISO(), kind: session.kind, feedback: session.feedback, n: answered.length, hits: answered.filter(isRight).length, ms: session.ended - session.started });
+  persist();
+  stopTimer();
+  renderSim();
+}
+function stopTimer(){ clearInterval(timerId); timerId = null; }
+function tick(){ const el = $('simTimer'); if (el && session && !session.ended) el.textContent = fmtTime(Date.now() - session.started); }
+
+function needsGrade(it){ return session.kind === 'srs' && it.chosen != null && !it.graded; }
+function renderSim(){
+  const body = $('simBody');
+  if (!session) return renderConfig(body);
+  if (session.ended) return renderResults(body);
+  session.items = session.items.filter(i => getQ(i.id));
+  if (!session.items.length){ session = null; return renderConfig(body); }
+  session.idx = Math.min(session.idx, session.items.length - 1);
+  const it = session.items[session.idx], q = getQ(it.id), n = session.items.length;
+  const reveal = session.feedback === 'estudo' && it.chosen != null;
+  const answered = session.items.filter(i => i.chosen != null).length;
+  const last = session.idx === n - 1;
+  const srs = session.kind === 'srs';
+  const blocked = session.feedback === 'estudo' && (it.chosen == null || needsGrade(it));
+  let gradeBar = '';
+  if (srs && it.chosen != null){
+    if (needsGrade(it)){
+      const s = q.srs, iv = g => fmtIv(srsNext(s, g).interval);
+      gradeBar = `<div class="grade"><p>Acertou. Quão fácil foi lembrar?</p>
+        <button class="btn" data-grade="3">Difícil<small>${iv(3)} · tecla 1</small></button>
+        <button class="btn primary" data-grade="4">Bom<small>${iv(4)} · tecla 2 / Enter</small></button>
+        <button class="btn" data-grade="5">Fácil<small>${iv(5)} · tecla 3</small></button></div>`;
+    } else if (it.relearn){
+      gradeBar = `<div class="grade"><p>${isRight(it) ? 'Reaprendida nesta sessão. A revisão continua marcada para amanhã.' : 'Ainda errada. A revisão continua marcada para amanhã.'}</p></div>`;
+    } else if (!isRight(it)){
+      gradeBar = `<div class="grade"><p>Errada: intervalo volta para 1 dia e o cartão reaparece no fim desta sessão.</p></div>`;
+    }
+  }
+  const modeLabel = srs ? `Revisão SRS${it.relearn ? ' — reaprendizagem' : (isNew(q) && it.chosen == null ? ' — cartão novo' : '')}` : session.feedback === 'estudo' ? 'Simulado — correção imediata' : 'Simulado — correção no final';
+  body.innerHTML = `
+    <div class="runbar"><span class="pos">${srs ? 'Cartão' : 'Questão'} ${session.idx + 1} de ${n}</span>
+      <span>${modeLabel}</span>
+      <span>${answered} respondida(s)</span>
+      <span class="sp timer" id="simTimer">${fmtTime(Date.now() - session.started)}</span>
+      <button class="btn" data-act="end">Encerrar</button></div>
+    <div class="progress"><i style="width:${answered / n * 100}%"></i></div>
+    ${session.feedback === 'prova' ? `<div class="dots">${session.items.map((x, i) => `<button class="dot${x.chosen != null ? ' done' : ''}${i === session.idx ? ' cur' : ''}" data-go="${i}" aria-label="Ir para questão ${i + 1}">${i + 1}</button>`).join('')}</div>` : ''}
+    <div class="card" id="runCard">${cardHTML(q, it, reveal)}</div>
+    ${gradeBar}
+    <div class="runnav">
+      ${session.feedback === 'prova' ? `<button class="btn" data-act="prev" ${session.idx === 0 ? 'disabled' : ''}>← Anterior</button>` : ''}
+      <span class="sp"></span>
+      ${needsGrade(it) ? '' : last ? `<button class="btn primary" data-act="finish" ${blocked ? 'disabled' : ''}>Ver resultado</button>`
+             : `<button class="btn primary" data-act="next" ${blocked ? 'disabled' : ''}>Próxima →</button>`}
+    </div>
+    <p class="keys">Atalhos: A–E ou 1–5 marcam a alternativa · Enter avança${srs ? ' · depois de acertar: 1 Difícil, 2 Bom, 3 Fácil' : ''}${session.feedback === 'prova' ? ' · ← → navegam' : ''}</p>`;
+  if (!timerId) timerId = setInterval(tick, 1000);
+}
+function choose(i){
+  if (!session || session.ended) return;
+  const it = session.items[session.idx];
+  if (i >= it.order.length) return;
+  if (session.feedback === 'estudo'){
+    if (it.chosen != null) return;
+    it.chosen = i; record(it);
+  } else it.chosen = i;
+  renderSim();
+}
+function go(delta){
+  if (!session || session.ended) return;
+  const it = session.items[session.idx];
+  if (delta > 0 && session.feedback === 'estudo' && (it.chosen == null || needsGrade(it))) return;
+  const ni = session.idx + delta;
+  if (ni >= session.items.length){ finishSession(); return; }
+  if (ni < 0) return;
+  session.idx = ni; renderSim(); window.scrollTo(0, 0);
+}
+
+function renderConfig(body){
+  stopTimer();
+  const playable = db.questions.filter(isPlayable).length;
+  if (!playable){
+    body.innerHTML = `<div class="empty"><p>Nenhuma questão completa no banco ainda. Uma questão entra no estudo quando tem enunciado, resposta correta e pelo menos um distrator.</p><button class="btn primary" data-act="tobanco">Ir para o banco</button></div>`;
+    return;
+  }
+  body.innerHTML = `
+    <div class="srs-panel">
+      <h2 class="sec">Revisão do dia (SRS)</h2>
+      <p class="note">Repetição espaçada SM-2: cada acerto empurra o cartão para mais longe (1 dia, 6 dias, depois intervalo × facilidade); cada erro traz de volta para amanhã. Respeita os filtros de Banca e Domain do simulado abaixo.</p>
+      <div class="srs-nums" id="srsNums"></div>
+      <div class="srs-row">
+        <div><label for="cNew"><b>Novas por dia</b></label><input type="number" id="cNew" min="0" value="${db.meta.newPerDay}"></div>
+        <button class="btn primary" data-act="srs" id="btnSrs">Iniciar revisão</button>
+      </div>
+    </div>
+    <h2 class="sec">Simulado livre</h2>
+    <div class="cfg">
+      <div><label for="cCount"><b>Quantidade</b></label><input type="number" id="cCount" min="1" value="${cfg.count}"></div>
+      <div><label for="cBanca"><b>Banca / Órgão</b></label><select id="cBanca"></select></div>
+      <div><label for="cDomain"><b>Domain / Tema</b></label><select id="cDomain"></select></div>
+      <div><label for="cMode"><b>Seleção</b></label><select id="cMode">
+        <option value="aleatorio">Aleatória</option>
+        <option value="fracas">Priorizar pontos fracos</option>
+        <option value="nunca">Só nunca respondidas</option>
+        <option value="erradas">Só erradas na última vez</option></select></div>
+      <div><label for="cFeedback"><b>Correção</b></label><select id="cFeedback">
+        <option value="estudo">Imediata (modo estudo)</option>
+        <option value="prova">No final (modo prova)</option></select></div>
+      <div><label for="cAlts"><b>Alternativas</b></label><select id="cAlts">
+        <option value="">Todas as questões</option>
+        <option value="4">Só com 4 (a–d)</option>
+        <option value="5">Só com 5 (a–e)</option></select></div>
+    </div>
+    <p class="avail" id="cAvail"></p>
+    <button class="btn primary" data-act="start">Iniciar simulado</button>
+    <p class="note" style="margin-top:12px">No simulado livre, um erro também reagenda o cartão no SRS para amanhã; acertos não mexem na agenda.</p>`;
+  fillSelect($('cBanca'), uniq('banca'), 'Todas', false); $('cBanca').value = uniq('banca').includes(cfg.banca) ? cfg.banca : '';
+  fillSelect($('cDomain'), uniq('domain'), 'Todos', false); $('cDomain').value = uniq('domain').includes(cfg.domain) ? cfg.domain : '';
+  $('cMode').value = cfg.mode; $('cFeedback').value = cfg.feedback; $('cAlts').value = cfg.alts;
+  const upd = () => {
+    Object.assign(cfg, { count: Math.max(1, parseInt($('cCount').value, 10) || 1), banca: $('cBanca').value, domain: $('cDomain').value, mode: $('cMode').value, feedback: $('cFeedback').value, alts: $('cAlts').value });
+    const v = parseInt($('cNew').value, 10);
+    if (v >= 0 && v !== db.meta.newPerDay){ db.meta.newPerDay = v; persist(); }
+    const n = buildPool(cfg).length;
+    $('cAvail').innerHTML = n ? `<b>${n}</b> questões atendem aos critérios — o simulado terá <b>${Math.min(n, cfg.count)}</b>, em ordem aleatória e com alternativas embaralhadas.` : 'Nenhuma questão atende a esses critérios. Ajuste os filtros.';
+    body.querySelector('[data-act="start"]').disabled = !n;
+    const sq = srsQueue(cfg);
+    $('srsNums').innerHTML = `<span><b>${sq.due.length}</b>revisões vencidas</span><span><b>${sq.news.length}</b>novas hoje</span><span><b>${sq.newsTotal}</b>novas no banco</span>`;
+    $('btnSrs').disabled = !(sq.due.length + sq.news.length);
+    $('btnSrs').textContent = sq.due.length + sq.news.length ? `Iniciar revisão (${sq.due.length + sq.news.length})` : 'Nada para revisar hoje';
+  };
+  ['cCount','cBanca','cDomain','cMode','cFeedback','cAlts','cNew'].forEach(id => $(id).addEventListener('input', upd));
+  upd();
+}
+
+function renderResults(body){
+  const items = session.items, n = items.length;
+  const hits = items.filter(isRight).length;
+  const answered = items.filter(i => i.chosen != null).length;
+  const p = pct(hits, n) ?? 0;
+  const by = {};
+  items.forEach(i => { const q = getQ(i.id); const d = q ? dom(q) : '(excluída)'; by[d] = by[d] || { n: 0, c: 0 }; by[d].n++; if (isRight(i)) by[d].c++; });
+  const wrongIds = [...new Set(items.filter(i => !isRight(i)).map(i => i.id))];
+  let srsNote = '';
+  if (session.kind === 'srs'){
+    const nextDue = db.questions.filter(q => !isNew(q) && q.srs.due > today()).map(q => q.srs.due).sort()[0];
+    srsNote = `<p class="note">Revisão registrada. ${nextDue ? 'Próximo cartão vence em ' + fmtDay(nextDue) + '.' : ''} ${srsQueue(null).due.length ? 'Ainda há revisões vencidas em outros filtros.' : ''}</p>`;
+  }
+  body.innerHTML = `<h2 class="sec">Resultado${session.kind === 'srs' ? ' da revisão' : ''}</h2>
+    <div class="score"><span class="big">${p}%</span>
+      <span>${hits} acertos de ${n} ${session.kind === 'srs' ? 'respostas' : 'questões'}</span><span>${answered} respondidas</span><span>tempo ${fmtTime(session.ended - session.started)}</span></div>
+    ${srsNote}
+    <div class="tablewrap"><table><thead><tr><th>Domain / Tema</th><th class="num">Acertos</th><th class="num">Total</th><th class="num">%</th></tr></thead>
+      <tbody>${Object.entries(by).sort((a, b) => a[1].c / a[1].n - b[1].c / b[1].n).map(([d, v]) => `<tr><td>${esc(d)}</td><td class="num">${v.c}</td><td class="num">${v.n}</td><td class="num">${pct(v.c, v.n)}%</td></tr>`).join('')}</tbody></table></div>
+    <div class="runnav" style="margin:0 0 18px">
+      <button class="btn primary" data-act="redo" ${wrongIds.length ? '' : 'disabled'}>Refazer as ${wrongIds.length} erradas / em branco</button>
+      <button class="btn" data-act="newsim">Voltar ao estudo</button>
+      <button class="btn ghost" data-act="toevo">Ver evolução</button></div>
+    <h2 class="sec">Revisão</h2>
+    ${items.map((it, i) => {
+      const q = getQ(it.id); if (!q) return '';
+      const st = it.chosen == null ? ['skip','em branco'] : isRight(it) ? ['hit','acerto'] : ['miss','erro'];
+      const sn = plain(q.question).trim();
+      return `<details class="res-item"><summary><span class="mark ${st[0]}">${i + 1}. ${st[1]}${it.relearn ? '*' : ''}</span><span>${esc(sn.length > 150 ? sn.slice(0, 147) + '…' : sn)}</span></summary><div class="card">${cardHTML(q, it, true)}</div></details>`;
+    }).join('')}
+    ${items.some(i => i.relearn) ? '<p class="note">* reaprendizagem: cartão repetido no fim da sessão após erro.</p>' : ''}`;
+  session._wrongIds = wrongIds;
+}
+
+$('simBody').addEventListener('click', e => {
+  const opt = e.target.closest('[data-opt]');
+  if (opt && opt.closest('#runCard') && !opt.hasAttribute('aria-disabled')){ choose(+opt.dataset.opt); return; }
+  const gb = e.target.closest('[data-grade]');
+  if (gb){ grade(+gb.dataset.grade); return; }
+  const dot = e.target.closest('[data-go]');
+  if (dot && session){ session.idx = +dot.dataset.go; renderSim(); return; }
+  const btn = e.target.closest('[data-act]'); if (!btn) return;
+  switch (btn.dataset.act){
+    case 'srs': { const sq = srsQueue(cfg); startSession([...sq.due, ...sq.news].map(q => q.id), 'estudo', 'srs'); break; }
+    case 'start': startSession(pick(buildPool(cfg), cfg.count, cfg.mode).map(q => q.id), cfg.feedback, 'simulado'); break;
+    case 'next': go(1); break;
+    case 'prev': go(-1); break;
+    case 'finish': finishSession(); break;
+    case 'end':
+      if (session.items.every(i => i.chosen == null)){ if (confirm('Encerrar sem responder nenhuma questão?')){ session = null; stopTimer(); renderSim(); } }
+      else finishSession();
+      break;
+    case 'redo': startSession(shuffle(session._wrongIds), session.feedback, 'simulado'); break;
+    case 'newsim': session = null; renderSim(); break;
+    case 'tobanco': show('banco'); break;
+    case 'toevo': show('evolucao'); break;
+  }
+});
+$('simBody').addEventListener('keydown', e => {
+  const opt = e.target.closest('[data-opt]');
+  if (opt && (e.key === 'Enter' || e.key === ' ')){ e.preventDefault(); e.stopPropagation(); if (!opt.hasAttribute('aria-disabled')) choose(+opt.dataset.opt); }
+});
+document.addEventListener('keydown', e => {
+  if (currentView !== 'simulado' || !session || session.ended || $('dlg').open) return;
+  if (e.target.matches('input,textarea,select') || e.ctrlKey || e.metaKey || e.altKey) return;
+  const it = session.items[session.idx];
+  if (needsGrade(it)){
+    const g = { '1': 3, '2': 4, '3': 5 }[e.key];
+    if (g){ e.preventDefault(); grade(g); return; }
+    if (e.key === 'Enter' && !e.target.closest('button')){ e.preventDefault(); grade(4); }
+    return;
+  }
+  const k = e.key.toLowerCase();
+  const i = 'abcde'.indexOf(k) >= 0 ? 'abcde'.indexOf(k) : '12345'.indexOf(k);
+  if (k.length === 1 && i >= 0){ e.preventDefault(); choose(i); return; }
+  if (e.key === 'Enter' && !e.target.closest('[data-opt],button')){ e.preventDefault(); go(1); return; }
+  if (session.feedback === 'prova'){
+    if (e.key === 'ArrowRight' && session.idx < session.items.length - 1) go(1);
+    if (e.key === 'ArrowLeft') go(-1);
+  }
+});
+
+/* =========================================================
+   EVOLUÇÃO
+   ========================================================= */
+const PALETTE = ['#ffcc00','#87CEEB','#FF8A65','#9CCC65','#CE93D8','#4DD0E1','#F48FB1','#FFF59D'];
+const evo = { period: 'semana', sel: null };
+function periodKey(iso, period){
+  const d = new Date(iso);
+  if (period === 'mes') return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2,'0');
+  const m = new Date(d.getFullYear(), d.getMonth(), d.getDate() - ((d.getDay() + 6) % 7));
+  return ymd(m);
+}
+function lastPeriods(period, n){
+  const out = [], d = new Date();
+  for (let i = n - 1; i >= 0; i--){
+    if (period === 'mes'){ const x = new Date(d.getFullYear(), d.getMonth() - i, 1); out.push(x.getFullYear() + '-' + String(x.getMonth() + 1).padStart(2,'0')); }
+    else { const x = new Date(d.getFullYear(), d.getMonth(), d.getDate() - i * 7); out.push(periodKey(x.toISOString(), 'semana')); }
+  }
+  return out;
+}
+const MESES = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+function periodLabel(k, period){ if (period === 'mes'){ const [y, m] = k.split('-'); return MESES[+m - 1] + '/' + y.slice(2); } const [, m, d] = k.split('-'); return d + '/' + m; }
+const hDom = h => { const q = getQ(h.id); return q ? dom(q) : (h.d || '(sem tema)'); };
+
+function lineChart(labels, series){
+  const W = 760, H = 270, L = 40, R = 14, T = 14, B = 34;
+  const x = i => L + (labels.length === 1 ? (W - L - R) / 2 : i * (W - L - R) / (labels.length - 1));
+  const y = v => T + (100 - v) / 100 * (H - T - B);
+  let g = '';
+  [0, 25, 50, 75, 100].forEach(v => g += `<line x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" stroke="#4A5462" stroke-width="1"${v ? ' stroke-dasharray="2 4"' : ''}/><text x="${L - 6}" y="${y(v) + 4}" fill="#A9B3BF" font-size="11" text-anchor="end" font-family="Helvetica,Arial,sans-serif">${v}%</text>`);
+  labels.forEach((l, i) => g += `<text x="${x(i)}" y="${H - 12}" fill="#A9B3BF" font-size="10" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">${esc(l)}</text>`);
+  series.forEach(s => {
+    let d = '', pen = false;
+    s.points.forEach((p, i) => { if (p.v == null){ pen = false; return; } d += (pen ? 'L' : 'M') + x(i).toFixed(1) + ' ' + y(p.v).toFixed(1) + ' '; pen = true; });
+    if (d) g += `<path d="${d}" fill="none" stroke="${s.color}" stroke-width="${s.thick ? 2.5 : 2}"${s.dash ? ' stroke-dasharray="6 4"' : ''} stroke-linejoin="round" stroke-linecap="round"/>`;
+    s.points.forEach((p, i) => { if (p.v != null) g += `<circle cx="${x(i)}" cy="${y(p.v)}" r="3.5" fill="${s.color}"><title>${esc(s.name)} — ${esc(labels[i])}: ${p.v}% (${p.n} resp.)</title></circle>`; });
+  });
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Taxa de acerto por período">${g}</svg>`;
+}
+function barChart(days){
+  const W = 760, H = 110, L = 40, R = 14, T = 10, B = 24;
+  const max = Math.max(1, ...days.map(d => d.n));
+  const bw = (W - L - R) / days.length;
+  let g = `<line x1="${L}" x2="${W - R}" y1="${H - B}" y2="${H - B}" stroke="#4A5462"/><text x="${L - 6}" y="${T + 8}" fill="#A9B3BF" font-size="11" text-anchor="end" font-family="Helvetica,Arial,sans-serif">${max}</text>`;
+  days.forEach((d, i) => {
+    const h = d.n / max * (H - T - B), hc = d.c / max * (H - T - B);
+    const bx = L + i * bw + 2, w = Math.max(2, bw - 4);
+    g += `<g><title>${fmtDay(d.k)}: ${d.n} resp., ${d.c} acertos</title><rect x="${bx}" y="${H - B - h}" width="${w}" height="${h}" fill="#4A5462"/><rect x="${bx}" y="${H - B - hc}" width="${w}" height="${hc}" fill="#ffcc00"/></g>`;
+    if (i % 5 === 0 || i === days.length - 1) g += `<text x="${bx + w / 2}" y="${H - 8}" fill="#A9B3BF" font-size="10" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">${d.k.slice(8)}/${d.k.slice(5, 7)}</text>`;
+  });
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Respostas por dia nos últimos 30 dias">${g}</svg>`;
+}
+
+function renderEvo(){
+  const body = $('evoBody');
+  const H = db.history;
+  const qs = db.questions;
+  const totalR = H.length, totalC = H.filter(h => h.r).length;
+  const mature = qs.filter(q => q.srs.interval >= MATURE_DAYS).length;
+  const due = qs.filter(q => isPlayable(q) && isDue(q)).length;
+  const d30 = addDays(today(), -29), d60 = addDays(today(), -59);
+  const day = h => ymd(new Date(h.t));
+
+  const domains = {};
+  qs.forEach(q => { const d = dom(q); domains[d] = domains[d] || { q: 0, mature: 0, due: 0, newc: 0, r: 0, c: 0, r30: 0, c30: 0, rp: 0, cp: 0 }; const o = domains[d]; o.q++; if (q.srs.interval >= MATURE_DAYS) o.mature++; if (isPlayable(q) && isDue(q)) o.due++; if (isNew(q)) o.newc++; });
+  H.forEach(h => {
+    const d = hDom(h); domains[d] = domains[d] || { q: 0, mature: 0, due: 0, newc: 0, r: 0, c: 0, r30: 0, c30: 0, rp: 0, cp: 0 };
+    const o = domains[d], k = day(h);
+    o.r++; o.c += h.r;
+    if (k >= d30){ o.r30++; o.c30 += h.r; } else if (k >= d60){ o.rp++; o.cp += h.r; }
+  });
+  const names = Object.keys(domains).sort((a, b) => domains[b].r - domains[a].r || a.localeCompare(b, 'pt-BR'));
+  if (!evo.sel) evo.sel = names.filter(n => domains[n].r).slice(0, 5);
+  evo.sel = evo.sel.filter(n => domains[n]);
+
+  if (!totalR){
+    body.innerHTML = `<h2 class="sec">Evolução por domínio</h2>
+      <div class="kpis"><span><b>${qs.length}</b>questões</span><span><b>${mature}</b>maduras (intervalo ≥ ${MATURE_DAYS}d)</span><span><b>${due}</b>revisões vencidas</span></div>
+      <div class="empty"><p>Ainda não há respostas registradas. O histórico começa a contar a partir das revisões e simulados feitos nesta versão.</p><button class="btn primary" data-act="tosim">Ir estudar</button></div>`;
+    return;
+  }
+
+  const periods = lastPeriods(evo.period, 12);
+  const labels = periods.map(k => periodLabel(k, evo.period));
+  const bucket = filterFn => periods.map(k => {
+    const hs = H.filter(h => periodKey(h.t, evo.period) === k && filterFn(h));
+    return { v: pct(hs.filter(h => h.r).length, hs.length), n: hs.length };
+  });
+  const colorOf = n => PALETTE[names.indexOf(n) % PALETTE.length];
+  const series = [{ name: 'Geral', color: '#F8F8FF', dash: true, points: bucket(() => true) }]
+    .concat(evo.sel.map(n => ({ name: n, color: colorOf(n), thick: true, points: bucket(h => hDom(h) === n) })));
+
+  const days = []; for (let i = 29; i >= 0; i--){ const k = addDays(today(), -i); const hs = H.filter(h => day(h) === k); days.push({ k, n: hs.length, c: hs.filter(h => h.r).length }); }
+
+  const trend = o => {
+    if (o.r30 < 3 || o.rp < 3) return '<span style="color:var(--muted)">—</span>';
+    const dlt = pct(o.c30, o.r30) - pct(o.cp, o.rp);
+    return `<span class="${dlt > 0 ? 'up' : dlt < 0 ? 'down' : ''}">${dlt > 0 ? '▲ +' : dlt < 0 ? '▼ ' : ''}${dlt} pp</span>`;
+  };
+  const sess = db.sessions.slice(-10).reverse();
+
+  body.innerHTML = `<h2 class="sec">Evolução por domínio</h2>
+    <div class="kpis">
+      <span><b>${pct(totalC, totalR)}%</b>acerto geral (${totalR} respostas)</span>
+      <span><b>${(() => { const r = H.filter(h => day(h) >= d30); return r.length ? pct(r.filter(h => h.r).length, r.length) + '%' : '—'; })()}</b>acerto nos últimos 30 dias</span>
+      <span><b>${mature}/${qs.length}</b>maduras (intervalo ≥ ${MATURE_DAYS}d)</span>
+      <span><b>${due}</b>revisões vencidas</span>
+    </div>
+    <div class="evo-ctrl"><label for="evoPeriod" style="margin:0">Agrupar por</label>
+      <select id="evoPeriod"><option value="semana">Semana (12 últimas)</option><option value="mes">Mês (12 últimos)</option></select></div>
+    <div class="chips">${names.filter(n => domains[n].r).map(n => `<label class="chip${evo.sel.includes(n) ? ' on' : ''}"><input type="checkbox" data-dom="${esc(n)}" ${evo.sel.includes(n) ? 'checked' : ''}><i style="background:${colorOf(n)}"></i>${esc(n.length > 40 ? n.slice(0, 37) + '…' : n)}</label>`).join('')}</div>
+    <div class="chart">${lineChart(labels, series)}</div>
+    <p class="note" style="margin-top:6px">Linha tracejada branca = todos os domínios. Passe o mouse nos pontos para ver o número de respostas; períodos sem resposta ficam em branco.</p>
+
+    <h3 class="sub">Por domínio</h3>
+    <div class="tablewrap"><table><thead><tr><th>Domain / Tema</th><th class="num">Questões</th><th class="num">Respostas</th><th class="num">Acerto total</th><th class="num">Últ. 30 dias</th><th class="num">30 dias antes</th><th class="num">Tendência</th><th class="num">Maduras</th><th class="num">Vencidas</th><th class="num">Novas</th></tr></thead>
+      <tbody>${names.map(n => { const o = domains[n]; return `<tr><td>${esc(n)}</td><td class="num">${o.q}</td><td class="num">${o.r}</td><td class="num">${o.r ? pct(o.c, o.r) + '%' : '—'}</td><td class="num">${o.r30 ? pct(o.c30, o.r30) + '%' : '—'}</td><td class="num">${o.rp ? pct(o.cp, o.rp) + '%' : '—'}</td><td class="num">${trend(o)}</td><td class="num">${o.mature}</td><td class="num">${o.due}</td><td class="num">${o.newc}</td></tr>`; }).join('')}</tbody></table></div>
+    <p class="note">Tendência = acerto dos últimos 30 dias menos o dos 30 dias anteriores, em pontos percentuais (pp); aparece quando cada janela tem ao menos 3 respostas.</p>
+
+    <h3 class="sub">Atividade nos últimos 30 dias</h3>
+    <div class="chart">${barChart(days)}</div>
+    <p class="note" style="margin-top:6px">Barra cinza = respostas no dia; parte amarela = acertos.</p>
+
+    ${sess.length ? `<h3 class="sub">Últimas sessões</h3>
+    <div class="tablewrap"><table><thead><tr><th>Data</th><th>Tipo</th><th class="num">Respostas</th><th class="num">Acerto</th><th class="num">Tempo</th></tr></thead>
+      <tbody>${sess.map(s => `<tr><td>${new Date(s.t).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}</td><td>${s.kind === 'srs' ? 'Revisão SRS' : s.feedback === 'prova' ? 'Simulado (prova)' : 'Simulado (estudo)'}</td><td class="num">${s.n}</td><td class="num">${pct(s.hits, s.n)}%</td><td class="num">${fmtTime(s.ms)}</td></tr>`).join('')}</tbody></table></div>` : ''}`;
+  $('evoPeriod').value = evo.period;
+  $('evoPeriod').addEventListener('change', e => { evo.period = e.target.value; renderEvo(); });
+}
+$('evoBody').addEventListener('change', e => {
+  const cb = e.target.closest('[data-dom]'); if (!cb) return;
+  const n = cb.dataset.dom;
+  evo.sel = cb.checked ? [...evo.sel, n] : evo.sel.filter(x => x !== n);
+  renderEvo();
+});
+$('evoBody').addEventListener('click', e => { if (e.target.closest('[data-act="tosim"]')) show('simulado'); });
+
+/* =========================================================
+   DADOS — exportar / importar (JSON + mapeador de colunas) / limpar
+   ========================================================= */
+function download(name, text, type){
+  const blob = new Blob([text], { type });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+$('btnExport').addEventListener('click', () => {
+  try {
+    const data = { app: APP, version: VERSION, exportDate: nowISO(), total: db.questions.length, questions: db.questions, history: db.history, sessions: db.sessions, meta: db.meta };
+    download(`mabios_quiz_${today()}.json`, JSON.stringify(data, null, 2), 'application/json');
+    msg(`${db.questions.length} questões exportadas, com histórico e agenda SRS.`);
+  } catch (err){ console.error(err); msg('Falha ao exportar o JSON.', 'error'); }
+});
+
+let importMode = 'merge', pendingImport = null;
+$('btnImport').addEventListener('click', () => openDialog(`<h3>Importar questões</h3>
+  <p>Aceita o JSON exportado por este app (v1.0 ou v1.1) e arquivos de texto: TXT do Anki ("Notes in Plain Text"), TSV ou CSV. Para texto, a próxima tela deixa você escolher para qual campo vai cada coluna. Mesclar atualiza questões já existentes e preserva histórico e agenda SRS.</p>
+  <div class="dlg-actions"><button class="btn ghost" data-close>Cancelar</button>
+    <button class="btn danger" data-imp="replace">Substituir o banco</button>
+    <button class="btn primary" data-imp="merge">Mesclar com o banco</button></div>`));
+$('fileInput').addEventListener('change', e => {
+  const file = e.target.files[0]; if (!file) return;
+  const r = new FileReader();
+  r.onload = ev => {
+    try {
+      const text = String(ev.target.result).replace(/^\uFEFF/, '');
+      if (/\.json$/i.test(file.name) || /^\s*[\[{]/.test(text)){
+        const data = JSON.parse(text);
+        const arr = Array.isArray(data) ? data : data.questions;
+        if (!Array.isArray(arr)) throw new Error('JSON sem a lista "questions".');
+        const inc = normalizeDB(Array.isArray(data) ? { questions: data } : data);
+        if (!inc.questions.length) throw new Error('Nenhuma questão no arquivo.');
+        applyImport(inc, importMode);
+      } else {
+        const parsed = parseDelimited(text);
+        if (!parsed.rows.length) throw new Error('Nenhuma linha encontrada no arquivo.');
+        openMapper(parsed, importMode, file.name);
+      }
+    } catch (err){ console.error(err); msg('Erro ao importar: ' + err.message, 'error'); }
+  };
+  r.readAsText(file);
+  e.target.value = '';
+});
+function keyOf(q){ return (plain(q.codigo).trim() + '|' + plain(q.question).replace(/\s+/g, ' ').trim()).toLowerCase(); }
+function applyImport(inc, mode){
+  if (mode === 'replace'){
+    if (db.questions.length && !confirm(`Substituir as ${db.questions.length} questões atuais (e o histórico) por ${inc.questions.length} importadas?`)) return;
+    const keepNew = db.meta.newPerDay;
+    db = { questions: inc.questions, history: inc.history, sessions: inc.sessions, meta: { ...inc.meta, newPerDay: inc.history.length ? inc.meta.newPerDay : keepNew } };
+    session = null; evo.sel = null;
+    persist(); show('banco'); msg(`${inc.questions.length} questões importadas (banco substituído).`); return;
+  }
+  let added = 0, updated = 0;
+  const byId = new Map(db.questions.map(q => [q.id, q]));
+  const byKey = new Map(db.questions.map(q => [keyOf(q), q]));
+  const idMap = {};
+  inc.questions.forEach(n => {
+    const cur = byId.get(n.id) || byKey.get(keyOf(n));
+    if (cur){
+      TARGETS.forEach(k => cur[k] = n[k]);
+      if (n.stats.seen > cur.stats.seen){ cur.stats = n.stats; cur.srs = n.srs; }
+      cur.updatedAt = nowISO(); updated++; idMap[n.id] = cur.id;
+    } else { db.questions.push(n); byId.set(n.id, n); byKey.set(keyOf(n), n); added++; }
+  });
+  const seenH = new Set(db.history.map(h => h.t + '|' + h.id));
+  inc.history.forEach(h => { const id = idMap[h.id] || h.id; if (!seenH.has(h.t + '|' + id)){ db.history.push({ ...h, id }); seenH.add(h.t + '|' + id); } });
+  db.history.sort((a, b) => a.t.localeCompare(b.t));
+  const seenS = new Set(db.sessions.map(s => s.t));
+  inc.sessions.forEach(s => { if (!seenS.has(s.t)) db.sessions.push(s); });
+  db.sessions.sort((a, b) => a.t.localeCompare(b.t));
+  persist(); show('banco'); msg(`Importação concluída: ${added} novas, ${updated} atualizadas.`);
+}
+
+/* ---- parser de texto delimitado (Anki TXT, TSV, CSV) ---- */
+function parseDelimited(text){
+  const lines = text.split(/\r?\n/);
+  const meta = {};
+  let start = 0;
+  while (start < lines.length && lines[start].startsWith('#') && lines[start].includes(':')){
+    const m = lines[start].slice(1).split(':');
+    meta[m[0].trim().toLowerCase()] = m.slice(1).join(':').trim();
+    start++;
+  }
+  const body = lines.slice(start).join('\n');
+  const SEPS = { tab: '\t', comma: ',', semicolon: ';', pipe: '|', space: ' ', colon: ':' };
+  let sep = SEPS[(meta.separator || '').toLowerCase()] || meta.separator;
+  if (!sep || sep.length !== 1){
+    const first = body.split('\n')[0] || '';
+    sep = first.includes('\t') ? '\t' : (first.split(';').length > first.split(',').length ? ';' : ',');
+  }
+  const rows = [];
+  let rec = [], f = '', inQ = false, atStart = true;
+  for (let i = 0; i < body.length; i++){
+    const c = body[i];
+    if (inQ){
+      if (c === '"'){ if (body[i + 1] === '"'){ f += '"'; i++; } else inQ = false; }
+      else f += c;
+      continue;
+    }
+    if (c === '"' && atStart){ inQ = true; atStart = false; continue; }
+    if (c === sep){ rec.push(f); f = ''; atStart = true; continue; }
+    if (c === '\n'){ rec.push(f); rows.push(rec); rec = []; f = ''; atStart = true; continue; }
+    if (c === '\r') continue;
+    f += c; atStart = false;
+  }
+  if (f || rec.length){ rec.push(f); rows.push(rec); }
+  return { rows: rows.filter(r => r.some(x => x.trim())), meta };
+}
+const aliasTarget = cell => { const c = String(cell || '').trim().toLowerCase(); return TARGETS.find(k => ALIASES[k].includes(c)) || null; };
+function defaultMap(parsed, ncol, header){
+  if (header){ const used = new Set(); return parsed.rows[0].concat(Array(ncol).fill('')).slice(0, ncol).map(c => { const t = aliasTarget(c); if (t && !used.has(t)){ used.add(t); return t; } return 'ignore'; }); }
+  const m = parsed.meta;
+  const metaCols = ['guid column', 'notetype column', 'deck column'].map(k => parseInt(m[k], 10) - 1).filter(n => n >= 0);
+  const tagCol = parseInt(m['tags column'], 10) - 1;
+  const order = ncol <= 14 ? LEGACY_KEYS : KEYS; /* até 14 colunas = layout v1.1 (13 campos + Tags) */
+  const map = []; let k = 0;
+  for (let i = 0; i < ncol; i++){
+    if (metaCols.includes(i)) map.push('ignore');
+    else if (i === tagCol) map.push('tags');
+    else if (k < order.length) map.push(order[k++]);
+    else map.push(tagCol >= 0 || map.includes('tags') ? 'ignore' : 'tags');
+  }
+  return map;
+}
+function openMapper(parsed, mode, fname){
+  const ncol = Math.max(...parsed.rows.slice(0, 50).map(r => r.length));
+  const header = parsed.rows[0].filter(aliasTarget).length >= 3;
+  const saved = db.meta.importMaps[ncol];
+  pendingImport = { parsed, mode, ncol };
+  const map = !header && saved && saved.length === ncol ? saved : defaultMap(parsed, ncol, header);
+  const opts = [...TARGETS, 'ignore'];
+  openDialog(`<h3>Mapear colunas — ${esc(fname)}</h3>
+    <p>${parsed.rows.length} linhas · ${ncol} colunas. ${!header && saved && saved.length === ncol ? 'Mapeamento salvo para arquivos com ' + ncol + ' colunas aplicado. ' : ''}Escolha o campo de destino de cada coluna. Question e Answer1 são obrigatórios.</p>
+    <label class="chk"><input type="checkbox" id="mHeader" ${header ? 'checked' : ''}> Primeira linha é cabeçalho (não importar)</label>
+    <div class="maptable"><table><thead><tr><th>Col.</th><th>Exemplo (1ª linha de dados)</th><th>Campo de destino</th></tr></thead><tbody id="mBody">
+      ${Array.from({ length: ncol }, (_, i) => `<tr><td class="num">${i + 1}</td><td class="ex" data-ex="${i}"></td><td><select data-col="${i}">${opts.map(o => `<option value="${o}" ${map[i] === o ? 'selected' : ''}>${esc(LABEL[o])}</option>`).join('')}</select></td></tr>`).join('')}
+    </tbody></table></div>
+    <label class="chk"><input type="checkbox" id="mRemember" checked> Lembrar este mapeamento para arquivos com ${ncol} colunas</label>
+    <div class="dlg-actions"><button class="btn sp" data-mswap title="Inverte os destinos Código e Domain">Trocar Código ↔ Domain</button>
+      <button class="btn ghost" data-close>Cancelar</button>
+      <button class="btn primary" data-mgo>Importar (${mode === 'replace' ? 'substituir' : 'mesclar'})</button></div>`);
+  fillExamples();
+}
+function fillExamples(){
+  if (!pendingImport) return;
+  const row = pendingImport.parsed.rows[$('mHeader').checked ? 1 : 0] || [];
+  document.querySelectorAll('[data-ex]').forEach(td => { const v = plain(row[+td.dataset.ex] || '').trim(); td.textContent = v || '(vazio)'; td.title = v; });
+}
+function runMapper(){
+  const { parsed, mode, ncol } = pendingImport;
+  const map = [...document.querySelectorAll('[data-col]')].map(s => s.value);
+  const used = map.filter(v => v !== 'ignore' && v !== 'tags');
+  const dup = used.find((v, i) => used.indexOf(v) !== i);
+  if (dup){ msg(`O campo ${LABEL[dup]} está em mais de uma coluna.`, 'error'); return; }
+  if (!map.includes('question') || !map.includes('answer1')){ msg('Mapeie as colunas de Question e Answer1.', 'error'); return; }
+  const rows = parsed.rows.slice($('mHeader').checked ? 1 : 0);
+  const qs = []; let skipped = 0;
+  rows.forEach(r => {
+    const o = {};
+    map.forEach((t, i) => { if (t === 'ignore') return; const v = r[i] || ''; if (t === 'tags') o.tags = ((o.tags || '') + ' ' + v).trim(); else o[t] = v; });
+    if (blank(o.question)){ skipped++; return; }
+    qs.push(normalize(o));
+  });
+  if (!qs.length){ msg('Nenhuma linha com Question preenchida.', 'error'); return; }
+  if ($('mRemember').checked && !$('mHeader').checked){ db.meta.importMaps[ncol] = map; }
+  $('dlg').close(); pendingImport = null;
+  applyImport({ questions: qs, history: [], sessions: [], meta: db.meta }, mode);
+  if (skipped) setTimeout(() => msg(`${qs.length} importadas; ${skipped} linha(s) ignorada(s) por não terem Question.`), 50);
+}
+
+$('btnClear').addEventListener('click', () => {
+  if (!db.questions.length && !db.history.length){ msg('O banco já está vazio.'); return; }
+  if (confirm(`Apagar as ${db.questions.length} questões, o histórico e a agenda SRS? Exporte o JSON antes se quiser guardar. A ação não pode ser desfeita.`)){
+    db = normalizeDB(null); session = null; evo.sel = null; stopTimer(); persist(); show('banco'); msg('Banco apagado.');
+  }
+});
+
+/* ---------- diálogo ---------- */
+function openDialog(html){ $('dlgBody').innerHTML = html; if (!$('dlg').open) $('dlg').showModal(); }
+$('dlg').addEventListener('click', e => {
+  if (e.target === $('dlg') || e.target.closest('[data-close]')){ $('dlg').close(); pendingImport = null; return; }
+  const imp = e.target.closest('[data-imp]');
+  if (imp){ importMode = imp.dataset.imp; $('dlg').close(); $('fileInput').click(); return; }
+  if (e.target.closest('[data-mswap]')){
+    const sels = [...document.querySelectorAll('[data-col]')];
+    const a = sels.find(s => s.value === 'codigo'), b = sels.find(s => s.value === 'domain');
+    if (a) a.value = 'domain'; if (b) b.value = 'codigo';
+    msg(a || b ? 'Destinos Código e Domain trocados.' : 'Nenhuma coluna está mapeada para Código ou Domain.', a || b ? 'success' : 'error');
+    return;
+  }
+  if (e.target.closest('[data-mgo]')) runMapper();
+});
+$('dlg').addEventListener('change', e => { if (e.target.id === 'mHeader') fillExamples(); });
+$('dlg').addEventListener('close', () => { pendingImport = null; });
+
+/* ---------- exemplo (cartão GAIT-R dos prints) ---------- */
+function loadSeed(){
+  db.questions.push(normalize({
+    codigo: 'D1GAIT',
+    banca: 'Certification in Risk Management Assurance® (CRMA®)',
+    domain: '05-DOMAIN I - ORGANIZATIONAL GOVERNANCE RELATED TO RISK MANAGEMENT',
+    question: 'A company is planning a risk assessment of the IT systems that process, store, and transmit its litigation data. In accordance with GAIT-R, the first and most important planning task the assessment team should undertake is:',
+    answer1: 'Interviewing key C-suite (CEO, CIO, CFO, legal) executives and operational managers to identify and rank threats to the business.',
+    distractor2: 'Ensuring that the risk management team or assessment contractor has access to the technical expertise necessary to understand system configurations and software vulnerabilities.',
+    distractor3: 'Conducting a thorough review of information security (InfoSec) policies and procedures.',
+    distractor4: 'Determining the types and proper mix of manual and automated controls needed to provide reasonable assurance.',
+    source: 'Correct. The first principle of GAIT-R states the failure of technology is only a risk that needs to be assessed, managed, and audited if it represents a risk to the business. GAIT advocates a top-down assessment of business risks, risk tolerance, and the controls required to manage or mitigate business risk.',
+    erro1: 'Ensuring that the risk management team or assessment contractor has access to the technical expertise necessary to understand system configurations and software vulnerabilities.\nIncorrect. Having the correct expertise is important, but one must first determine which systems require assessment before determining the expertise necessary.',
+    erro2: 'Conducting a thorough review of information security (InfoSec) policies and procedures.\nIncorrect. Reviews of InfoSec policies and procedures are part of the assessment but not the planning stage.',
+    erro3: 'Determining the types and proper mix of manual and automated controls needed to provide reasonable assurance.\nIncorrect. Key manual and automated controls "should be identified as a result of a top-down assessment of business risks, risk tolerance and the controls ... required to ... mitigate risk." Identifying and assessing the key controls are steps 2 and 3 in GAIT-R (GAIT-R Executive Summary).',
+    portuguese: '',
+    tags: 'Dom1::D1GAIT-R'
+  }));
+  persist(); renderBanco(); msg('Questão de exemplo carregada.');
+}
+
+/* ---------- início ---------- */
+db = normalizeDB(store.load());
+persist();
+show('banco');
+</script>
+</body>
+</html>

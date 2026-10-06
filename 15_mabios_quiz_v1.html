@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mábio's Quiz — banco de questões e simulados</title>
+<style>
+  :root{
+    --page:#2B323B; --card:#333B45; --raise:#3C4552; --line:#4A5462;
+    --ink:#F8F8FF; --muted:#A9B3BF;
+    --yellow:#ffcc00; --navy:#08233e; --blue:#0080FF; --sky:#87CEEB;
+    --right:#FFF200; --wrong:#FF5A5A; --exp:#FFFFE0;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--page);color:var(--ink);font:15px/1.6 Verdana,Geneva,sans-serif}
+  button,input,select,textarea{font:inherit;color:inherit}
+  :focus-visible{outline:2px solid var(--yellow);outline-offset:2px}
+  [hidden]{display:none!important}
+
+  /* ---------- topo ---------- */
+  .top{display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px 28px;padding:16px 24px 0;background:var(--card);border-bottom:1px solid var(--line)}
+  .brand h1{margin:0;font:700 24px/1.1 Helvetica,Arial,sans-serif;letter-spacing:.2px}
+  .brand p{margin:2px 0 10px;color:var(--muted);font:13px Helvetica,Arial,sans-serif}
+  .tabs{display:flex;gap:4px;margin-right:auto}
+  .tab{background:none;border:0;border-bottom:3px solid transparent;padding:8px 14px 10px;cursor:pointer;color:var(--muted);font:600 14px Helvetica,Arial,sans-serif}
+  .tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--yellow)}
+  .data{display:flex;flex-wrap:wrap;gap:6px;padding-bottom:10px}
+
+  .btn{border:1px solid var(--line);background:var(--raise);padding:7px 13px;border-radius:6px;cursor:pointer;font:13px Helvetica,Arial,sans-serif}
+  .btn:hover{border-color:var(--muted)}
+  .btn.primary{background:var(--yellow);color:var(--navy);border-color:var(--yellow);border-radius:10px;font-weight:700}
+  .btn.primary:hover{background:#ffd633}
+  .btn.danger{background:transparent;color:var(--wrong);border-color:var(--wrong)}
+  .btn.ghost{background:transparent}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+
+  .status{position:fixed;right:16px;bottom:16px;z-index:50;padding:10px 14px;border-radius:6px;font:600 13px Helvetica,Arial,sans-serif;max-width:360px;display:none}
+  .status.success{display:block;background:#d4edda;color:#155724}
+  .status.error{display:block;background:#f8d7da;color:#721c24}
+  .warn{margin:0;padding:8px 24px;background:#5a4a12;color:#ffe9a6;font:13px Helvetica,Arial,sans-serif}
+
+  main{max-width:960px;margin:0 auto;padding:22px 20px 60px}
+  h2.sec{font:700 18px Helvetica,Arial,sans-serif;margin:0 0 14px}
+
+  /* ---------- banco ---------- */
+  .toolbar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+  .toolbar input[type=search]{flex:1 1 260px}
+  input[type=text],input[type=search],input[type=number],select,textarea{background:#262C34;border:1px solid var(--line);border-radius:6px;padding:7px 10px;width:100%}
+  .toolbar select{width:auto;max-width:240px}
+  .count{color:var(--muted);font-size:13px;margin:4px 0 14px}
+  .row{border-top:1px solid var(--line);padding:14px 2px}
+  .row:last-child{border-bottom:1px solid var(--line)}
+  .row-meta{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;font:12px Helvetica,Arial,sans-serif;color:var(--muted);margin-bottom:6px}
+  .mini-pill{background:var(--yellow);color:var(--navy);border-radius:10px;padding:1px 9px;font-weight:700;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .row-q{margin:0 0 8px}
+  .row-foot{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px}
+  .perf{font:12px Helvetica,Arial,sans-serif;color:var(--muted)}
+  .perf b{color:var(--ink)}
+  .row-actions{display:flex;gap:6px}
+  .empty{padding:40px 10px;text-align:center;color:var(--muted)}
+  .empty p{margin:0 0 14px}
+
+  /* ---------- cadastro ---------- */
+  fieldset{border:0;border-top:1px solid var(--line);margin:0 0 18px;padding:14px 0 0}
+  legend{font:700 14px Helvetica,Arial,sans-serif;color:var(--yellow);padding-right:10px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px 16px}
+  .grid .full{grid-column:1/-1}
+  label{display:block;font:13px Helvetica,Arial,sans-serif;color:var(--muted);margin-bottom:4px}
+  label b{color:var(--ink);font-weight:700}
+  textarea{resize:vertical;min-height:64px;line-height:1.5}
+  .pair{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:12px 16px;padding:10px;border-left:3px solid var(--wrong);background:rgba(255,90,90,.04)}
+  .pair.right{border-left-color:var(--right);background:rgba(255,242,0,.04)}
+  .form-actions{display:flex;flex-wrap:wrap;gap:8px;position:sticky;bottom:0;background:var(--page);padding:12px 0;border-top:1px solid var(--line)}
+  .hint{font-size:12px;color:var(--muted);margin:0 0 16px}
+
+  /* ---------- cartão (fiel ao modelo Anki) ---------- */
+  .card{background:var(--card);border-radius:8px;padding:18px 20px 22px;line-height:1.85}
+  .code-pill{display:inline-block;background:var(--yellow);color:var(--navy);border-radius:10px;padding:6px 10px;font:11px/1.3 Futura,'Century Gothic',AppleGothic,sans-serif;box-shadow:inset 0 1px 0 rgba(255,255,255,.5);border-bottom:1px solid #9f9f9f;margin-bottom:16px}
+  .banca-bar{border-top:5px double var(--sky);border-bottom:5px double var(--sky);background:var(--blue);color:#fff;text-align:center;font:15px Helvetica,Arial,sans-serif;padding:6px;margin-bottom:12px}
+  .q-domain{margin:0 0 12px}
+  .q-text{margin:0 0 18px}
+  .opts{display:flex;flex-direction:column;gap:2px}
+  .opt{display:flex;gap:.7em;padding:4px 10px 4px 8px;border-left:4px solid transparent;border-radius:3px;cursor:pointer}
+  .opt:hover{background:var(--raise)}
+  .opt-l{flex:none;width:1.4em}
+  .opt.is-picked{border-left-color:var(--blue);background:rgba(0,128,255,.16)}
+  .opt.is-right{border-left-color:var(--right);color:var(--right);font-weight:700}
+  .opt.is-wrong{border-left-color:var(--wrong);color:var(--wrong)}
+  .opt[aria-disabled="true"]{cursor:default}
+  .opt[aria-disabled="true"]:hover{background:none}
+  .back hr{border:0;border-top:1px solid #b9c0c8;margin:20px 0 12px}
+  .verdict{margin:0 0 6px;font:700 14px Helvetica,Arial,sans-serif}
+  .verdict.hit{color:var(--right)} .verdict.miss{color:var(--wrong)} .verdict.skip{color:var(--muted)}
+  .ans{color:var(--right);font-weight:700;margin:0}
+  .answer-text{margin:0 0 4px}
+  .src{margin:0 0 16px}
+  .erro{color:var(--wrong);margin:0 0 14px;padding:4px 0 4px 2.1em;text-indent:-2.1em}
+  .erro .lt{display:inline-block;width:2.1em;text-indent:0}
+  .erro.is-mine{outline:1px dashed var(--wrong);background:rgba(255,90,90,.08);border-radius:4px;padding-top:8px;padding-bottom:8px}
+  .mine-tag{display:inline-block;text-indent:0;font:700 11px Helvetica,Arial,sans-serif;background:var(--wrong);color:#fff;border-radius:8px;padding:0 7px;margin-right:8px}
+  .exp{color:var(--exp);font-size:17px;line-height:1.5;margin:6px 0 10px}
+  .tag{color:#8a929c;font-size:12px;margin:12px 0 0}
+  .card img{max-width:100%}
+
+  /* ---------- simulado ---------- */
+  .cfg{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px 16px;margin-bottom:18px}
+  .avail{font:13px Helvetica,Arial,sans-serif;color:var(--muted);margin:0 0 16px}
+  .avail b{color:var(--yellow)}
+  .runbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 18px;font:13px Helvetica,Arial,sans-serif;color:var(--muted);margin-bottom:12px}
+  .runbar .pos{color:var(--ink);font-weight:700;font-size:15px}
+  .runbar .sp{margin-left:auto}
+  .timer{font-variant-numeric:tabular-nums}
+  .progress{height:4px;background:var(--line);border-radius:2px;margin-bottom:14px;overflow:hidden}
+  .progress i{display:block;height:100%;background:var(--yellow)}
+  .dots{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:14px}
+  .dot{min-width:30px;height:28px;border:1px solid var(--line);background:transparent;border-radius:5px;cursor:pointer;font:12px Helvetica,Arial,sans-serif;color:var(--muted)}
+  .dot.done{background:var(--raise);color:var(--ink)}
+  .dot.cur{border-color:var(--yellow);color:var(--yellow)}
+  .runnav{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+  .runnav .sp{margin-left:auto}
+  .keys{font:12px Helvetica,Arial,sans-serif;color:var(--muted);margin-top:10px}
+
+  .score{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 22px;margin:0 0 18px}
+  .score .big{font:700 46px/1 Helvetica,Arial,sans-serif;color:var(--yellow)}
+  .score span{font:14px Helvetica,Arial,sans-serif;color:var(--muted)}
+  table{width:100%;border-collapse:collapse;font:13px Helvetica,Arial,sans-serif;margin-bottom:20px}
+  th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line)}
+  th{color:var(--muted);font-weight:400}
+  td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+  .res-item{border-top:1px solid var(--line)}
+  .res-item summary{cursor:pointer;padding:10px 4px;display:flex;gap:10px;align-items:baseline;list-style:none}
+  .res-item summary::-webkit-details-marker{display:none}
+  .mark{flex:none;font:700 13px Helvetica,Arial,sans-serif;width:72px}
+  .mark.hit{color:var(--right)} .mark.miss{color:var(--wrong)} .mark.skip{color:var(--muted)}
+  .res-item .card{margin:0 0 14px}
+
+  dialog{background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:20px;max-width:min(760px,94vw);width:100%}
+  dialog::backdrop{background:rgba(10,14,20,.7)}
+  dialog h3{margin:0 0 8px;font:700 17px Helvetica,Arial,sans-serif}
+  dialog p{margin:0 0 14px;color:var(--muted);font-size:14px}
+  .dlg-actions{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end}
+
+  @media (max-width:720px){
+    .top{padding:12px 14px 0}
+    main{padding:16px 12px 60px}
+    .grid,.pair{grid-template-columns:1fr}
+    .card{padding:14px 12px 18px}
+  }
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="brand">
+    <h1>Mábio's Quiz</h1>
+    <p>Banco de questões e simulados aleatórios</p>
+  </div>
+  <nav class="tabs" role="tablist" aria-label="Seções">
+    <button class="tab" role="tab" data-view="banco" aria-selected="true">Banco</button>
+    <button class="tab" role="tab" data-view="cadastro" aria-selected="false">Cadastro</button>
+    <button class="tab" role="tab" data-view="simulado" aria-selected="false">Simulado</button>
+  </nav>
+  <div class="data">
+    <button class="btn" id="btnExport">📤 Exportar JSON</button>
+    <button class="btn" id="btnImport">📥 Importar</button>
+    <button class="btn danger" id="btnClear">🗑️ Limpar tudo</button>
+    <input type="file" id="fileInput" accept=".json,.txt,.tsv,.csv" hidden>
+  </div>
+</header>
+<p class="warn" id="storageWarn" hidden>O navegador bloqueou o armazenamento local. Os dados valem só para esta sessão — exporte o JSON antes de fechar.</p>
+<div id="status" class="status" role="status" aria-live="polite"></div>
+
+<main>
+  <!-- BANCO -->
+  <section id="v-banco">
+    <div class="toolbar">
+      <input type="search" id="fSearch" placeholder="Buscar em enunciado, código, tema, tags…" aria-label="Buscar">
+      <select id="fBanca" aria-label="Filtrar por banca"></select>
+      <select id="fDomain" aria-label="Filtrar por tema"></select>
+      <button class="btn primary" id="btnNew">+ Nova questão</button>
+      <button class="btn" id="btnSimFiltered">Simular estas</button>
+    </div>
+    <p class="count" id="bancoCount"></p>
+    <div id="bancoList"></div>
+  </section>
+
+  <!-- CADASTRO -->
+  <section id="v-cadastro" hidden>
+    <h2 class="sec" id="formTitle">Nova questão</h2>
+    <p class="hint">Campos aceitam texto puro ou HTML (como no Anki). Cada Erro fica ao lado do distrator que ele explica — o simulado usa esse vínculo para destacar a justificativa da alternativa que você marcou.</p>
+    <form id="qForm" autocomplete="off">
+      <fieldset>
+        <legend>Identificação</legend>
+        <div class="grid">
+          <div><label for="f_codigo"><b>Código</b></label><input type="text" id="f_codigo" placeholder="05-DOMAIN I - ORGANIZATIONAL GOVERNANCE…"></div>
+          <div><label for="f_banca"><b>Banca / Órgão</b></label><input type="text" id="f_banca" list="dlBanca" placeholder="CRMA, CISA, CGU…"></div>
+          <div><label for="f_domain"><b>Domain / Tema</b></label><input type="text" id="f_domain" list="dlDomain" placeholder="D1GAIT"></div>
+          <div><label for="f_tags"><b>Tags</b> (opcional, separadas por espaço)</label><input type="text" id="f_tags" placeholder="Dom1::D1GAIT-R"></div>
+        </div>
+        <datalist id="dlBanca"></datalist><datalist id="dlDomain"></datalist>
+      </fieldset>
+      <fieldset>
+        <legend>Enunciado</legend>
+        <div><label for="f_question"><b>Question</b> (enunciado) *</label><textarea id="f_question" rows="5" required></textarea></div>
+      </fieldset>
+      <fieldset>
+        <legend>Resposta correta</legend>
+        <div class="grid">
+          <div class="pair right">
+            <div><label for="f_answer1"><b>Answer1</b> (alternativa correta) *</label><textarea id="f_answer1" rows="3" required></textarea></div>
+            <div><label for="f_source"><b>Source</b> (fonte / justificativa)</label><textarea id="f_source" rows="3"></textarea></div>
+          </div>
+        </div>
+      </fieldset>
+      <fieldset>
+        <legend>Distratores e justificativas</legend>
+        <div class="grid">
+          <div class="pair">
+            <div><label for="f_distractor2"><b>Distractor2</b> (distrator) *</label><textarea id="f_distractor2" rows="3"></textarea></div>
+            <div><label for="f_erro1"><b>Erro1</b> (por que o Distractor2 está errado)</label><textarea id="f_erro1" rows="3"></textarea></div>
+          </div>
+          <div class="pair">
+            <div><label for="f_distractor3"><b>Distractor3</b> (distrator)</label><textarea id="f_distractor3" rows="3"></textarea></div>
+            <div><label for="f_erro2"><b>Erro2</b> (por que o Distractor3 está errado)</label><textarea id="f_erro2" rows="3"></textarea></div>
+          </div>
+          <div class="pair">
+            <div><label for="f_distractor4"><b>Distractor4</b> (distrator)</label><textarea id="f_distractor4" rows="3"></textarea></div>
+            <div><label for="f_erro3"><b>Erro3</b> (por que o Distractor4 está errado)</label><textarea id="f_erro3" rows="3"></textarea></div>
+          </div>
+        </div>
+      </fieldset>
+      <fieldset>
+        <legend>Tradução</legend>
+        <div><label for="f_portuguese"><b>Portuguese</b> (tradução / comentário em português)</label><textarea id="f_portuguese" rows="4"></textarea></div>
+      </fieldset>
+      <div class="form-actions">
+        <button type="submit" class="btn primary">Salvar</button>
+        <button type="button" class="btn" id="btnSaveNew">Salvar e cadastrar outra</button>
+        <button type="button" class="btn" id="btnPreview">Pré-visualizar cartão</button>
+        <button type="button" class="btn ghost" id="btnCancel">Cancelar</button>
+      </div>
+    </form>
+  </section>
+
+  <!-- SIMULADO -->
+  <section id="v-simulado" hidden>
+    <div id="simBody"></div>
+  </section>
+</main>
+
+<dialog id="dlg"><div id="dlgBody"></div></dialog>
+
+<script>
+'use strict';
+/* =========================================================
+   Mábio's Quiz v1.0 — single-file, vanilla JS
+   Persistência: localStorage (fallback em memória) + JSON
+   ========================================================= */
+const APP = "Mábio's Quiz", VERSION = '1.0', STORE_KEY = 'mabiosQuiz_v1';
+const KEYS = ['codigo','banca','domain','question','answer1','distractor2','distractor3','distractor4','source','erro1','erro2','erro3','portuguese'];
+const CHOICE_KEYS = ['answer1','distractor2','distractor3','distractor4'];
+const ERRO_OF = {distractor2:'erro1', distractor3:'erro2', distractor4:'erro3'};
+const LETTERS = ['a','b','c','d'];
+const ALIASES = {
+  codigo:['codigo','código','code','cod'], banca:['banca','orgao','órgão','banca/orgao','banca/órgão','board'],
+  domain:['domain','tema','domain/tema','dominio','domínio'], question:['question','pergunta','enunciado'],
+  answer1:['answer1','answer','resposta','correta'], distractor2:['distractor2'], distractor3:['distractor3'], distractor4:['distractor4'],
+  source:['source','fonte'], erro1:['erro1','error1'], erro2:['erro2','error2'], erro3:['erro3','error3'],
+  portuguese:['portuguese','portugues','português','traducao','tradução'], tags:['tags','tag']
+};
+
+/* ---------- armazenamento ---------- */
+const store = (() => {
+  let ok = true, mem = null;
+  try { localStorage.setItem('__mq', '1'); localStorage.removeItem('__mq'); } catch (e) { ok = false; }
+  return {
+    get ok(){ return ok; },
+    load(){ if (!ok) return mem; try { return JSON.parse(localStorage.getItem(STORE_KEY) || 'null'); } catch (e) { return mem; } },
+    save(d){ mem = d; if (!ok) return false; try { localStorage.setItem(STORE_KEY, JSON.stringify(d)); return true; } catch (e) { ok = false; return false; } }
+  };
+})();
+
+let db = store.load();
+if (!db || !Array.isArray(db.questions)) db = { questions: [] };
+db.questions = db.questions.map(normalize);
+
+function persist(){
+  const ok = store.save(db);
+  document.getElementById('storageWarn').hidden = ok;
+}
+
+/* ---------- utilidades ---------- */
+const $ = id => document.getElementById(id);
+const uid = () => 'q' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+const nowISO = () => new Date().toISOString();
+function esc(s){ return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function shuffle(a){ a = a.slice(); for (let i = a.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+function fmtTime(ms){ const s = Math.max(0, Math.floor(ms / 1000)); const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), ss = s % 60; return (h ? h + ':' : '') + String(m).padStart(2,'0') + ':' + String(ss).padStart(2,'0'); }
+function msg(text, type = 'success'){ const el = $('status'); el.textContent = text; el.className = 'status ' + type; clearTimeout(msg.t); msg.t = setTimeout(() => el.className = 'status', 3200); }
+const blank = s => !String(s ?? '').trim();
+
+/* Sanitização: aceita HTML vindo do Anki, remove scripts/eventos */
+const ALLOWED = new Set(['B','I','U','S','STRONG','EM','BR','P','DIV','SPAN','UL','OL','LI','SUB','SUP','IMG','A','TABLE','THEAD','TBODY','TR','TD','TH','CODE','PRE','BLOCKQUOTE','HR','FONT','SMALL','MARK','H3','H4']);
+const DROP = new Set(['SCRIPT','STYLE','IFRAME','OBJECT','EMBED','LINK','META','FORM','INPUT','BUTTON','TEXTAREA','SELECT','SVG']);
+function sanitize(html){
+  const doc = new DOMParser().parseFromString('<div>' + html + '</div>', 'text/html');
+  const root = doc.body.firstElementChild;
+  (function walk(node){
+    [...node.childNodes].forEach(ch => {
+      if (ch.nodeType === 8){ ch.remove(); return; }
+      if (ch.nodeType !== 1) return;
+      if (DROP.has(ch.tagName)){ ch.remove(); return; }
+      walk(ch);
+      if (!ALLOWED.has(ch.tagName)){ ch.replaceWith(...ch.childNodes); return; }
+      [...ch.attributes].forEach(a => {
+        const n = a.name.toLowerCase();
+        const keep = (n === 'href' && ch.tagName === 'A') || (n === 'src' && ch.tagName === 'IMG') || (n === 'alt' && ch.tagName === 'IMG');
+        if (!keep || /^\s*(javascript|vbscript):/i.test(a.value)) ch.removeAttribute(a.name);
+      });
+      if (ch.tagName === 'A'){ ch.setAttribute('target','_blank'); ch.setAttribute('rel','noopener'); }
+    });
+  })(root);
+  return root.innerHTML;
+}
+/* Renderiza campo: texto puro preserva quebras; HTML é sanitizado. [[ ]] → < > (compatível com o modelo Anki) */
+function rich(s){
+  s = String(s ?? '').split('[[').join('<').split(']]').join('>');
+  if (!/<\/?[a-z][\s\S]*?>/i.test(s)) return esc(s).replace(/\r?\n/g, '<br>');
+  return sanitize(s);
+}
+function plain(s){
+  s = String(s ?? '');
+  if (!/[<&]/.test(s)) return s;
+  return new DOMParser().parseFromString(s.replace(/<br\s*\/?>/gi, ' '), 'text/html').body.textContent || '';
+}
+
+/* ---------- modelo ---------- */
+function normStats(s){
+  s = s || {};
+  return { seen: +s.seen || 0, correct: +s.correct || 0, wrong: +s.wrong || 0, lastResult: s.lastResult || null, lastSeen: s.lastSeen || null };
+}
+function normalize(o){
+  o = o || {};
+  const low = {};
+  Object.keys(o).forEach(k => low[k.toLowerCase().trim()] = o[k]);
+  const q = {};
+  [...KEYS, 'tags'].forEach(k => {
+    const hit = ALIASES[k].find(a => low[a] != null);
+    let v = hit ? low[hit] : '';
+    if (Array.isArray(v)) v = v.join(' ');
+    q[k] = String(v ?? '');
+  });
+  q.id = o.id ? String(o.id) : uid();
+  q.stats = normStats(o.stats);
+  q.createdAt = o.createdAt || nowISO();
+  q.updatedAt = o.updatedAt || q.createdAt;
+  return q;
+}
+const isPlayable = q => !blank(q.question) && !blank(q.answer1) && ['distractor2','distractor3','distractor4'].some(k => !blank(q[k]));
+const getQ = id => db.questions.find(q => q.id === id);
+const uniq = key => [...new Set(db.questions.map(q => plain(q[key]).trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+
+/* ---------- navegação ---------- */
+let currentView = 'banco';
+function show(view){
+  currentView = view;
+  document.querySelectorAll('.tab').forEach(t => t.setAttribute('aria-selected', String(t.dataset.view === view)));
+  ['banco','cadastro','simulado'].forEach(v => $('v-' + v).hidden = v !== view);
+  if (view === 'banco') renderBanco();
+  if (view === 'simulado') renderSim();
+  window.scrollTo(0, 0);
+}
+document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => {
+  if (t.dataset.view === 'cadastro' && !editingId) openForm(null);
+  else show(t.dataset.view);
+}));
+
+/* =========================================================
+   BANCO
+   ========================================================= */
+function fillSelect(sel, values, allLabel, keep){
+  const cur = keep ? sel.value : '';
+  sel.innerHTML = `<option value="">${esc(allLabel)}</option>` + values.map(v => `<option value="${esc(v)}">${esc(v.length > 60 ? v.slice(0, 57) + '…' : v)}</option>`).join('');
+  if (values.includes(cur)) sel.value = cur;
+}
+function filtered(){
+  const term = $('fSearch').value.trim().toLowerCase();
+  const b = $('fBanca').value, d = $('fDomain').value;
+  return db.questions.filter(q => {
+    if (b && plain(q.banca).trim() !== b) return false;
+    if (d && plain(q.domain).trim() !== d) return false;
+    if (!term) return true;
+    return [q.question, q.codigo, q.domain, q.banca, q.tags, q.answer1].some(f => plain(f).toLowerCase().includes(term));
+  });
+}
+function renderBanco(){
+  fillSelect($('fBanca'), uniq('banca'), 'Todas as bancas', true);
+  fillSelect($('fDomain'), uniq('domain'), 'Todos os temas', true);
+  const list = filtered();
+  const total = db.questions.length;
+  $('bancoCount').textContent = total ? `${list.length} de ${total} questões` : '';
+  $('btnSimFiltered').disabled = !list.some(isPlayable);
+  if (!total){
+    $('bancoList').innerHTML = `<div class="empty"><p>O banco está vazio. Cadastre a primeira questão, importe um JSON/TXT do Anki ou carregue um exemplo para testar.</p>
+      <button class="btn primary" data-act="new">+ Nova questão</button> <button class="btn" data-act="seed">Carregar exemplo</button></div>`;
+    return;
+  }
+  if (!list.length){ $('bancoList').innerHTML = `<div class="empty"><p>Nenhuma questão corresponde aos filtros.</p></div>`; return; }
+  $('bancoList').innerHTML = list.map(q => {
+    const s = q.stats;
+    const perf = s.seen ? `<b>${s.correct}</b> acertos em <b>${s.seen}</b> respostas` + (s.lastResult ? ` — última: ${s.lastResult === 'right' ? 'acerto' : 'erro'}` : '') : 'ainda não respondida';
+    const snippet = plain(q.question).trim();
+    return `<article class="row" data-id="${esc(q.id)}">
+      <div class="row-meta">${!blank(q.codigo) ? `<span class="mini-pill" title="${esc(plain(q.codigo))}">${esc(plain(q.codigo))}</span>` : ''}
+        ${!blank(q.banca) ? `<span>${esc(plain(q.banca))}</span>` : ''}${!blank(q.domain) ? `<span>${esc(plain(q.domain))}</span>` : ''}
+        ${isPlayable(q) ? '' : '<span style="color:var(--wrong)">incompleta: faltam alternativas</span>'}</div>
+      <p class="row-q">${esc(snippet.length > 240 ? snippet.slice(0, 237) + '…' : snippet)}</p>
+      <div class="row-foot"><span class="perf">${perf}</span>
+        <span class="row-actions"><button class="btn" data-act="view">Ver cartão</button><button class="btn" data-act="edit">Editar</button><button class="btn" data-act="dup">Duplicar</button><button class="btn danger" data-act="del">Excluir</button></span></div>
+    </article>`;
+  }).join('');
+}
+['fSearch','fBanca','fDomain'].forEach(id => $(id).addEventListener('input', renderBanco));
+$('btnNew').addEventListener('click', () => openForm(null));
+$('btnSimFiltered').addEventListener('click', () => {
+  const ids = shuffle(filtered().filter(isPlayable).map(q => q.id));
+  startSession(ids, 'estudo');
+});
+$('bancoList').addEventListener('click', e => {
+  const btn = e.target.closest('[data-act]'); if (!btn) return;
+  const act = btn.dataset.act;
+  if (act === 'new') return openForm(null);
+  if (act === 'seed') return loadSeed();
+  const id = btn.closest('.row')?.dataset.id, q = getQ(id); if (!q) return;
+  if (act === 'edit') openForm(q);
+  if (act === 'view') previewCard(q);
+  if (act === 'dup'){
+    const c = normalize({ ...q, id: null, stats: null, createdAt: null, updatedAt: null });
+    c.codigo = q.codigo; db.questions.splice(db.questions.indexOf(q) + 1, 0, c); persist(); renderBanco(); msg('Questão duplicada.');
+  }
+  if (act === 'del' && confirm('Excluir esta questão? A ação não pode ser desfeita (a menos que você tenha um JSON exportado).')){
+    db.questions = db.questions.filter(x => x !== q); persist(); renderBanco(); msg('Questão excluída.');
+  }
+});
+
+/* =========================================================
+   CADASTRO
+   ========================================================= */
+let editingId = null;
+function openForm(q){
+  editingId = q ? q.id : null;
+  $('formTitle').textContent = q ? 'Editar questão' : 'Nova questão';
+  [...KEYS, 'tags'].forEach(k => $('f_' + k).value = q ? q[k] : '');
+  $('dlBanca').innerHTML = uniq('banca').map(v => `<option value="${esc(v)}">`).join('');
+  $('dlDomain').innerHTML = uniq('domain').map(v => `<option value="${esc(v)}">`).join('');
+  show('cadastro');
+  $('f_codigo').focus();
+}
+function readForm(){ const o = {}; [...KEYS, 'tags'].forEach(k => o[k] = $('f_' + k).value); return o; }
+function saveForm(andNew){
+  const o = readForm();
+  if (blank(o.question) || blank(o.answer1)){ msg('Preencha Question e Answer1.', 'error'); return; }
+  if (['distractor2','distractor3','distractor4'].every(k => blank(o[k]))){ msg('Cadastre ao menos um distrator.', 'error'); return; }
+  if (editingId){
+    const q = getQ(editingId);
+    if (q){ Object.assign(q, o); q.updatedAt = nowISO(); }
+  } else {
+    db.questions.push(normalize(o));
+  }
+  persist();
+  msg(editingId ? 'Questão atualizada.' : 'Questão salva.');
+  if (andNew){
+    const keep = { codigo: o.codigo, banca: o.banca, domain: o.domain, tags: o.tags };
+    openForm(null);
+    Object.keys(keep).forEach(k => $('f_' + k).value = keep[k]);
+    $('f_question').focus();
+  } else { editingId = null; show('banco'); }
+}
+$('qForm').addEventListener('submit', e => { e.preventDefault(); saveForm(false); });
+$('btnSaveNew').addEventListener('click', () => saveForm(true));
+$('btnCancel').addEventListener('click', () => { editingId = null; show('banco'); });
+$('btnPreview').addEventListener('click', () => {
+  const q = normalize(readForm());
+  if (blank(q.question)){ msg('Escreva o enunciado para pré-visualizar.', 'error'); return; }
+  previewCard(q);
+});
+
+/* =========================================================
+   CARTÃO (reproduz frente + verso do modelo Anki)
+   ========================================================= */
+function cardHTML(q, item, reveal){
+  const opts = item.order.map((k, i) => {
+    let c = 'opt';
+    if (reveal){ if (k === 'answer1') c += ' is-right'; else if (item.chosen === i) c += ' is-wrong'; }
+    else if (item.chosen === i) c += ' is-picked';
+    return `<div class="${c}" role="button" tabindex="${reveal ? -1 : 0}" data-opt="${i}"${reveal ? ' aria-disabled="true"' : ''}><span class="opt-l">${LETTERS[i]}.</span><span class="opt-t">${rich(q[k])}</span></div>`;
+  }).join('');
+  let back = '';
+  if (reveal){
+    const ci = item.order.indexOf('answer1');
+    const chosenKey = item.chosen != null ? item.order[item.chosen] : null;
+    let verdict = '';
+    if (!item.preview){
+      verdict = chosenKey == null ? '<p class="verdict skip">Não respondida</p>'
+        : chosenKey === 'answer1' ? '<p class="verdict hit">Você acertou</p>'
+        : `<p class="verdict miss">Você marcou ${LETTERS[item.chosen]} — resposta errada</p>`;
+    }
+    const erros = item.order.map((k, i) => {
+      if (k === 'answer1') return '';
+      const e = q[ERRO_OF[k]];
+      if (blank(e)) return '';
+      const mine = k === chosenKey;
+      return `<div class="erro${mine ? ' is-mine' : ''}"><span class="lt">${LETTERS[i]}.</span>${mine ? '<span class="mine-tag">sua escolha</span>' : ''}${rich(e)}</div>`;
+    }).join('');
+    back = `<div class="back"><hr>${verdict}
+      <p class="ans">Correct: ${LETTERS[ci]}</p>
+      <div class="answer-text">${rich(q.answer1)}</div>
+      ${!blank(q.source) ? `<div class="ans src">Source solutions..: ${rich(q.source)}</div>` : ''}
+      ${erros}
+      ${!blank(q.portuguese) ? `<div class="exp">${rich(q.portuguese)}</div>` : ''}
+      ${!blank(q.tags) ? `<p class="tag">Tags: ${esc(q.tags)}</p>` : ''}</div>`;
+  }
+  return `${!blank(q.codigo) ? `<div class="code-pill">${esc(plain(q.codigo))}</div>` : ''}
+    ${!blank(q.banca) ? `<div class="banca-bar">${rich(q.banca)}</div>` : ''}
+    ${!blank(q.domain) ? `<p class="q-domain">${rich(q.domain)}</p>` : ''}
+    <div class="q-text">${rich(q.question)}</div>
+    <div class="opts">${opts}</div>${back}`;
+}
+function previewCard(q){
+  const order = CHOICE_KEYS.filter(k => !blank(q[k]));
+  openDialog(`<div class="card">${cardHTML(q, { order, chosen: null, preview: true }, true)}</div>
+    <div class="dlg-actions" style="margin-top:14px"><button class="btn" data-close>Fechar</button></div>`);
+}
+
+/* =========================================================
+   SIMULADO
+   ========================================================= */
+let session = null, timerId = null;
+const cfg = { count: 20, banca: '', domain: '', mode: 'aleatorio', feedback: 'estudo' };
+
+function buildPool(c){
+  let p = db.questions.filter(isPlayable);
+  if (c.banca) p = p.filter(q => plain(q.banca).trim() === c.banca);
+  if (c.domain) p = p.filter(q => plain(q.domain).trim() === c.domain);
+  if (c.mode === 'nunca') p = p.filter(q => !q.stats.seen);
+  if (c.mode === 'erradas') p = p.filter(q => q.stats.lastResult === 'wrong');
+  return p;
+}
+function pick(pool, n, mode){
+  if (mode === 'fracas'){
+    /* amostragem ponderada (Efraimidis–Spirakis): mais erros e menos exposição = mais chance */
+    return pool.map(q => {
+      const s = q.stats, w = (s.wrong + 1) / (s.correct + 1) * (s.seen ? 1 : 1.5);
+      return { q, k: Math.pow(Math.random(), 1 / w) };
+    }).sort((a, b) => b.k - a.k).slice(0, n).map(x => x.q);
+  }
+  return shuffle(pool).slice(0, n);
+}
+function startSession(ids, feedback){
+  if (!ids.length){ msg('Nenhuma questão disponível com esses critérios.', 'error'); return; }
+  session = {
+    feedback, idx: 0, started: Date.now(), ended: null,
+    items: ids.map(id => ({ id, order: shuffle(CHOICE_KEYS.filter(k => !blank(getQ(id)[k]))), chosen: null, recorded: false }))
+  };
+  show('simulado');
+}
+function record(item){
+  if (item.recorded || item.chosen == null) return;
+  const q = getQ(item.id); if (!q) return;
+  const right = item.order[item.chosen] === 'answer1';
+  q.stats.seen++; right ? q.stats.correct++ : q.stats.wrong++;
+  q.stats.lastResult = right ? 'right' : 'wrong'; q.stats.lastSeen = nowISO();
+  item.recorded = true; persist();
+}
+function finishSession(){
+  if (!session) return;
+  if (session.feedback === 'prova'){
+    const pend = session.items.filter(i => i.chosen == null).length;
+    if (pend && !confirm(`${pend} questão(ões) sem resposta. Finalizar mesmo assim?`)) return;
+  }
+  session.items.forEach(record);
+  session.ended = Date.now();
+  stopTimer();
+  renderSim();
+}
+function stopTimer(){ clearInterval(timerId); timerId = null; }
+function tick(){ const el = $('simTimer'); if (el && session) el.textContent = fmtTime(Date.now() - session.started); }
+
+function renderSim(){
+  const body = $('simBody');
+  if (!session) return renderConfig(body);
+  if (session.ended) return renderResults(body);
+  session.items = session.items.filter(i => getQ(i.id));
+  if (!session.items.length){ session = null; return renderConfig(body); }
+  session.idx = Math.min(session.idx, session.items.length - 1);
+  const it = session.items[session.idx], q = getQ(it.id), n = session.items.length;
+  const reveal = session.feedback === 'estudo' && it.chosen != null;
+  const answered = session.items.filter(i => i.chosen != null).length;
+  const last = session.idx === n - 1;
+  body.innerHTML = `
+    <div class="runbar"><span class="pos">Questão ${session.idx + 1} de ${n}</span>
+      <span>${session.feedback === 'estudo' ? 'Modo estudo (correção imediata)' : 'Modo prova (correção no final)'}</span>
+      <span>${answered} respondida(s)</span>
+      <span class="sp timer" id="simTimer">${fmtTime(Date.now() - session.started)}</span>
+      <button class="btn" data-act="end">Encerrar</button></div>
+    <div class="progress"><i style="width:${answered / n * 100}%"></i></div>
+    ${session.feedback === 'prova' ? `<div class="dots">${session.items.map((x, i) => `<button class="dot${x.chosen != null ? ' done' : ''}${i === session.idx ? ' cur' : ''}" data-go="${i}" aria-label="Ir para questão ${i + 1}">${i + 1}</button>`).join('')}</div>` : ''}
+    <div class="card" id="runCard">${cardHTML(q, it, reveal)}</div>
+    <div class="runnav">
+      ${session.feedback === 'prova' ? `<button class="btn" data-act="prev" ${session.idx === 0 ? 'disabled' : ''}>← Anterior</button>` : ''}
+      <span class="sp"></span>
+      ${last ? `<button class="btn primary" data-act="finish" ${session.feedback === 'estudo' && it.chosen == null ? 'disabled' : ''}>Ver resultado</button>`
+             : `<button class="btn primary" data-act="next" ${session.feedback === 'estudo' && it.chosen == null ? 'disabled' : ''}>Próxima →</button>`}
+    </div>
+    <p class="keys">Atalhos: A–D ou 1–4 marcam a alternativa · Enter avança${session.feedback === 'prova' ? ' · ← → navegam' : ''}</p>`;
+  if (!timerId) timerId = setInterval(tick, 1000);
+}
+function choose(i){
+  if (!session || session.ended) return;
+  const it = session.items[session.idx];
+  if (i >= it.order.length) return;
+  if (session.feedback === 'estudo'){
+    if (it.chosen != null) return;
+    it.chosen = i; record(it);
+  } else it.chosen = i;
+  renderSim();
+}
+function go(delta){
+  if (!session || session.ended) return;
+  const it = session.items[session.idx];
+  if (delta > 0 && session.feedback === 'estudo' && it.chosen == null) return;
+  const ni = session.idx + delta;
+  if (ni >= session.items.length){ finishSession(); return; }
+  if (ni < 0) return;
+  session.idx = ni; renderSim(); window.scrollTo(0, 0);
+}
+
+function renderConfig(body){
+  stopTimer();
+  const playable = db.questions.filter(isPlayable).length;
+  if (!playable){
+    body.innerHTML = `<div class="empty"><p>Nenhuma questão completa no banco ainda. Uma questão entra no simulado quando tem enunciado, resposta correta e pelo menos um distrator.</p><button class="btn primary" data-act="tobanco">Ir para o banco</button></div>`;
+    return;
+  }
+  body.innerHTML = `<h2 class="sec">Novo simulado</h2>
+    <div class="cfg">
+      <div><label for="cCount"><b>Quantidade</b></label><input type="number" id="cCount" min="1" value="${cfg.count}"></div>
+      <div><label for="cBanca"><b>Banca / Órgão</b></label><select id="cBanca"></select></div>
+      <div><label for="cDomain"><b>Domain / Tema</b></label><select id="cDomain"></select></div>
+      <div><label for="cMode"><b>Seleção</b></label><select id="cMode">
+        <option value="aleatorio">Aleatória</option>
+        <option value="fracas">Priorizar pontos fracos</option>
+        <option value="nunca">Só nunca respondidas</option>
+        <option value="erradas">Só erradas na última vez</option></select></div>
+      <div><label for="cFeedback"><b>Correção</b></label><select id="cFeedback">
+        <option value="estudo">Imediata (modo estudo)</option>
+        <option value="prova">No final (modo prova)</option></select></div>
+    </div>
+    <p class="avail" id="cAvail"></p>
+    <button class="btn primary" data-act="start">Iniciar simulado</button>`;
+  fillSelect($('cBanca'), uniq('banca'), 'Todas', false); $('cBanca').value = uniq('banca').includes(cfg.banca) ? cfg.banca : '';
+  fillSelect($('cDomain'), uniq('domain'), 'Todos', false); $('cDomain').value = uniq('domain').includes(cfg.domain) ? cfg.domain : '';
+  $('cMode').value = cfg.mode; $('cFeedback').value = cfg.feedback;
+  const upd = () => {
+    Object.assign(cfg, { count: Math.max(1, parseInt($('cCount').value, 10) || 1), banca: $('cBanca').value, domain: $('cDomain').value, mode: $('cMode').value, feedback: $('cFeedback').value });
+    const n = buildPool(cfg).length;
+    $('cAvail').innerHTML = n ? `<b>${n}</b> questões atendem aos critérios — o simulado terá <b>${Math.min(n, cfg.count)}</b>, em ordem aleatória e com alternativas embaralhadas.` : 'Nenhuma questão atende a esses critérios. Ajuste os filtros.';
+    body.querySelector('[data-act="start"]').disabled = !n;
+  };
+  ['cCount','cBanca','cDomain','cMode','cFeedback'].forEach(id => $(id).addEventListener('input', upd));
+  upd();
+}
+
+function renderResults(body){
+  const items = session.items, n = items.length;
+  const hits = items.filter(i => i.chosen != null && i.order[i.chosen] === 'answer1').length;
+  const answered = items.filter(i => i.chosen != null).length;
+  const pct = n ? Math.round(hits / n * 100) : 0;
+  const by = {};
+  items.forEach(i => {
+    const q = getQ(i.id); const d = plain(q?.domain).trim() || '(sem tema)';
+    by[d] = by[d] || { n: 0, c: 0 }; by[d].n++;
+    if (i.chosen != null && i.order[i.chosen] === 'answer1') by[d].c++;
+  });
+  const wrongIds = items.filter(i => !(i.chosen != null && i.order[i.chosen] === 'answer1')).map(i => i.id);
+  body.innerHTML = `<h2 class="sec">Resultado</h2>
+    <div class="score"><span class="big">${pct}%</span>
+      <span>${hits} acertos de ${n} questões</span><span>${answered} respondidas</span><span>tempo ${fmtTime(session.ended - session.started)}</span></div>
+    <table><thead><tr><th>Domain / Tema</th><th class="num">Acertos</th><th class="num">Questões</th><th class="num">%</th></tr></thead>
+      <tbody>${Object.entries(by).sort((a, b) => a[1].c / a[1].n - b[1].c / b[1].n).map(([d, v]) => `<tr><td>${esc(d)}</td><td class="num">${v.c}</td><td class="num">${v.n}</td><td class="num">${Math.round(v.c / v.n * 100)}%</td></tr>`).join('')}</tbody></table>
+    <div class="runnav" style="margin:0 0 18px">
+      <button class="btn primary" data-act="redo" ${wrongIds.length ? '' : 'disabled'}>Refazer as ${wrongIds.length} erradas / em branco</button>
+      <button class="btn" data-act="newsim">Novo simulado</button>
+      <button class="btn ghost" data-act="tobanco">Voltar ao banco</button></div>
+    <h2 class="sec">Revisão</h2>
+    ${items.map((it, i) => {
+      const q = getQ(it.id); if (!q) return '';
+      const st = it.chosen == null ? ['skip','em branco'] : it.order[it.chosen] === 'answer1' ? ['hit','acerto'] : ['miss','erro'];
+      const sn = plain(q.question).trim();
+      return `<details class="res-item"><summary><span class="mark ${st[0]}">${i + 1}. ${st[1]}</span><span>${esc(sn.length > 150 ? sn.slice(0, 147) + '…' : sn)}</span></summary><div class="card">${cardHTML(q, it, true)}</div></details>`;
+    }).join('')}`;
+  session._wrongIds = wrongIds;
+}
+
+$('simBody').addEventListener('click', e => {
+  const opt = e.target.closest('[data-opt]');
+  if (opt && opt.closest('#runCard') && !opt.hasAttribute('aria-disabled')){ choose(+opt.dataset.opt); return; }
+  const dot = e.target.closest('[data-go]');
+  if (dot && session){ session.idx = +dot.dataset.go; renderSim(); return; }
+  const btn = e.target.closest('[data-act]'); if (!btn) return;
+  switch (btn.dataset.act){
+    case 'start': startSession(pick(buildPool(cfg), cfg.count, cfg.mode).map(q => q.id), cfg.feedback); break;
+    case 'next': go(1); break;
+    case 'prev': go(-1); break;
+    case 'finish': finishSession(); break;
+    case 'end':
+      if (session.items.every(i => i.chosen == null)){ if (confirm('Encerrar sem responder nenhuma questão?')){ session = null; stopTimer(); renderSim(); } }
+      else finishSession();
+      break;
+    case 'redo': { const ids = shuffle(session._wrongIds); const fb = session.feedback; startSession(ids, fb); break; }
+    case 'newsim': session = null; renderSim(); break;
+    case 'tobanco': show('banco'); break;
+  }
+});
+$('simBody').addEventListener('keydown', e => {
+  const opt = e.target.closest('[data-opt]');
+  if (opt && (e.key === 'Enter' || e.key === ' ')){ e.preventDefault(); e.stopPropagation(); if (!opt.hasAttribute('aria-disabled')) choose(+opt.dataset.opt); }
+});
+document.addEventListener('keydown', e => {
+  if (currentView !== 'simulado' || !session || session.ended || $('dlg').open) return;
+  if (e.target.matches('input,textarea,select') || e.ctrlKey || e.metaKey || e.altKey) return;
+  const k = e.key.toLowerCase();
+  const i = 'abcd'.indexOf(k) >= 0 ? 'abcd'.indexOf(k) : '1234'.indexOf(k);
+  if (k.length === 1 && i >= 0){ e.preventDefault(); choose(i); return; }
+  if (e.key === 'Enter' && !e.target.closest('[data-opt],button')){ e.preventDefault(); go(1); return; }
+  if (session.feedback === 'prova'){
+    if (e.key === 'ArrowRight' && session.idx < session.items.length - 1) go(1);
+    if (e.key === 'ArrowLeft') go(-1);
+  }
+});
+
+/* =========================================================
+   DADOS — exportar / importar / limpar
+   ========================================================= */
+function download(name, text, type){
+  const blob = new Blob([text], { type });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+$('btnExport').addEventListener('click', () => {
+  try {
+    const data = { app: APP, version: VERSION, exportDate: nowISO(), total: db.questions.length, questions: db.questions };
+    download(`mabios_quiz_${new Date().toISOString().split('T')[0]}.json`, JSON.stringify(data, null, 2), 'application/json');
+    msg(`${db.questions.length} questões exportadas.`);
+  } catch (err){ console.error(err); msg('Falha ao exportar o JSON.', 'error'); }
+});
+
+let importMode = 'merge';
+$('btnImport').addEventListener('click', () => openDialog(`<h3>Importar questões</h3>
+  <p>Aceita o JSON exportado por este app e o TXT do Anki (Exportar → "Notes in Plain Text", com os 13 campos na ordem do seu modelo). Mesclar atualiza questões já existentes e preserva seu histórico de acertos.</p>
+  <div class="dlg-actions"><button class="btn ghost" data-close>Cancelar</button>
+    <button class="btn danger" data-imp="replace">Substituir o banco</button>
+    <button class="btn primary" data-imp="merge">Mesclar com o banco</button></div>`));
+$('fileInput').addEventListener('change', e => {
+  const file = e.target.files[0]; if (!file) return;
+  const r = new FileReader();
+  r.onload = ev => {
+    try {
+      const text = String(ev.target.result).replace(/^\uFEFF/, '');
+      let incoming;
+      if (/\.json$/i.test(file.name) || /^\s*[\[{]/.test(text)){
+        const data = JSON.parse(text);
+        const arr = Array.isArray(data) ? data : data.questions;
+        if (!Array.isArray(arr)) throw new Error('JSON sem a lista "questions".');
+        incoming = arr.map(normalize);
+      } else incoming = parseAnkiText(text);
+      if (!incoming.length) throw new Error('Nenhuma questão encontrada no arquivo.');
+      applyImport(incoming, importMode);
+    } catch (err){ console.error(err); msg('Erro ao importar: ' + err.message, 'error'); }
+  };
+  r.readAsText(file);
+  e.target.value = '';
+});
+function keyOf(q){ return (plain(q.codigo).trim() + '|' + plain(q.question).replace(/\s+/g, ' ').trim()).toLowerCase(); }
+function applyImport(incoming, mode){
+  if (mode === 'replace'){
+    if (db.questions.length && !confirm(`Substituir as ${db.questions.length} questões atuais por ${incoming.length} importadas?`)) return;
+    db.questions = incoming; session = null;
+    persist(); show('banco'); msg(`${incoming.length} questões importadas (banco substituído).`); return;
+  }
+  let added = 0, updated = 0;
+  const byId = new Map(db.questions.map(q => [q.id, q]));
+  const byKey = new Map(db.questions.map(q => [keyOf(q), q]));
+  incoming.forEach(n => {
+    const cur = byId.get(n.id) || byKey.get(keyOf(n));
+    if (cur){
+      [...KEYS, 'tags'].forEach(k => cur[k] = n[k]);
+      if (n.stats.seen > cur.stats.seen) cur.stats = n.stats;
+      cur.updatedAt = nowISO(); updated++;
+    } else { db.questions.push(n); byId.set(n.id, n); byKey.set(keyOf(n), n); added++; }
+  });
+  persist(); show('banco'); msg(`Importação concluída: ${added} novas, ${updated} atualizadas.`);
+}
+
+/* Parser do TXT do Anki: cabeçalhos #separator, #html, #tags column, #guid/#notetype/#deck column */
+function parseAnkiText(text){
+  const lines = text.split(/\r?\n/);
+  const meta = {};
+  let start = 0;
+  while (start < lines.length && lines[start].startsWith('#')){
+    const m = lines[start].slice(1).split(':');
+    meta[m[0].trim().toLowerCase()] = m.slice(1).join(':').trim();
+    start++;
+  }
+  const body = lines.slice(start).join('\n');
+  const SEPS = { tab: '\t', comma: ',', semicolon: ';', pipe: '|', space: ' ', colon: ':' };
+  let sep = SEPS[(meta.separator || '').toLowerCase()] || meta.separator;
+  if (!sep || sep.length !== 1){
+    const first = body.split('\n')[0] || '';
+    sep = first.includes('\t') ? '\t' : first.includes(';') ? ';' : ',';
+  }
+  const records = [];
+  let rec = [], f = '', inQ = false, atStart = true;
+  for (let i = 0; i < body.length; i++){
+    const c = body[i];
+    if (inQ){
+      if (c === '"'){ if (body[i + 1] === '"'){ f += '"'; i++; } else inQ = false; }
+      else f += c;
+      continue;
+    }
+    if (c === '"' && atStart){ inQ = true; atStart = false; continue; }
+    if (c === sep){ rec.push(f); f = ''; atStart = true; continue; }
+    if (c === '\n'){ rec.push(f); records.push(rec); rec = []; f = ''; atStart = true; continue; }
+    if (c === '\r') continue;
+    f += c; atStart = false;
+  }
+  if (f || rec.length){ rec.push(f); records.push(rec); }
+  const metaCols = ['guid column', 'notetype column', 'deck column'].map(k => parseInt(meta[k], 10) - 1).filter(n => n >= 0);
+  const tagCol = parseInt(meta['tags column'], 10) - 1;
+  const out = [];
+  records.forEach(r => {
+    if (r.length < 5 || r.every(x => !x.trim())) return;
+    const tags = tagCol >= 0 ? (r[tagCol] || '') : '';
+    const fields = r.filter((_, i) => !metaCols.includes(i) && i !== tagCol);
+    const o = {}; KEYS.forEach((k, i) => o[k] = fields[i] || '');
+    o.tags = tags || (fields.length > KEYS.length ? fields[KEYS.length] : '');
+    out.push(normalize(o));
+  });
+  return out;
+}
+
+$('btnClear').addEventListener('click', () => {
+  if (!db.questions.length){ msg('O banco já está vazio.'); return; }
+  if (confirm(`Apagar as ${db.questions.length} questões e todo o histórico? Exporte o JSON antes se quiser guardar. A ação não pode ser desfeita.`)){
+    db = { questions: [] }; session = null; stopTimer(); persist(); show('banco'); msg('Banco apagado.');
+  }
+});
+
+/* ---------- diálogo ---------- */
+function openDialog(html){ $('dlgBody').innerHTML = html; $('dlg').showModal(); }
+$('dlg').addEventListener('click', e => {
+  if (e.target === $('dlg') || e.target.closest('[data-close]')){ $('dlg').close(); return; }
+  const imp = e.target.closest('[data-imp]');
+  if (imp){ importMode = imp.dataset.imp; $('dlg').close(); $('fileInput').click(); }
+});
+
+/* ---------- exemplo (cartão GAIT-R dos prints) ---------- */
+function loadSeed(){
+  db.questions.push(normalize({
+    codigo: '05-DOMAIN I - ORGANIZATIONAL GOVERNANCE RELATED TO RISK MANAGEMENT',
+    banca: 'Certification in Risk Management Assurance® (CRMA®)',
+    domain: 'D1GAIT',
+    question: 'A company is planning a risk assessment of the IT systems that process, store, and transmit its litigation data. In accordance with GAIT-R, the first and most important planning task the assessment team should undertake is:',
+    answer1: 'Interviewing key C-suite (CEO, CIO, CFO, legal) executives and operational managers to identify and rank threats to the business.',
+    distractor2: 'Ensuring that the risk management team or assessment contractor has access to the technical expertise necessary to understand system configurations and software vulnerabilities.',
+    distractor3: 'Conducting a thorough review of information security (InfoSec) policies and procedures.',
+    distractor4: 'Determining the types and proper mix of manual and automated controls needed to provide reasonable assurance.',
+    source: 'Correct. The first principle of GAIT-R states the failure of technology is only a risk that needs to be assessed, managed, and audited if it represents a risk to the business. GAIT advocates a top-down assessment of business risks, risk tolerance, and the controls required to manage or mitigate business risk.',
+    erro1: 'Ensuring that the risk management team or assessment contractor has access to the technical expertise necessary to understand system configurations and software vulnerabilities.\nIncorrect. Having the correct expertise is important, but one must first determine which systems require assessment before determining the expertise necessary.',
+    erro2: 'Conducting a thorough review of information security (InfoSec) policies and procedures.\nIncorrect. Reviews of InfoSec policies and procedures are part of the assessment but not the planning stage.',
+    erro3: 'Determining the types and proper mix of manual and automated controls needed to provide reasonable assurance.\nIncorrect. Key manual and automated controls "should be identified as a result of a top-down assessment of business risks, risk tolerance and the controls ... required to ... mitigate risk." Identifying and assessing the key controls are steps 2 and 3 in GAIT-R (GAIT-R Executive Summary).',
+    portuguese: '',
+    tags: 'Dom1::D1GAIT-R'
+  }));
+  persist(); renderBanco(); msg('Questão de exemplo carregada.');
+}
+
+persist();
+show('banco');
+</script>
+</body>
+</html>

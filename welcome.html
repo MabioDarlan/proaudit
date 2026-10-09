@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>I'Mábio TRAININGS | Coach Estratégico Moonshot</title>
+  <meta name="description" content="Preparatórios para provas e concursos, palestras, consultoria educacional, idiomas e planejamento com o método Moonshot.">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Nunito+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
+
+  <style>
+    :root {
+      --linho: #F7F3EE;
+      --areia: #E8DFD3;
+      --greige: #CDBFAE;
+      --carvalho: #A89482;
+      --nogueira: #6B5A4E;
+      --grafite: #3B342F;
+      --rosa: #D9909A;
+      --rosa-texto: #B5636F;
+      --raio: 16px;
+      --sombra: 0 10px 30px rgba(59, 52, 47, 0.08);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Nunito Sans', sans-serif;
+      background: var(--linho);
+      color: var(--grafite);
+      line-height: 1.7;
+    }
+
+    h1, h2, h3 { font-family: 'Fraunces', serif; font-weight: 600; line-height: 1.2; }
+    a { color: inherit; text-decoration: none; }
+    .container { width: min(1120px, 90%); margin: 0 auto; }
+
+    /* ===== Cabeçalho ===== */
+    header {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(247, 243, 238, 0.92);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--areia);
+    }
+    .nav { display: flex; justify-content: space-between; align-items: center; height: 72px; }
+    .logo { display: flex; align-items: center; gap: 10px; font-family: 'Fraunces', serif; font-size: 1.3rem; font-weight: 600; }
+    .logo i { color: var(--rosa-texto); font-size: 1.6rem; }
+    .menu { display: flex; gap: 2rem; list-style: none; }
+    .menu a { color: var(--nogueira); font-weight: 600; transition: color .2s; }
+    .menu a:hover { color: var(--rosa-texto); }
+    .menu-toggle { display: none; background: none; border: none; font-size: 1.8rem; color: var(--grafite); cursor: pointer; }
+
+    /* ===== Botões ===== */
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 14px 28px; border-radius: 50px;
+      font-weight: 700; font-size: 1rem; cursor: pointer;
+      transition: transform .2s, background .2s, box-shadow .2s;
+      border: 2px solid transparent;
+    }
+    .btn-principal { background: var(--nogueira); color: var(--linho); }
+    .btn-principal:hover { background: var(--grafite); transform: translateY(-2px); box-shadow: var(--sombra); }
+    .btn-secundario { border-color: var(--greige); color: var(--nogueira); }
+    .btn-secundario:hover { border-color: var(--nogueira); }
+
+    /* ===== Hero ===== */
+    .hero { padding: 6rem 0 4rem; text-align: center; }
+    .selo {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: var(--areia); color: var(--nogueira);
+      padding: 6px 16px; border-radius: 50px; font-size: .9rem; font-weight: 600;
+    }
+    .hero h1 { font-size: clamp(2.4rem, 6vw, 4rem); margin: 1.5rem 0 1rem; }
+    .hero h1 span { color: var(--rosa-texto); }
+    .hero p { font-size: 1.2rem; color: var(--nogueira); max-width: 620px; margin: 0 auto 2.5rem; }
+    .hero-botoes { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+
+    /* ===== Números ===== */
+    .numeros { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-top: 4rem; }
+    .numero { background: var(--areia); border-radius: var(--raio); padding: 1.8rem; }
+    .numero strong { display: block; font-family: 'Fraunces', serif; font-size: 2.4rem; color: var(--grafite); }
+    .numero span { color: var(--nogueira); }
+
+    /* ===== Seções ===== */
+    section { padding: 5rem 0; }
+    .titulo-secao { text-align: center; margin-bottom: 3rem; }
+    .titulo-secao small { color: var(--rosa-texto); font-weight: 700; letter-spacing: 2px; text-transform: uppercase; font-size: .8rem; }
+    .titulo-secao h2 { font-size: clamp(1.8rem, 4vw, 2.6rem); margin: .5rem 0; }
+    .titulo-secao p { color: var(--nogueira); max-width: 560px; margin: 0 auto; }
+
+    /* ===== Método ===== */
+    .metodo { background: var(--areia); }
+    .etapas { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 1.5rem; }
+    .etapa { background: var(--linho); border-radius: var(--raio); padding: 2rem; position: relative; }
+    .etapa .num { font-family: 'Fraunces', serif; font-size: 3rem; color: var(--greige); line-height: 1; }
+    .etapa .fase { color: var(--rosa-texto); font-weight: 700; font-size: .85rem; text-transform: uppercase; letter-spacing: 1px; }
+    .etapa h3 { font-size: 1.3rem; margin: .4rem 0; }
+    .etapa p { color: var(--nogueira); font-size: .95rem; }
+
+    /* ===== Serviços ===== */
+    .servicos { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; }
+    .servico {
+      background: #fff; border: 1px solid var(--areia); border-radius: var(--raio);
+      padding: 2rem; transition: transform .25s, box-shadow .25s, border-color .25s;
+    }
+    .servico:hover { transform: translateY(-6px); box-shadow: var(--sombra); border-color: var(--greige); }
+    .servico .icone {
+      width: 56px; height: 56px; border-radius: 14px; background: var(--areia);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.7rem; color: var(--nogueira); margin-bottom: 1.2rem;
+    }
+    .servico h3 { font-size: 1.3rem; margin-bottom: .5rem; }
+    .servico p { color: var(--nogueira); margin-bottom: 1rem; }
+    .servico a { color: var(--rosa-texto); font-weight: 700; border-bottom: 2px solid var(--rosa); }
+
+    /* ===== Depoimento ===== */
+    .depoimento { text-align: center; max-width: 760px; margin: 0 auto; }
+    .depoimento blockquote { font-family: 'Fraunces', serif; font-size: clamp(1.3rem, 3vw, 1.8rem); line-height: 1.5; }
+    .depoimento cite { display: block; margin-top: 1.5rem; color: var(--nogueira); font-style: normal; font-weight: 600; }
+
+    /* ===== Chamada final ===== */
+    .cta {
+      background: var(--grafite); color: var(--linho);
+      border-radius: 28px; padding: 4rem 2rem; text-align: center;
+    }
+    .cta i.ti-rocket { font-size: 2.5rem; color: var(--rosa); }
+    .cta h2 { font-size: clamp(1.8rem, 4vw, 2.6rem); margin: 1rem 0; }
+    .cta p { color: var(--greige); max-width: 520px; margin: 0 auto 2rem; }
+    .cta .btn-principal { background: var(--rosa); color: var(--grafite); }
+    .cta .btn-principal:hover { background: var(--linho); }
+
+    /* ===== Rodapé ===== */
+    footer { padding: 3rem 0 2rem; border-top: 1px solid var(--areia); margin-top: 5rem; }
+    .rodape { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1.5rem; }
+    .redes { display: flex; gap: 1rem; }
+    .redes a {
+      width: 42px; height: 42px; border-radius: 50%; background: var(--areia);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.3rem; color: var(--nogueira); transition: background .2s, color .2s;
+    }
+    .redes a:hover { background: var(--nogueira); color: var(--linho); }
+    .copy { text-align: center; color: var(--carvalho); font-size: .9rem; margin-top: 2rem; }
+
+    /* ===== Botão flutuante WhatsApp ===== */
+    .whatsapp {
+      position: fixed; bottom: 24px; right: 24px; z-index: 200;
+      width: 60px; height: 60px; border-radius: 50%;
+      background: var(--nogueira); color: var(--linho);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 2rem; box-shadow: var(--sombra); transition: transform .2s;
+    }
+    .whatsapp:hover { transform: scale(1.1); }
+
+    /* ===== Animação de entrada ===== */
+    .revelar { opacity: 0; transform: translateY(30px); transition: opacity .8s, transform .8s; }
+    .revelar.visivel { opacity: 1; transform: none; }
+
+    /* ===== Responsivo ===== */
+    @media (max-width: 768px) {
+      .menu-toggle { display: block; }
+      .menu {
+        position: absolute; top: 72px; left: 0; right: 0;
+        flex-direction: column; gap: 0; background: var(--linho);
+        border-bottom: 1px solid var(--areia);
+        max-height: 0; overflow: hidden; transition: max-height .3s;
+      }
+      .menu.aberto { max-height: 300px; }
+      .menu li { padding: 1rem 5%; border-top: 1px solid var(--areia); }
+      .hero { padding: 4rem 0 2rem; }
+      .rodape { flex-direction: column; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <nav class="container nav">
+      <a href="#inicio" class="logo"><i class="ti ti-rocket"></i> I'Mábio TRAININGS</a>
+      <button class="menu-toggle" aria-label="Abrir menu"><i class="ti ti-menu-2"></i></button>
+      <ul class="menu">
+        <li><a href="#metodo">Método</a></li>
+        <li><a href="#servicos">Serviços</a></li>
+        <li><a href="#depoimentos">Depoimentos</a></li>
+        <li><a href="#contato">Contato</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main>
+    <!-- HERO -->
+    <section class="hero" id="inicio">
+      <div class="container">
+        <span class="selo"><i class="ti ti-moon"></i> Coach estratégico Moonshot</span>
+        <h1>Welcome to<br><span>I'Mábio TRAININGS</span></h1>
+        <p>Mire na lua. Com estratégia, método e acompanhamento próximo, até a meta mais ousada vira um plano de voo.</p>
+        <div class="hero-botoes">
+          <a href="#contato" class="btn btn-principal"><i class="ti ti-calendar-event"></i> Agende sua sessão diagnóstica</a>
+          <a href="#servicos" class="btn btn-secundario">Conheça os serviços</a>
+        </div>
+
+        <div class="numeros revelar">
+          <div class="numero"><strong>+XX</strong><span>alunos acompanhados</span></div>
+          <div class="numero"><strong>+XX</strong><span>aprovações em concursos</span></div>
+          <div class="numero"><strong>5</strong><span>idiomas ensinados</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- MÉTODO -->
+    <section class="metodo" id="metodo">
+      <div class="container">
+        <div class="titulo-secao revelar">
+          <small>Nossa metodologia</small>
+          <h2>O método Moonshot</h2>
+          <p>Quatro fases para transformar uma meta ousada em resultado concreto.</p>
+        </div>
+        <div class="etapas">
+          <div class="etapa revelar">
+            <div class="num">01</div>
+            <span class="fase">Plataforma</span>
+            <h3>Diagnóstico</h3>
+            <p>Entendemos onde você está, seus pontos fortes e aonde quer chegar.</p>
+          </div>
+          <div class="etapa revelar">
+            <div class="num">02</div>
+            <span class="fase">Rota</span>
+            <h3>Planejamento</h3>
+            <p>Cronograma realista, metas semanais e prioridades bem definidas.</p>
+          </div>
+          <div class="etapa revelar">
+            <div class="num">03</div>
+            <span class="fase">Propulsão</span>
+            <h3>Execução guiada</h3>
+            <p>Ferramentas didáticas, prática ativa e acompanhamento constante.</p>
+          </div>
+          <div class="etapa revelar">
+            <div class="num">04</div>
+            <span class="fase">Órbita</span>
+            <h3>Conquista</h3>
+            <p>Simulados, ajustes finais e a chegada ao seu objetivo.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SERVIÇOS -->
+    <section id="servicos">
+      <div class="container">
+        <div class="titulo-secao revelar">
+          <small>O que oferecemos</small>
+          <h2>Soluções para cada missão</h2>
+          <p>Ferramentas e acompanhamento sob medida para o seu momento.</p>
+        </div>
+        <div class="servicos">
+          <article class="servico revelar">
+            <div class="icone"><i class="ti ti-certificate"></i></div>
+            <h3>Provas e concursos</h3>
+            <p>Mapas mentais, revisões espaçadas, simulados e trilhas de estudo organizadas por edital.</p>
+            <a href="#contato">Saiba mais</a>
+          </article>
+          <article class="servico revelar">
+            <div class="icone"><i class="ti ti-microphone"></i></div>
+            <h3>Palestras</h3>
+            <p>Motivação, produtividade nos estudos e alta performance para escolas, faculdades e empresas.</p>
+            <a href="#contato">Saiba mais</a>
+          </article>
+          <article class="servico revelar">
+            <div class="icone"><i class="ti ti-school"></i></div>
+            <h3>Consultoria educacional</h3>
+            <p>Apoio a estudantes, famílias e instituições em toda a jornada de aprendizagem.</p>
+            <a href="#contato">Saiba mais</a>
+          </article>
+          <article class="servico revelar">
+            <div class="icone"><i class="ti ti-language"></i></div>
+            <h3>Idiomas</h3>
+            <p>Aulas comunicativas com foco em conversação, exames de proficiência e intercâmbio.</p>
+            <a href="#contato">Saiba mais</a>
+          </article>
+          <article class="servico revelar">
+            <div class="icone"><i class="ti ti-calendar-stats"></i></div>
+            <h3>Planejamento</h3>
+            <p>Rotina de estudos, gestão do tempo e metas acompanhadas de perto, semana a semana.</p>
+            <a href="#contato">Saiba mais</a>
+          </article>
+          <article class="servico revelar">
+            <div class="icone"><i class="ti ti-target-arrow"></i></div>
+            <h3>Coaching estratégico</h3>
+            <p>Mentoria individual para metas ousadas, com estratégia personalizada e suporte contínuo.</p>
+            <a href="#contato">Saiba mais</a>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- DEPOIMENTO -->
+    <section id="depoimentos" style="background: var(--areia);">
+      <div class="container depoimento revelar">
+        <i class="ti ti-quote" style="font-size: 2.5rem; color: var(--rosa-texto);"></i>
+        <blockquote>Eu estudava muito, mas sem direção. Com o método Moonshot, ganhei rotina, foco e confiança, e finalmente conquistei minha aprovação.</blockquote>
+        <cite>— Nome do aluno, aprovado no concurso X</cite>
+      </div>
+    </section>
+
+    <!-- CHAMADA FINAL -->
+    <section id="contato">
+      <div class="container">
+        <div class="cta revelar">
+          <i class="ti ti-rocket"></i>
+          <h2>Pronto para a decolagem?</h2>
+          <p>A primeira conversa é gratuita. Vamos traçar juntos a sua rota até a lua.</p>
+          <a href="https://wa.me/5586999999999?text=Olá!%20Quero%20agendar%20minha%20sessão%20diagnóstica." target="_blank" class="btn btn-principal">
+            <i class="ti ti-brand-whatsapp"></i> Quero começar minha missão
+          </a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">
+      <div class="rodape">
+        <a href="#inicio" class="logo"><i class="ti ti-rocket"></i> I'Mábio TRAININGS</a>
+        <div class="redes">
+          <a href="#" aria-label="Instagram"><i class="ti ti-brand-instagram"></i></a>
+          <a href="#" aria-label="YouTube"><i class="ti ti-brand-youtube"></i></a>
+          <a href="#" aria-label="LinkedIn"><i class="ti ti-brand-linkedin"></i></a>
+          <a href="mailto:contato@imabiotrainings.com.br" aria-label="E-mail"><i class="ti ti-mail"></i></a>
+        </div>
+      </div>
+      <p class="copy">© 2026 I'Mábio TRAININGS · Educação com propósito e estratégia</p>
+    </div>
+  </footer>
+
+  <a href="https://wa.me/5586999999999" target="_blank" class="whatsapp" aria-label="Fale conosco pelo WhatsApp">
+    <i class="ti ti-brand-whatsapp"></i>
+  </a>
+
+  <script>
+    // Menu mobile
+    const toggle = document.querySelector('.menu-toggle');
+    const menu = document.querySelector('.menu');
+    toggle.addEventListener('click', () => menu.classList.toggle('aberto'));
+    menu.querySelectorAll('a').forEach(link =>
+      link.addEventListener('click', () => menu.classList.remove('aberto'))
+    );
+
+    // Animação ao rolar a página
+    const observador = new IntersectionObserver(entradas => {
+      entradas.forEach(e => {
+        if (e.isIntersecting) {
+          e.target.classList.add('visivel');
+          observador.unobserve(e.target);
+        }
+      });
+    }, { threshold: 0.15 });
+    document.querySelectorAll('.revelar').forEach(el => observador.observe(el));
+  </script>
+</body>
+</html>
